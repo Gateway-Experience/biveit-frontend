@@ -1,0 +1,12 @@
+node_modules
+.env.production
+.env.development
+dist
+
+*.tsbuildinfo
+
+# Browser-automation logs/snapshots from local testing
+.playwright-mcp
+
+# Browser-automation logs/snapshots from local testing
+.playwright-mcp
