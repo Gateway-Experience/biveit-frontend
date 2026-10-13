@@ -55,9 +55,10 @@ export default function ProjectList() {
   const { t } = useTranslation();
   // null = still loading, [] = loaded but nothing there yet.
   const [projects, setProjects] = useState<Project[] | null>(null);
+  const [hasLoadFailed, setHasLoadFailed] = useState(false);
 
   useEffect(() => {
-    getProjects().then(setProjects);
+    getProjects().then(setProjects).catch(() => setHasLoadFailed(true));
   }, []);
 
   const hasProjects = !_.isEmpty(projects);
@@ -83,14 +84,15 @@ export default function ProjectList() {
         )}
       </div>
 
-      {_.isNil(projects) && <ProjectGridSkeleton />}
+      {hasLoadFailed && <p className='py-20 text-center text-muted-foreground'>{t('projects_load_failed')}</p>}
+      {_.isNil(projects) && !hasLoadFailed && <ProjectGridSkeleton />}
       {_.isEmpty(projects) && !_.isNil(projects) && <ProjectsEmptyState />}
       {hasProjects && (
         <div className={_GRID_CLASS}>
           {_.map(projects, (project, index) => (
             // Staggered fade-up on first paint; the delay caps out so long lists don't crawl in.
             <div
-              key={project._id}
+              key={project.id}
               className='flex animate-in fade-in-0 slide-in-from-bottom-2 duration-500 fill-mode-both *:flex-1'
               style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
             >

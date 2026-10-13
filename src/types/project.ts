@@ -1,14 +1,12 @@
-// Shape of a project as the backend will return it (`/projects`). snake_case to match the API,
+// Shape of a project as the BE returns it (vib3-backend dto/projects.py). snake_case to match the API,
 // same as `User`.
-export type ProjectStatus = 'DRAFT' | 'PUBLISHED';
-
 export type Project = {
-  _id: string;
+  id: number;
+  user_id: number;
   name: string;
-  description?: string;
-  status: ProjectStatus;
-  // Screenshot of the generated site. Missing until the first build finishes.
-  thumbnail_url?: string;
+  description: string | null;
+  meta: Record<string, unknown>;
   created_at: string;
+  // "Last edited" — the list comes sorted by it, newest first.
   updated_at: string;
 };

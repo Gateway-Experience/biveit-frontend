@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-
 import { cn } from 'cn';
+
 import { choose, formatRelativeTime } from 'src/utils/common';
 import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
@@ -10,10 +10,10 @@ import type { Project } from 'src/types/project';
 // the same tint across reloads.
 const _PREVIEW_TINT_CLASSES = ['bg-chart-1', 'bg-chart-2', 'bg-chart-3', 'bg-chart-4', 'bg-chart-5'];
 
-// Intentions: until a project has a real screenshot, show a tiny wireframe "site in a browser window"
+// Intentions: projects have no screenshot (yet), so show a tiny wireframe "site in a browser window"
 // so the grid still reads as a gallery of websites rather than a wall of grey boxes.
-function ProjectPreviewPlaceholder({ projectId }: { projectId: string }) {
-  const tintClass = choose(_PREVIEW_TINT_CLASSES, projectId);
+function ProjectPreviewPlaceholder({ projectId }: { projectId: number }) {
+  const tintClass = choose(_PREVIEW_TINT_CLASSES, String(projectId));
 
   return (
     <div className='flex size-full flex-col bg-muted p-3 pb-0'>
@@ -39,13 +39,12 @@ function ProjectPreviewPlaceholder({ projectId }: { projectId: string }) {
 
 export default function ProjectCard({ project }: { project: Project }) {
   const { t, i18n } = useTranslation();
-  const isPublished = project.status === 'PUBLISHED';
 
   return (
     // A real link (not LinkButton) so middle-click / cmd-click open the project in a new tab for free.
     <Link
-      to={`${PATHS.projects}/${project._id}`}
-      data-projectid={project._id}
+      to={`${PATHS.projects}/${project.id}`}
+      data-projectid={project.id}
       className={cn(
         'group flex flex-col overflow-hidden rounded-2xl bg-card text-card-foreground ring-1 ring-foreground/10',
         'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary',
@@ -53,9 +52,7 @@ export default function ProjectCard({ project }: { project: Project }) {
       )}
     >
       <div className='aspect-[16/10] overflow-hidden border-b'>
-        {project.thumbnail_url
-          ? <img src={project.thumbnail_url} alt='' className='size-full object-cover object-top' />
-          : <ProjectPreviewPlaceholder projectId={project._id} />}
+        <ProjectPreviewPlaceholder projectId={project.id} />
       </div>
 
       <div className='flex flex-1 flex-col gap-1.5 p-4'>
@@ -63,13 +60,9 @@ export default function ProjectCard({ project }: { project: Project }) {
         <p className='line-clamp-2 min-h-10 text-sm text-muted-foreground'>
           {project.description || t('projects_no_description')}
         </p>
-        <div className='mt-auto flex items-center justify-between gap-2 pt-2 text-xs text-muted-foreground'>
-          <span className='flex items-center gap-1.5 font-medium'>
-            <span className={cn('size-1.5 rounded-full', isPublished ? 'bg-success' : 'bg-foreground/30')} />
-            {t(`project_status_${project.status}`)}
-          </span>
-          <span>{t('projects_edited', { time: formatRelativeTime(project.updated_at, i18n.language) })}</span>
-        </div>
+        <p className='mt-auto pt-2 text-xs text-muted-foreground'>
+          {t('projects_edited', { time: formatRelativeTime(project.updated_at, i18n.language) })}
+        </p>
       </div>
     </Link>
   );

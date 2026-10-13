@@ -204,14 +204,6 @@ export default {
     en: 'No description yet',
     vi: 'Chưa có mô tả',
   },
-  project_status_DRAFT: {
-    en: 'Draft',
-    vi: 'Bản nháp',
-  },
-  project_status_PUBLISHED: {
-    en: 'Live',
-    vi: 'Đang chạy',
-  },
   projects_empty_title: {
     en: 'Nothing built yet',
     vi: 'Chưa có dự án nào',
@@ -223,5 +215,213 @@ export default {
   projects_empty_cta: {
     en: 'Create your first project',
     vi: 'Tạo dự án đầu tiên',
+  },
+  project_back_to_list: {
+    en: 'Projects',
+    vi: 'Dự án',
+  },
+  project_not_found: {
+    en: 'This project doesn\'t exist or you don\'t have access to it.',
+    vi: 'Dự án không tồn tại hoặc bạn không có quyền truy cập.',
+  },
+  chat_placeholder: {
+    en: 'Type your message here...',
+    vi: 'Nhập tin nhắn của bạn tại đây...',
+  },
+  chat_send: {
+    en: 'Send',
+    vi: 'Gửi',
+  },
+  chat_send_failed: {
+    en: 'Couldn\'t send your message. Please try again.',
+    vi: 'Không gửi được tin nhắn. Vui lòng thử lại.',
+  },
+  chat_working: {
+    en: 'Working…',
+    vi: 'Đang làm…',
+  },
+  chat_tool_input: {
+    en: 'Input',
+    vi: 'Đầu vào',
+  },
+  chat_tool_result: {
+    en: 'Result',
+    vi: 'Kết quả',
+  },
+  chat_empty_title: {
+    en: 'What are we building?',
+    vi: 'Chúng ta sẽ xây gì nào?',
+  },
+  chat_empty_body: {
+    en: 'Describe your site in plain words. You can keep refining it, one message at a time.',
+    vi: 'Mô tả trang web của bạn bằng lời thường. Bạn có thể tiếp tục chỉnh sửa qua từng tin nhắn.',
+  },
+  chat_suggestion_landing: {
+    en: 'A landing page for my coffee shop',
+    vi: 'Trang giới thiệu cho quán cà phê của tôi',
+  },
+  chat_suggestion_portfolio: {
+    en: 'A minimal photography portfolio',
+    vi: 'Portfolio nhiếp ảnh tối giản',
+  },
+  chat_suggestion_event: {
+    en: 'A sign-up page for a weekend event',
+    vi: 'Trang đăng ký cho sự kiện cuối tuần',
+  },
+  chat_load_failed: {
+    en: 'Couldn\'t load this conversation. Try refreshing the page.',
+    vi: 'Không tải được cuộc trò chuyện. Hãy thử tải lại trang.',
+  },
+  chat_error_INTERACTION_PENDING: {
+    en: 'The agent is waiting for your answer. Answer or dismiss its question first.',
+    vi: 'Trợ lý đang chờ câu trả lời của bạn. Hãy trả lời hoặc bỏ qua câu hỏi trước.',
+  },
+  chat_error_INTERACTION_NOT_PENDING: {
+    en: 'This question was already answered.',
+    vi: 'Câu hỏi này đã được trả lời.',
+  },
+  chat_error_INVALID_SUBMISSION: {
+    en: 'Those answers didn\'t fit the question ({{reason}}).',
+    vi: 'Câu trả lời không hợp lệ ({{reason}}).',
+  },
+  chat_asked_questions_one: {
+    en: 'Asked you a question',
+    vi: 'Đã hỏi bạn một câu',
+  },
+  chat_asked_questions_other: {
+    en: 'Asked you {{count}} questions',
+    vi: 'Đã hỏi bạn {{count}} câu',
+  },
+  chat_waiting_for_answer: {
+    en: 'Waiting for you',
+    vi: 'Đang chờ bạn',
+  },
+  chat_answer_none: {
+    en: 'Nothing selected',
+    vi: 'Không chọn gì',
+  },
+  chat_answer_dismissed: {
+    en: 'Dismissed',
+    vi: 'Đã bỏ qua',
+  },
+  chat_question_progress: {
+    en: 'Question {{current}} of {{total}}',
+    vi: 'Câu {{current}} / {{total}}',
+  },
+  chat_question_dismiss: {
+    en: 'Dismiss the question and go back to chat mode',
+    vi: 'Bỏ qua câu hỏi và quay lại trò chuyện',
+  },
+  chat_question_hint_single: {
+    en: 'Pick one',
+    vi: 'Chọn một',
+  },
+  chat_question_hint_multi: {
+    en: 'Pick any that apply',
+    vi: 'Chọn tất cả những gì phù hợp',
+  },
+  chat_question_custom_placeholder: {
+    en: 'Something else…',
+    vi: 'Ý khác…',
+  },
+  chat_question_back: {
+    en: 'Back',
+    vi: 'Quay lại',
+  },
+  chat_question_next: {
+    en: 'Next',
+    vi: 'Tiếp',
+  },
+  chat_question_submit: {
+    en: 'Send answers',
+    vi: 'Gửi câu trả lời',
+  },
+  chat_attach_files: {
+    en: 'Attach files',
+    vi: 'Đính kèm tệp',
+  },
+  chat_attachment_remove: {
+    en: 'Remove',
+    vi: 'Gỡ bỏ',
+  },
+  chat_attachment_uploading: {
+    en: 'Uploading…',
+    vi: 'Đang tải lên…',
+  },
+  chat_upload_failed: {
+    en: 'Couldn\'t upload your files. Please try again.',
+    vi: 'Không tải lên được tệp. Vui lòng thử lại.',
+  },
+  chat_error_UPLOAD_REJECTED: {
+    en: 'Those files couldn\'t be uploaded ({{reason}}).',
+    vi: 'Không thể tải lên các tệp này ({{reason}}).',
+  },
+  chat_error_INVALID_ATTACHMENT: {
+    en: 'One of the attachments is no longer available. Remove it and try again.',
+    vi: 'Một tệp đính kèm không còn khả dụng. Hãy gỡ nó và thử lại.',
+  },
+  chat_tab_chat: {
+    en: 'Chat',
+    vi: 'Trò chuyện',
+  },
+  chat_tab_documents: {
+    en: 'Documents',
+    vi: 'Tài liệu',
+  },
+  artifact_open_in_documents: {
+    en: 'Open in Documents',
+    vi: 'Mở trong Tài liệu',
+  },
+  artifacts_back: {
+    en: 'All documents',
+    vi: 'Tất cả tài liệu',
+  },
+  artifacts_open_new_tab: {
+    en: 'Open in a new tab',
+    vi: 'Mở trong tab mới',
+  },
+  artifacts_empty_title: {
+    en: 'No documents yet',
+    vi: 'Chưa có tài liệu nào',
+  },
+  artifacts_empty_body: {
+    en: 'Specs, palettes and other files the agent writes for you will show up here.',
+    vi: 'Đặc tả, bảng màu và các tệp khác do trợ lý tạo sẽ hiển thị ở đây.',
+  },
+  artifact_no_preview: {
+    en: 'No preview for this kind of file. Open it in a new tab instead.',
+    vi: 'Không xem trước được loại tệp này. Hãy mở nó trong tab mới.',
+  },
+  artifact_load_failed: {
+    en: 'Couldn\'t load this document.',
+    vi: 'Không tải được tài liệu này.',
+  },
+  chat_attachment_limit_one: {
+    en: 'You can attach up to {{count}} file per message.',
+    vi: 'Mỗi tin nhắn chỉ được đính kèm tối đa {{count}} tệp.',
+  },
+  chat_attachment_limit_other: {
+    en: 'You can attach up to {{count}} files per message.',
+    vi: 'Mỗi tin nhắn chỉ được đính kèm tối đa {{count}} tệp.',
+  },
+  chat_attachment_too_large: {
+    en: 'Files must be {{limit}} or smaller. Left out: {{names}}',
+    vi: 'Mỗi tệp tối đa {{limit}}. Đã bỏ qua: {{names}}',
+  },
+  image_lightbox_close: {
+    en: 'Close image',
+    vi: 'Đóng ảnh',
+  },
+  chat_load_older_failed: {
+    en: 'Couldn\'t load earlier messages.',
+    vi: 'Không tải được tin nhắn cũ hơn.',
+  },
+  chat_load_older_retry: {
+    en: 'Retry',
+    vi: 'Thử lại',
+  },
+  projects_load_failed: {
+    en: 'Couldn\'t load your projects. Try refreshing the page.',
+    vi: 'Không tải được danh sách dự án. Hãy thử tải lại trang.',
   },
 };

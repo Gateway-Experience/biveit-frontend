@@ -188,12 +188,20 @@ const _RELATIVE_TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
 ];
 
 // Turns a timestamp into "3 hours ago" / "yesterday" in the given locale, using the largest unit
-// that fits. [Pure] apart from reading the clock.
+// that fits. [Pure-ish]: reads the clock.
 function formatRelativeTime(dateRaw: string | number | Date, locale?: string) {
   const diffSeconds = (new Date(dateRaw).getTime() - Date.now()) / 1000;
   const [unit, unitSeconds] = _.find(_RELATIVE_TIME_UNITS, ([, seconds]) => Math.abs(diffSeconds) >= seconds)
     || ['second', 1];
   return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(Math.round(diffSeconds / unitSeconds), unit);
+}
+
+const _FILE_SIZE_UNITS = ['B', 'KB', 'MB', 'GB'];
+
+// 2048 -> "2 KB", 3_400_000 -> "3.2 MB".
+function formatFileSize(bytes: number) {
+  const exponent = _.clamp(Math.floor(Math.log(Math.max(bytes, 1)) / Math.log(1024)), 0, _FILE_SIZE_UNITS.length - 1);
+  return `${_.round(bytes / 1024 ** exponent, 1)} ${_FILE_SIZE_UNITS[exponent]}`;
 }
 
 function formatNumber(num: number | string) {
@@ -245,6 +253,7 @@ export {
   decryptData,
   formatDate,
   formatRelativeTime,
+  formatFileSize,
   formatNumber,
   handleShare,
 };
