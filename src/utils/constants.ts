@@ -12,6 +12,8 @@ const PATHS = {
   register: '/register',
   userProfile: '/user-profile',
   privacyPolicy: '/privacy-policy',
+  projects: '/projects',
+  newProject: '/projects/new',
 };
 
 export {

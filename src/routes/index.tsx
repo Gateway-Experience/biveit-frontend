@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router';
 
 import ProtectedRoute from 'src/components/common/ProtectedRoute';
 import DefaultLayout from 'src/components/layouts/DefaultLayout';
-import Home from 'src/components/pages/Home';
+import ProjectList from 'src/components/pages/projects/ProjectList';
 import Dummy from 'src/components/pages/Dummy';
 import UserProfile from 'src/components/pages/UserProfile';
 import Login from 'src/components/pages/auth/Login';
@@ -23,12 +23,13 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path = '/' element={<DefaultLayout />}>
+        {/* Home is the user's project list. */}
+        <Route index element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         <Route path='protected-dummy' element={<ProtectedRoute><Dummy /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path={PATHS.privacyPolicy} element={<PrivacyPolicy />} />
         <Route path='/showcase' element={<ShowCase />} />
       </Route>
-      <Route path='/' element={<Home />} />
       <Route path='/dummy' element={<Dummy />} />
       <Route path={PATHS.login} element={<Login />} />
       <Route path={PATHS.register} element={<Register />} />

@@ -100,14 +100,17 @@
   --scrim-foreground: oklch(1 0 0);
   /* Marker-pen highlight behind emphasised headline words. */
   --highlight: oklch(0.912 0.090 121.7);
-  --sidebar: oklch(0.36 0.045 150);
-  --sidebar-foreground: oklch(0.893 0.018 142.8);
-  --sidebar-primary: oklch(0.912 0.172 124.5);
-  --sidebar-primary-foreground: oklch(0.296 0.058 133.2);
-  --sidebar-accent: oklch(0.42 0.05 148);
-  --sidebar-accent-foreground: oklch(0.893 0.018 142.8);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.678 0.029 152.1);
+  /* The bar (navbar) wears the brand colour. Derived from --primary rather than copied, so
+     retheming the primary moves the bar with it — and since these only reference other tokens,
+     they resolve correctly under .dark too without being redeclared there. */
+  --sidebar: var(--primary);
+  --sidebar-foreground: var(--primary-foreground);
+  --sidebar-primary: var(--primary-foreground);
+  --sidebar-primary-foreground: var(--primary);
+  --sidebar-accent: color-mix(in oklch, var(--primary) 85%, var(--primary-foreground));
+  --sidebar-accent-foreground: var(--primary-foreground);
+  --sidebar-border: color-mix(in oklch, var(--primary-foreground) 15%, transparent);
+  --sidebar-ring: var(--primary-foreground);
 }
 
 .dark {
@@ -141,14 +144,6 @@
   --info: oklch(0.70 0.14 250);
   --info-foreground: oklch(0.205 0 0);
   --highlight: oklch(0.912 0.172 124.5 / 30%);
-  --sidebar: oklch(0.175 0.020 158);
-  --sidebar-foreground: oklch(0.893 0.018 142.8);
-  --sidebar-primary: oklch(0.912 0.172 124.5);
-  --sidebar-primary-foreground: oklch(0.296 0.058 133.2);
-  --sidebar-accent: oklch(0.290 0.035 150);
-  --sidebar-accent-foreground: oklch(0.893 0.018 142.8);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.678 0.029 152.1);
 }
 
 @layer base {

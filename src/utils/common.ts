@@ -178,6 +178,24 @@ function formatDate(dateRaw: string | number | Date) {
   return formattedDate;
 }
 
+const _RELATIVE_TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 365 * 24 * 3600],
+  ['month', 30 * 24 * 3600],
+  ['week', 7 * 24 * 3600],
+  ['day', 24 * 3600],
+  ['hour', 3600],
+  ['minute', 60],
+];
+
+// Turns a timestamp into "3 hours ago" / "yesterday" in the given locale, using the largest unit
+// that fits. [Pure] apart from reading the clock.
+function formatRelativeTime(dateRaw: string | number | Date, locale?: string) {
+  const diffSeconds = (new Date(dateRaw).getTime() - Date.now()) / 1000;
+  const [unit, unitSeconds] = _.find(_RELATIVE_TIME_UNITS, ([, seconds]) => Math.abs(diffSeconds) >= seconds)
+    || ['second', 1];
+  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(Math.round(diffSeconds / unitSeconds), unit);
+}
+
 function formatNumber(num: number | string) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
@@ -226,6 +244,7 @@ export {
   encryptData,
   decryptData,
   formatDate,
+  formatRelativeTime,
   formatNumber,
   handleShare,
 };

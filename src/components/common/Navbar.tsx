@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
 //   - ghost's `hover:bg-muted`          -> a light block appears behind the text, and its
 //     `dark:hover:bg-muted/50` needs killing separately — the dark: variant outranks a
 //     plain `hover:bg-transparent`, so a grey block showed up in dark mode only
-//   - ghost's `hover:text-foreground`   -> text flips to near-black, ~invisible on the dark bar
+//   - ghost's `hover:text-foreground`   -> text colour drifts off the bar's own foreground
 //   - `focus-visible:border-ring`       -> near-white 1px border, which lingers after a
 //     click since focus persists
 //

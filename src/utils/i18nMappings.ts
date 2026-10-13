@@ -176,4 +176,52 @@ export default {
     en: 'This text is language dependent',
     vi: 'Dòng chữ này tùy thuộc vào ngôn ngữ đang chọn',
   },
+  projects_eyebrow: {
+    en: 'Workspace',
+    vi: 'Không gian làm việc',
+  },
+  projects_title: {
+    en: 'Your projects',
+    vi: 'Dự án của bạn',
+  },
+  projects_count_one: {
+    en: '{{count}} project',
+    vi: '{{count}} dự án',
+  },
+  projects_count_other: {
+    en: '{{count}} projects',
+    vi: '{{count}} dự án',
+  },
+  projects_new: {
+    en: 'New project',
+    vi: 'Dự án mới',
+  },
+  projects_edited: {
+    en: 'Edited {{time}}',
+    vi: 'Sửa {{time}}',
+  },
+  projects_no_description: {
+    en: 'No description yet',
+    vi: 'Chưa có mô tả',
+  },
+  project_status_DRAFT: {
+    en: 'Draft',
+    vi: 'Bản nháp',
+  },
+  project_status_PUBLISHED: {
+    en: 'Live',
+    vi: 'Đang chạy',
+  },
+  projects_empty_title: {
+    en: 'Nothing built yet',
+    vi: 'Chưa có dự án nào',
+  },
+  projects_empty_body: {
+    en: 'Describe the website you have in mind and Vib3 will build it with you, one prompt at a time.',
+    vi: 'Mô tả trang web bạn muốn và Vib3 sẽ cùng bạn xây dựng nó, từng câu lệnh một.',
+  },
+  projects_empty_cta: {
+    en: 'Create your first project',
+    vi: 'Tạo dự án đầu tiên',
+  },
 };
