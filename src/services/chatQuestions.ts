@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import type { AskUserQuestion, InteractionResult } from 'src/types/chat';
+import type { AskUserQuestion, InteractionAnswer, InteractionResult, ToolUseBlock } from 'src/types/chat';
 
 // Intentions: the rules for answering the agent's `ask_user` questions — what counts as a complete answer,
 // and turning the form's drafts into the submission's `results`. All [Pure].
@@ -39,8 +39,32 @@ function buildInteractionResults(
   });
 }
 
+// All the questions of an agent message's pending `ask_user` calls, as one sequence (the order the user
+// answers them in: call by call, question by question).
+function flattenQuestions(interactions: ToolUseBlock[]): AskUserQuestion[] {
+  return _.flatMap(interactions, interaction => interaction.input.questions as AskUserQuestion[]);
+}
+
+// The submission's `answers`: one entry per call, each with its own slice of the results. `drafts` and
+// `abortedAtIndex` are over the flattened sequence (see flattenQuestions), so a dismiss marks everything
+// after it untouched — the rest of that call and every later call alike.
+function buildSubmissionAnswers(
+  interactions: ToolUseBlock[],
+  drafts: QuestionDraft[],
+  options: { abortedAtIndex?: number } = {},
+): InteractionAnswer[] {
+  const results = buildInteractionResults(flattenQuestions(interactions), drafts, options);
+  const questionCounts = _.map(interactions, interaction => _.size(interaction.input.questions as AskUserQuestion[]));
+  return _.map(interactions, (interaction, index) => {
+    const start = _.sum(_.take(questionCounts, index));
+    return { interaction_id: interaction.id, results: _.slice(results, start, start + questionCounts[index]) };
+  });
+}
+
 export {
   EMPTY_QUESTION_DRAFT,
   buildInteractionResults,
+  buildSubmissionAnswers,
+  flattenQuestions,
   isQuestionDraftComplete,
 };

@@ -7,7 +7,7 @@ import { ChevronLeftIcon } from 'lucide-react';
 import LinkButton from 'src/components/common/LinkButton';
 import AgentChat from 'src/components/pages/projects/chat/AgentChat';
 import { Spinner } from 'src/components/shadui/spinner';
-import { getProjects } from 'src/services/project';
+import { getProjects, openProject } from 'src/services/project';
 import type { Project } from 'src/types/project';
 
 // Original purpose: a single project's workspace. For now it's just the agent chat; the site preview
@@ -19,6 +19,9 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null | undefined>(undefined);
 
   useEffect(() => {
+    // Warm the project up as soon as the page loads, alongside everything else rather than before it.
+    // Silent on failure: it's only a head start (sending a message brings the agent up anyway).
+    openProject(projectId).catch(_.noop);
     // There's no GET /projects/{id}; the user's own list is small, so pick it out of that.
     getProjects()
       .then(projects => setProject(_.find(projects, { id: projectId }) || null))

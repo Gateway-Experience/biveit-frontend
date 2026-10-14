@@ -12,10 +12,12 @@ import { formatFileSize } from 'src/utils/common';
 
 // Images are bare thumbnails: no card border or padding around them, just the rounded picture.
 const _IMAGE_ATTACHMENT_CLASS = 'w-16 border-0 bg-transparent has-data-[slot=attachment-media]:p-0';
-// The remove button is a small badge centred on the thumbnail's top-right corner (mostly outside it, so it
-// never covers the picture). Whatever holds the thumbnails needs a little top/right room for it.
-const _IMAGE_ACTIONS_CLASS = 'translate-x-1/2 -translate-y-1/2 group-data-[orientation=vertical]/attachment:top-0 group-data-[orientation=vertical]/attachment:right-0';
-const _IMAGE_REMOVE_BUTTON_CLASS = 'size-5 rounded-full border bg-background shadow-xs hover:bg-muted';
+// The remove button is a small badge centred on the attachment's top-right corner (mostly outside it, so it
+// never covers the picture or the file name) — same for thumbnails and file chips. Whatever holds them needs
+// a little top/right room for it. The vertical (thumbnail) variants are repeated because the registry's own
+// vertical positioning would otherwise win over the plain classes.
+const _REMOVE_ACTIONS_CLASS = 'absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 group-data-[orientation=vertical]/attachment:top-0 group-data-[orientation=vertical]/attachment:right-0';
+const _REMOVE_BUTTON_CLASS = 'size-5 rounded-full border bg-background shadow-xs hover:bg-muted';
 
 // Intentions: one attached file, wherever it shows — a chip in the composer (still uploading, or ready
 // with a remove button) or in a sent message (click to open). Images get a thumbnail once there's a URL
@@ -56,12 +58,12 @@ export default function ChatAttachment({ name, mime, size, url, isUploading = fa
       {/* Other files open in a new tab. The BE serves them sandboxed, so even an uploaded .html can't run script. */}
       {url && !isImage && <AttachmentTrigger render={<a href={url} target='_blank' rel='noreferrer' aria-label={name} />} />}
       {onRemove && (
-        <AttachmentActions className={isImage ? _IMAGE_ACTIONS_CLASS : undefined}>
+        <AttachmentActions className={_REMOVE_ACTIONS_CLASS}>
           <AttachmentAction
             aria-label={t('chat_attachment_remove')}
             title={t('chat_attachment_remove')}
             onClick={onRemove}
-            className={isImage ? _IMAGE_REMOVE_BUTTON_CLASS : undefined}
+            className={_REMOVE_BUTTON_CLASS}
           >
             <XIcon />
           </AttachmentAction>

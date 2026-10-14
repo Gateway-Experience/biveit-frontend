@@ -58,11 +58,14 @@ function getInteractionResults(toolResult: ToolResultBlock): InteractionResult[]
 }
 
 // Best guess at "the agent is on it" — the API has no status signal, so it's read off the log: the user
-// spoke last, that wasn't a dismiss (a dismiss closes the question without waking the agent), and no
-// question is still open (the agent only resumes once every question in its message is answered).
-function isAgentPresumedWorking(messages: AiMessage[]) {
+// spoke last, that wasn't a dismiss (a dismiss closes the question without waking the agent), no question
+// is still open (the agent only resumes once every question in its message is answered), and this tab is
+// the one that sent it (`sentSeqs`: the seqs its successful posts got back) — in which case it waits for
+// the reply indefinitely. Anything else (loaded with the history, sent from another tab, or a send that
+// errored) never counts: a reply that didn't come must not leave the chat locked.
+function isAgentPresumedWorking(messages: AiMessage[], sentSeqs: number[]) {
   const lastMessage = _.last(messages);
-  if (lastMessage?.role !== 'user' || !_.isEmpty(findPendingInteractions(messages))) {
+  if (lastMessage?.role !== 'user' || !_.includes(sentSeqs, lastMessage.seq) || !_.isEmpty(findPendingInteractions(messages))) {
     return false;
   }
   const answers = _.filter(lastMessage.content, { type: 'tool_result' }) as ToolResultBlock[];

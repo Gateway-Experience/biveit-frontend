@@ -8,24 +8,26 @@ import { Checkbox } from 'src/components/shadui/checkbox';
 import { Input } from 'src/components/shadui/input';
 import { RadioGroup, RadioGroupItem } from 'src/components/shadui/radio-group';
 import {
-  EMPTY_QUESTION_DRAFT, buildInteractionResults, isQuestionDraftComplete, type QuestionDraft,
+  EMPTY_QUESTION_DRAFT, buildSubmissionAnswers, flattenQuestions, isQuestionDraftComplete, type QuestionDraft,
 } from 'src/services/chatQuestions';
-import type { AskUserQuestion, InteractionResult, ToolUseBlock } from 'src/types/chat';
+import type { InteractionAnswer, ToolUseBlock } from 'src/types/chat';
 
 // One option as a full-width clickable row; the radio/checkbox inside carries the checked state.
 const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15 has-disabled:pointer-events-none has-disabled:opacity-60';
 
-// Intentions: the agent's `ask_user` questions, one at a time, in place of the chat input (the BE won't
-// take text until they're answered or dismissed). Submits once at the end; the X dismisses from the
-// current question on, which hands chat mode back without the agent replying.
-// Mount with `key={toolUse.id}` so a new interaction starts from a clean form.
-export default function QuestionPanel({ toolUse, onSubmit }: {
-  toolUse: ToolUseBlock;
-  // Resolves to whether it went through. On success the interaction stops being pending and this unmounts.
-  onSubmit: (interactionId: string, results: InteractionResult[]) => Promise<boolean>;
+// Intentions: the agent's questions, one at a time, in place of the chat input (the BE won't take text until
+// they're answered or dismissed). An agent message can hold several `ask_user` calls; their questions run
+// as one sequence and are submitted together once, at the end (the BE wants the whole message answered in
+// one go). The X dismisses from the current question on, which hands chat mode back without a reply.
+// Mount with a key made of the calls' ids, so a new set of questions starts from a clean form.
+export default function QuestionPanel({ interactions, onSubmit }: {
+  // The agent message's pending `ask_user` calls, in the order it asked them.
+  interactions: ToolUseBlock[];
+  // Resolves to whether it went through. On success nothing is pending any more and this unmounts.
+  onSubmit: (answers: InteractionAnswer[]) => Promise<boolean>;
 }) {
   const { t } = useTranslation();
-  const questions = toolUse.input.questions as AskUserQuestion[];
+  const questions = flattenQuestions(interactions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [drafts, setDrafts] = useState<QuestionDraft[]>(() => _.map(questions, () => EMPTY_QUESTION_DRAFT));
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,9 +41,9 @@ export default function QuestionPanel({ toolUse, onSubmit }: {
     setDrafts(previousDrafts => _.map(previousDrafts, (existing, index) => (index === currentIndex ? { ...existing, ...patch } : existing)));
   }
 
-  async function submitResults(results: InteractionResult[]) {
+  async function submitAnswers(answers: InteractionAnswer[]) {
     setIsSubmitting(true);
-    const isSent = await onSubmit(toolUse.id, results);
+    const isSent = await onSubmit(answers);
     // Only reached usefully on failure — on success the panel is on its way out.
     if (!isSent) {
       setIsSubmitting(false);
@@ -53,7 +55,7 @@ export default function QuestionPanel({ toolUse, onSubmit }: {
       return;
     }
     if (isLastQuestion) {
-      submitResults(buildInteractionResults(questions, drafts));
+      submitAnswers(buildSubmissionAnswers(interactions, drafts));
     } else {
       setCurrentIndex(currentIndex + 1);
     }
@@ -62,7 +64,7 @@ export default function QuestionPanel({ toolUse, onSubmit }: {
   return (
     <div
       data-component='question-panel'
-      data-interactionid={toolUse.id}
+      data-interactionids={_.map(interactions, 'id').join(',')}
       data-questionindex={currentIndex}
       className='flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-xs animate-in fade-in-0 slide-in-from-bottom-1 dark:bg-input/30'
     >
@@ -76,7 +78,7 @@ export default function QuestionPanel({ toolUse, onSubmit }: {
           disabled={isSubmitting}
           aria-label={t('chat_question_dismiss')}
           title={t('chat_question_dismiss')}
-          onClick={() => submitResults(buildInteractionResults(questions, drafts, { abortedAtIndex: currentIndex }))}
+          onClick={() => submitAnswers(buildSubmissionAnswers(interactions, drafts, { abortedAtIndex: currentIndex }))}
         >
           <XIcon />
         </Button>

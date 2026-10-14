@@ -127,11 +127,9 @@ export default function AgentChat({ projectId, className }: { projectId: number;
   // The artifact open in the Documents tab; null = showing the list.
   const [openArtifactPath, setOpenArtifactPath] = useState<string | null>(null);
   // One thing at a time: no sending while history loads, a message is in flight, or the agent is replying.
-  // Heads-up: "replying" is inferred from the log (see isAgentPresumedWorking), so if the agent dies
-  // without answering, this stays locked until it does.
+  // "Replying" is inferred (see isAgentPresumedWorking) and only ever for a message this tab sent: if that
+  // reply never comes, it stays locked until a refresh — older or failed messages never lock it.
   const isSendDisabled = _.isNull(messages) || isPosting || isAgentWorking;
-  // Answered one at a time if the agent asked several in one go; the next shows once this one's answered.
-  const currentInteraction = _.first(pendingInteractions);
   // The agent can revise a document without showing it again, so the Documents list refetches whenever it
   // says anything new.
   const latestAssistantSeq = _.findLast(messages, { role: 'assistant' })?.seq;
@@ -217,8 +215,10 @@ export default function AgentChat({ projectId, className }: { projectId: number;
             {/* While the agent waits on an answer, the question takes the input's place (the BE refuses text
                 until then). The composer stays mounted underneath, just hidden, so a half-typed message and
                 its uploaded files are still there once the question is answered or dismissed. */}
-            {currentInteraction && <QuestionPanel key={currentInteraction.id} toolUse={currentInteraction} onSubmit={submitAnswers} />}
-            <div hidden={Boolean(currentInteraction)}>
+            {!_.isEmpty(pendingInteractions) && (
+              <QuestionPanel key={_.map(pendingInteractions, 'id').join(',')} interactions={pendingInteractions} onSubmit={submitAnswers} />
+            )}
+            <div hidden={!_.isEmpty(pendingInteractions)}>
               <ChatComposerWithSend
                 sendText={sendText}
                 onUpload={uploadFiles}

@@ -8,7 +8,7 @@ import {
   uploadAttachments,
 } from 'src/services/chat';
 import { findPendingInteractions, hasOlderMessages, isAgentPresumedWorking, mergeMessages } from 'src/services/chatLog';
-import type { AiMessage, Attachment, InteractionResult, PostChatMessageBody } from 'src/types/chat';
+import type { AiMessage, Attachment, InteractionAnswer, PostChatMessageBody } from 'src/types/chat';
 
 // Error codes the user can do something about get their own wording (`chat_error_<CODE>`, with the BE's
 // `reason` when it gives one); anything else gets the generic message for that action.
@@ -33,6 +33,9 @@ export default function useAgentChat(projectId: number) {
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   // Set when an older page fails, so the auto-load doesn't hammer a failing endpoint; the UI offers a retry.
   const [hasLoadOlderFailed, setHasLoadOlderFailed] = useState(false);
+  // Seqs of the messages this tab posted successfully. Only those make the agent count as "working" (see
+  // isAgentPresumedWorking), so a reply that never came for an older or failed message can't lock the chat.
+  const [sentSeqs, setSentSeqs] = useState<number[]>([]);
 
   const receiveMessages = useCallback((incomingMessages: AiMessage[]) => {
     setMessages(previousMessages => mergeMessages(previousMessages || [], incomingMessages));
@@ -89,7 +92,9 @@ export default function useAgentChat(projectId: number) {
     setIsPosting(true);
     try {
       // Our own message also comes back on the stream; the merge dedupes it by seq.
-      receiveMessages([await postChatMessage(conversationId as number, body)]);
+      const storedMessage = await postChatMessage(conversationId as number, body);
+      receiveMessages([storedMessage]);
+      setSentSeqs(previous => [...previous, storedMessage.seq]);
       return true;
     } catch (error) {
       notifyError(error, 'chat_send_failed');
@@ -116,13 +121,14 @@ export default function useAgentChat(projectId: number) {
   }, [conversationId, notifyError]);
 
   const getFileUrl = useCallback((path: string) => getConversationFileUrl(conversationId as number, path), [conversationId]);
+  // One post answers the agent's whole message — every pending `ask_user` call in it (see buildSubmissionAnswers).
   const submitAnswers = useCallback(
-    (interactionId: string, results: InteractionResult[]) => postMessage({ type: 'submission', interaction_id: interactionId, results }),
+    (answers: InteractionAnswer[]) => postMessage({ type: 'submission', answers }),
     [postMessage],
   );
 
   const pendingInteractions = useMemo(() => findPendingInteractions(messages || []), [messages]);
-  const isAgentWorking = useMemo(() => isAgentPresumedWorking(messages || []), [messages]);
+  const isAgentWorking = useMemo(() => isAgentPresumedWorking(messages || [], sentSeqs), [messages, sentSeqs]);
 
   return {
     conversationId, messages, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting, sendText, submitAnswers,

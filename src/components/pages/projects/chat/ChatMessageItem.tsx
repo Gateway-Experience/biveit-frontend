@@ -75,29 +75,34 @@ function ShowArtifactCard({ toolUse, onOpenArtifact }: { toolUse: ToolUseBlock; 
   );
 }
 
-// The user's answers to an `ask_user`, shown as their side of the conversation: each answered question
-// with what they picked. A dismiss shows where they bailed out; questions they never reached are left out.
-function InteractionAnswerBubble({ toolResult, toolUse }: { toolResult: ToolResultBlock; toolUse?: ToolUseBlock }) {
+// The user's answers, shown as their side of the conversation: each answered question with what they
+// picked. One answer message can cover several `ask_user` calls (the agent's whole message is answered in
+// one go), so it's one card for all of them, in the order asked. A dismiss shows where the user bailed
+// out; questions they never reached are left out.
+function InteractionAnswerBubble({ answers }: { answers: { toolResult: ToolResultBlock; toolUse?: ToolUseBlock }[] }) {
   const { t } = useTranslation();
-  const questions = (toolUse?.input.questions || []) as AskUserQuestion[];
+  const answeredQuestions = _.flatMap(answers, ({ toolResult, toolUse }) => {
+    const questions = (toolUse?.input.questions || []) as AskUserQuestion[];
+    return _.map(getInteractionResults(toolResult), (result, index) => ({
+      key: `${toolResult.tool_use_id}:${index}`,
+      question: questions[index]?.question,
+      result,
+    }));
+  });
 
   return (
-    <Bubble variant='secondary' align='end' data-toolresultfor={toolResult.tool_use_id}>
+    <Bubble variant='secondary' align='end' data-toolresultfor={_.map(answers, 'toolResult.tool_use_id').join(',')}>
       <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2.5 py-3')}>
-        {_.map(getInteractionResults(toolResult), (result, index) => {
-          if (result.status === 'untouched') {
-            return null;
-          }
-          const answer = result.status === 'submitted'
-            ? _.join(_.compact([...result.value.selected, result.value.custom]), ', ') || t('chat_answer_none')
-            : t('chat_answer_dismissed');
-          return (
-            <div key={index} className='flex flex-col gap-0.5'>
-              <span className='text-xs text-muted-foreground'>{questions[index]?.question}</span>
-              <span className={cn('font-medium', result.status === 'aborted' && 'font-normal text-muted-foreground italic')}>{answer}</span>
-            </div>
-          );
-        })}
+        {_.map(_.reject(answeredQuestions, { result: { status: 'untouched' } }), ({ key, question, result }) => (
+          <div key={key} className='flex flex-col gap-0.5'>
+            <span className='text-xs text-muted-foreground'>{question}</span>
+            <span className={cn('font-medium', result.status === 'aborted' && 'font-normal text-muted-foreground italic')}>
+              {result.status === 'submitted'
+                ? _.join(_.compact([...result.value.selected, result.value.custom]), ', ') || t('chat_answer_none')
+                : t('chat_answer_dismissed')}
+            </span>
+          </div>
+        ))}
       </BubbleContent>
     </Bubble>
   );
@@ -164,21 +169,18 @@ function UserMessageBlocks({ message, renderContext }: { message: AiMessage; ren
     </div>
   );
 
-  return [attachmentRow, ..._.map(message.content, (block, index) => {
-    if (_isTextBlock(block)) {
-      return (
-        <Bubble key={index} variant='secondary' align='end'>
-          <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'whitespace-pre-wrap')}>{block.text}</BubbleContent>
-        </Bubble>
-      );
-    }
-    // Answers to the agent's questions get a bubble; results of its other tools render under the call.
-    const toolUse = _isToolResultBlock(block) ? renderContext.toolUsesById[block.tool_use_id] : undefined;
-    if (_isToolResultBlock(block) && isAskUser(toolUse)) {
-      return <InteractionAnswerBubble key={index} toolResult={block} toolUse={toolUse} />;
-    }
-    return null;
-  })];
+  // Answers to the agent's questions share one card; results of its other tools render under the call.
+  const answers = _.filter(
+    _.map(_.filter(message.content, _isToolResultBlock), toolResult => ({ toolResult, toolUse: renderContext.toolUsesById[toolResult.tool_use_id] })),
+    ({ toolUse }) => isAskUser(toolUse),
+  );
+  const answerCard = !_.isEmpty(answers) && <InteractionAnswerBubble key='answers' answers={answers} />;
+
+  return [attachmentRow, answerCard, ..._.map(_.filter(message.content, _isTextBlock), (block, index) => (
+    <Bubble key={index} variant='secondary' align='end'>
+      <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'whitespace-pre-wrap')}>{block.text}</BubbleContent>
+    </Bubble>
+  ))];
 }
 
 function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage; renderContext: ChatRenderContext }) {

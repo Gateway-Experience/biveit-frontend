@@ -63,8 +63,12 @@ export type InteractionResult =
   | { status: 'aborted' }
   | { status: 'untouched' };
 
+// The answers to one `ask_user` tool call: `results` follow that call's questions, in order.
+export type InteractionAnswer = { interaction_id: string; results: InteractionResult[] };
+
 // POST /conversations/{id}/messages body.
 export type PostChatMessageBody =
   // Text may be empty when there are attachments (paths from the uploads endpoint), but not both.
   | { type: 'text'; text: string; attachments?: string[] }
-  | { type: 'submission'; interaction_id: string; results: InteractionResult[] };
+  // One submission answers the agent's whole message: one entry per pending `ask_user` call, each exactly once.
+  | { type: 'submission'; answers: InteractionAnswer[] };

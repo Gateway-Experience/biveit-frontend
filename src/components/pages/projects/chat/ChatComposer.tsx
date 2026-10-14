@@ -114,8 +114,10 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
       <InputGroup className='rounded-2xl bg-card shadow-xs'>
         {!_.isEmpty(draftAttachments) && (
           <InputGroupAddon align='block-start' className='px-3 pt-3'>
-            {/* pt/pr: room for the remove badges that poke out of image thumbnails' corners (the group clips overflow). */}
-            <AttachmentGroup className='w-full items-end pt-2.5 pr-2.5'>
+            {/* pt/pr: room for the remove badges that poke out of image thumbnails' corners (the group clips overflow).
+                No edge fade: the registry's `scroll-fade-x` stays on permanently in browsers without scroll-driven
+                animations (e.g. Firefox), fading the first thumbnail; with at most 5 files the row rarely scrolls. */}
+            <AttachmentGroup className='w-full items-end pt-2.5 pr-2.5 [mask-image:none]'>
               {_.map(draftAttachments, draftAttachment => (
                 <ChatAttachment
                   key={draftAttachment.clientId}

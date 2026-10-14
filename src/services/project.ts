@@ -6,6 +6,14 @@ async function getProjects(): Promise<Project[]> {
   return callBe('/projects');
 }
 
+// Asks the BE to get the project ready (its workspace and agent session), so the agent doesn't cold-start
+// on the first message. Idempotent — fine to call on every visit, from every tab. It's a warm-up, not a
+// precondition: the BE ensures the session again on its own when a message is sent.
+async function openProject(projectId: number): Promise<{ status: 'ready' }> {
+  return callBe({ method: 'POST', url: `/projects/${projectId}/open` });
+}
+
 export {
   getProjects,
+  openProject,
 };
