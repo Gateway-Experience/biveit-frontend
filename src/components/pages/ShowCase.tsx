@@ -20,6 +20,7 @@ import ThemeToggle from 'src/components/common/ThemeToggle';
 import { useAnalytics } from 'src/utils/hooks';
 import { useOneTimeQueryParams, useIsMobile } from 'src/utils/hooks';
 import FullScreenLoading from 'src/components/common/FullScreenLoading';
+import { Spinner } from 'src/components/common/Spinner';
 import MultiSelect from 'src/components/common/MultiSelect';
 import Info from 'src/components/common/Info';
 import LinkButton from 'src/components/common/LinkButton';
@@ -347,6 +348,49 @@ function ExampleForm() {
   );
 }
 
+// Shows the full-screen loading mask on demand, so it can be looked at (and restyled). It blocks the whole
+// page by design, so a click anywhere on it hides it again.
+function ExampleFullScreenLoading() {
+  const [isShown, setIsShown] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setIsShown(true)}>Show full screen loading</Button>
+      {isShown && (
+        <div onClick={() => setIsShown(false)}>
+          <FullScreenLoading />
+        </div>
+      )}
+    </>
+  );
+}
+
+// A button with a loading state, the way action buttons in the app do it: disabled, with a spinner in
+// front of the label, while the request runs. Here the "request" is just a 2-second timer.
+function ExampleLoadingButton() {
+  const [isLoading, setIsLoading] = useState(false);
+  const startLoading = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 2000);
+  };
+  return (
+    <div className='flex flex-wrap items-center gap-3'>
+      <Button disabled={isLoading} onClick={startLoading}>
+        {isLoading && <Spinner data-icon='inline-start' />}
+        Save
+      </Button>
+      <Button variant='outline' disabled={isLoading} onClick={startLoading}>
+        {isLoading && <Spinner data-icon='inline-start' />}
+        Outline
+      </Button>
+      {/* Always spinning, to look at the resting look without clicking. */}
+      <Button disabled>
+        <Spinner data-icon='inline-start' />
+        Loading
+      </Button>
+    </div>
+  );
+}
+
 function ExampleModal() {
   const [modalOpen, setModalOpen] = useState(false);
   return (
@@ -542,6 +586,26 @@ export default function ShowCase() {
             </h2>
           </div>
           <ExampleModal />
+        </div>
+
+        <div>
+          <div className='mb-3'>
+            <h2 className='text-lg font-semibold'>
+              Full screen loading
+            </h2>
+            <p className='text-sm text-muted-foreground'>Click anywhere to hide it.</p>
+          </div>
+          <ExampleFullScreenLoading />
+        </div>
+
+        <div>
+          <div className='mb-3'>
+            <h2 className='text-lg font-semibold'>
+              Loading button
+            </h2>
+            <p className='text-sm text-muted-foreground'>Click one to see it load for 2 seconds.</p>
+          </div>
+          <ExampleLoadingButton />
         </div>
 
         <div>

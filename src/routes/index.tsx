@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router';
+import { Navigate, Routes, Route } from 'react-router';
 
 import ProtectedRoute from 'src/components/common/ProtectedRoute';
 import DefaultLayout from 'src/components/layouts/DefaultLayout';
@@ -24,13 +24,18 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path = '/' element={<DefaultLayout />}>
-        {/* Home is the user's project list. */}
-        <Route index element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
-        <Route path={`${PATHS.projects}/:projectId`} element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+        {/* Home is the user's project list. Links to "/" (logo, Home, after login) land there too. */}
+        <Route index element={<Navigate to={PATHS.projects} replace />} />
+        <Route path={PATHS.projects} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
+        {/* The same list, with the new-project form open over it. */}
+        <Route path={PATHS.newProject} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         <Route path='protected-dummy' element={<ProtectedRoute><Dummy /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path={PATHS.privacyPolicy} element={<PrivacyPolicy />} />
         <Route path='/showcase' element={<ShowCase />} />
+      </Route>
+      <Route element={<DefaultLayout isWorkspace />}>
+        <Route path={`${PATHS.projects}/:projectId`} element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
       </Route>
       <Route path='/dummy' element={<Dummy />} />
       <Route path={PATHS.login} element={<Login />} />

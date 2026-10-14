@@ -4,7 +4,7 @@ import { FileIcon, FileTextIcon, ImageIcon } from 'lucide-react';
 
 import ImageLightbox from 'src/components/common/ImageLightbox';
 import Markdown from 'src/components/common/Markdown';
-import { Spinner } from 'src/components/shadui/spinner';
+import { Spinner } from 'src/components/common/Spinner';
 import { getConversationFileText } from 'src/services/chat';
 import type { Artifact } from 'src/types/chat';
 

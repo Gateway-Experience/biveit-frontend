@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation, Link } from 'react-router';
 import { MenuIcon, ChevronDownIcon } from 'lucide-react';
 
+import LanguageSelector from 'src/components/common/LanguageSelector';
 import LinkButton from 'src/components/common/LinkButton';
 import Popover from 'src/components/common/Popover';
 import { Avatar, AvatarFallback, AvatarImage } from 'src/components/shadui/avatar';
@@ -186,7 +187,8 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                 );
               })}
             </div>
-            <div className='flex flex-row gap-4'>
+            <div className='flex flex-row items-center gap-4'>
+              <LanguageSelector className={NAV_ITEM_CLASS} />
               {!user && (
                 <LinkButton
                   href={loginPath}

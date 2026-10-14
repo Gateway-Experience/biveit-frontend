@@ -6,7 +6,7 @@ import { ChevronLeftIcon, ExternalLinkIcon, FilesIcon } from 'lucide-react';
 import ArtifactViewer, { ArtifactIcon } from 'src/components/pages/projects/chat/ArtifactViewer';
 import { Button } from 'src/components/shadui/button';
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from 'src/components/shadui/item';
-import { Spinner } from 'src/components/shadui/spinner';
+import { Spinner } from 'src/components/common/Spinner';
 import { getArtifacts } from 'src/services/chat';
 import { formatFileSize } from 'src/utils/common';
 import type { Artifact } from 'src/types/chat';

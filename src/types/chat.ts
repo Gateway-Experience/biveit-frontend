@@ -72,3 +72,10 @@ export type PostChatMessageBody =
   | { type: 'text'; text: string; attachments?: string[] }
   // One submission answers the agent's whole message: one entry per pending `ask_user` call, each exactly once.
   | { type: 'submission'; answers: InteractionAnswer[] };
+
+// Where POST /projects/{id}/open is at for this visit: it gets the agent up (and, the first time, hands it
+// the bootstrap form's answers so it can open the conversation).
+export type AgentSessionStatus = 'opening' | 'ready' | 'failed';
+
+// A conversation before the agent has said anything (see getChatIntroState).
+export type ChatIntroState = 'loading' | 'setting-up' | 'setup-failed' | 'awaiting-agent' | 'started';

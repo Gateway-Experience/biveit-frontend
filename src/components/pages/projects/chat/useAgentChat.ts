@@ -4,11 +4,13 @@ import { useTranslation } from 'react-i18next';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
 import {
-  getChatErrorCode, getConversation, getConversationFileUrl, getMessages, postChatMessage, subscribeToMessages,
+  getChatErrorCode, getConversation, getConversationFileUrl, getMessages, postChatMessage, subscribeToConversationEvents,
   uploadAttachments,
 } from 'src/services/chat';
-import { findPendingInteractions, hasOlderMessages, isAgentPresumedWorking, mergeMessages } from 'src/services/chatLog';
-import type { AiMessage, Attachment, InteractionAnswer, PostChatMessageBody } from 'src/types/chat';
+import {
+  findPendingInteractions, getChatIntroState, hasOlderMessages, isAgentPresumedWorking, mergeMessages,
+} from 'src/services/chatLog';
+import type { AgentSessionStatus, AiMessage, Attachment, InteractionAnswer, PostChatMessageBody } from 'src/types/chat';
 
 // Error codes the user can do something about get their own wording (`chat_error_<CODE>`, with the BE's
 // `reason` when it gives one); anything else gets the generic message for that action.
@@ -21,7 +23,13 @@ const _KNOWN_ERROR_CODES = [
 // Flow: find the conversation -> load its newest page -> stream everything after the last seq we have.
 // Older pages are fetched on demand (`loadOlderMessages`, when the user scrolls to the top).
 // Nothing is reset when `projectId` changes, so mount the consumer with `key={projectId}`.
-export default function useAgentChat(projectId: number) {
+// `sessionStatus` is how opening the project went (useProjectSession) — it explains an empty log.
+// `onDevenvChange` must be stable (e.g. a dispatch): changing it reconnects the stream.
+export default function useAgentChat(projectId: number, options: {
+  sessionStatus?: AgentSessionStatus;
+  onDevenvChange?: () => void;
+} = {}) {
+  const { sessionStatus = 'ready', onDevenvChange } = options;
   const { t } = useTranslation();
   const notify = useNotification();
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -55,16 +63,24 @@ export default function useAgentChat(projectId: number) {
       setConversationId(conversation.id);
       receiveMessages(history);
       // Starting after what we already have; the stream (and its reconnects) carry it on from there.
-      unsubscribe = subscribeToMessages(conversation.id, _.last(history)?.seq || 0, message => receiveMessages([message]));
+      unsubscribe = subscribeToConversationEvents(conversation.id, _.last(history)?.seq || 0, {
+        onMessage: message => receiveMessages([message]),
+        // The dev environment rides the same stream; the caller re-reads it on a nudge or a (re)connect.
+        onConnect: onDevenvChange,
+        onDevenvChange,
+      });
     })().catch(() => !isCancelled && setHasLoadFailed(true));
 
     return () => {
       isCancelled = true;
       unsubscribe();
     };
-  }, [projectId, receiveMessages]);
+  }, [projectId, receiveMessages, onDevenvChange]);
 
   // Prepends the page before the oldest message we have. Overlaps and repeats are fine: the merge dedupes.
+  // The Documents list refetches when it moves (the agent can revise a file without showing it again).
+  const latestAssistantSeq = _.findLast(messages, { role: 'assistant' })?.seq;
+
   const loadOlderMessages = useCallback(async () => {
     if (!conversationId || isLoadingOlder || !hasOlderMessages(messages || [])) {
       return;
@@ -128,10 +144,15 @@ export default function useAgentChat(projectId: number) {
   );
 
   const pendingInteractions = useMemo(() => findPendingInteractions(messages || []), [messages]);
-  const isAgentWorking = useMemo(() => isAgentPresumedWorking(messages || [], sentSeqs), [messages, sentSeqs]);
+  const introState = getChatIntroState(messages, sessionStatus);
+  // Also "working" while its opening message is on the way: the session is up, it just hasn't spoken yet.
+  const isAgentWorking = useMemo(
+    () => introState === 'awaiting-agent' || isAgentPresumedWorking(messages || [], sentSeqs),
+    [introState, messages, sentSeqs],
+  );
 
   return {
-    conversationId, messages, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting, sendText, submitAnswers,
+    conversationId, latestAssistantSeq, messages, introState, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting, sendText, submitAnswers,
     uploadFiles, getFileUrl, loadOlderMessages, isLoadingOlder, hasLoadOlderFailed,
     hasOlder: hasOlderMessages(messages || []),
   };

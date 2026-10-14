@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import _ from 'lodash';
+import { useMatch, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { PlusIcon, SparklesIcon } from 'lucide-react';
 
 import LinkButton from 'src/components/common/LinkButton';
+import NewProjectModal from 'src/components/pages/projects/NewProjectModal';
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
 import { getProjects } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
@@ -56,6 +58,10 @@ export default function ProjectList() {
   // null = still loading, [] = loaded but nothing there yet.
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [hasLoadFailed, setHasLoadFailed] = useState(false);
+  // The new-project form is open exactly while we're on its URL: the "New project" buttons are plain links
+  // (middle-click works), and the browser's back button closes it.
+  const isCreatingProject = !!useMatch(PATHS.newProject);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getProjects().then(setProjects).catch(() => setHasLoadFailed(true));
@@ -65,6 +71,9 @@ export default function ProjectList() {
 
   return (
     <div data-page='project-list'>
+      {/* Replace: closing shouldn't leave an entry that reopens the form on "back". */}
+      <NewProjectModal open={isCreatingProject} onClose={() => navigate(PATHS.projects, { replace: true })} />
+
       <div className='mb-8 flex flex-wrap items-end justify-between gap-4'>
         <div>
           <span className='mb-2 block text-[0.625rem] font-bold tracking-[0.18em] text-muted-foreground uppercase'>

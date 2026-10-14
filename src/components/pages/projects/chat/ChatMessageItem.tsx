@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckIcon, ChevronRightIcon, FileTextIcon, MessageCircleQuestionIcon, XIcon } from 'lucide-react';
 import { cn } from 'cn';
 
+import Markdown from 'src/components/common/Markdown';
 import ChatAttachment from 'src/components/pages/projects/chat/ChatAttachment';
 import {
   Attachment, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle, AttachmentTrigger,
@@ -11,7 +12,7 @@ import { Bubble, BubbleContent } from 'src/components/shadui/bubble';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'src/components/shadui/collapsible';
 import { Marker, MarkerContent, MarkerIcon } from 'src/components/shadui/marker';
 import { Message, MessageContent } from 'src/components/shadui/message';
-import { Spinner } from 'src/components/shadui/spinner';
+import { Spinner } from 'src/components/common/Spinner';
 import { getInteractionResults, isAskUser, isShowArtifact } from 'src/services/chatLog';
 import type {
   AiMessage, AskUserQuestion, AttachmentBlock, ContentBlock, TextBlock, ToolResultBlock, ToolUseBlock,
@@ -30,7 +31,8 @@ export type ChatRenderContext = {
 
 // The registry's bubbles are sized for dense UIs (text-xs); chat reads better at body size.
 const _USER_BUBBLE_CONTENT_CLASS = 'rounded-2xl px-4 py-2.5 text-sm';
-const _AGENT_TEXT_CLASS = 'text-sm leading-relaxed whitespace-pre-wrap';
+// The agent writes markdown; Markdown sets its own (body-sized) type, so this only lets it use the full width.
+const _AGENT_TEXT_CLASS = 'w-full';
 
 const _isTextBlock = (block: ContentBlock): block is TextBlock => block.type === 'text';
 const _isAttachmentBlock = (block: ContentBlock): block is AttachmentBlock => block.type === 'attachment';
@@ -188,7 +190,7 @@ function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage
     if (_isTextBlock(block)) {
       return (
         <Bubble key={index} variant='ghost'>
-          <BubbleContent className={_AGENT_TEXT_CLASS}>{block.text}</BubbleContent>
+          <BubbleContent className={_AGENT_TEXT_CLASS}><Markdown>{block.text}</Markdown></BubbleContent>
         </Bubble>
       );
     }

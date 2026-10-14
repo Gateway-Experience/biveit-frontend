@@ -8,7 +8,7 @@ import { useNotification } from 'src/components/common/NotificationProvider';
 import AuthPageLayout from 'src/components/pages/auth/AuthPageLayout';
 import { EMAIL_PATTERN, MIN_PASSWORD_LENGTH } from 'src/components/pages/auth/authForm';
 import { Button } from 'src/components/shadui/button';
-import { Spinner } from 'src/components/shadui/spinner';
+import { Spinner } from 'src/components/common/Spinner';
 import { useStore } from 'src/state-store';
 import { callBe } from 'src/utils/request';
 import { PATHS } from 'src/utils/constants';

@@ -6,7 +6,7 @@ import { SearchIcon } from 'lucide-react';
 
 import { FieldShell } from 'src/components/common/FormField';
 import { Input } from 'src/components/shadui/input';
-import { Spinner } from 'src/components/shadui/spinner';
+import { Spinner } from 'src/components/common/Spinner';
 
 export type Item = { id: string | number; label: string; [key: string]: unknown };
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentProps } from 'react';
+import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
@@ -9,19 +9,19 @@ import {
   MessageScrollerViewport, useMessageScroller, useMessageScrollerScrollable,
 } from 'src/components/shadui/message-scroller';
 import { Button } from 'src/components/shadui/button';
-import { Spinner } from 'src/components/shadui/spinner';
+import { Spinner } from 'src/components/common/Spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
 import ArtifactsPanel from 'src/components/pages/projects/chat/ArtifactsPanel';
+import { BuildGlyph } from 'src/components/pages/projects/preview/BuildIndicator';
 import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
 import ChatMessageItem, { hasVisibleContent, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
 import QuestionPanel from 'src/components/pages/projects/chat/QuestionPanel';
-import useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
+import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import { indexToolResults, indexToolUses } from 'src/services/chatLog';
-
-const _SUGGESTION_KEYS = ['chat_suggestion_landing', 'chat_suggestion_portfolio', 'chat_suggestion_event'];
+import type { ChatIntroState } from 'src/types/chat';
 
 // Readable column inside a box of any width. Shared by the transcript and the composer so they line up.
-const _COLUMN_CLASS = 'mx-auto w-full max-w-3xl px-4';
+const _COLUMN_CLASS = 'mx-auto w-full max-w-4xl px-4';
 
 // The registry's scroller items use `content-visibility: auto` with a 160px placeholder height, so
 // messages never drawn yet (everything above the fold on load) count as 160px until scrolled to. Real
@@ -30,28 +30,30 @@ const _COLUMN_CLASS = 'mx-auto w-full max-w-3xl px-4';
 // small (paged), so the optimisation isn't worth it here: always draw them at their real size.
 const _SCROLLER_ITEM_CLASS = '[content-visibility:visible] [contain-intrinsic-size:none]';
 
-function ChatEmptyState({ onPickSuggestion, isDisabled }: { onPickSuggestion: (text: string) => void; isDisabled: boolean }) {
+// Intentions: what an empty chat shows while the agent can't have spoken yet — its project is still being
+// set up (the first time takes a while), or setting it up failed and the user can try again. Once the
+// session is up the agent opens the conversation itself; until then the "working" marker covers it.
+function ChatSetupState({ introState, onRetry }: { introState: ChatIntroState; onRetry: () => void }) {
   const { t } = useTranslation();
 
-  return (
-    <div className='flex flex-1 flex-col items-center justify-center py-10 text-center animate-in fade-in-0 duration-500'>
-      <h2 className='font-heading text-xl font-bold tracking-[-0.02em]'>{t('chat_empty_title')}</h2>
-      <p className='mt-2 max-w-sm text-sm text-muted-foreground'>{t('chat_empty_body')}</p>
-      <div className='mt-6 flex flex-wrap justify-center gap-2'>
-        {_.map(_SUGGESTION_KEYS, key => (
-          <button
-            key={key}
-            type='button'
-            disabled={isDisabled}
-            onClick={() => onPickSuggestion(t(key))}
-            className='rounded-full border bg-card px-3.5 py-1.5 text-xs font-medium transition-colors hover:border-primary hover:bg-primary/15 disabled:pointer-events-none disabled:opacity-50'
-          >
-            {t(key)}
-          </button>
-        ))}
+  if (introState === 'setting-up') {
+    return (
+      <div className='flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center animate-in fade-in-0 duration-500'>
+        <Spinner className='size-6 text-primary' />
+        <p className='font-medium'>{t('chat_setting_up')}</p>
+        <p className='max-w-xs text-sm text-muted-foreground'>{t('chat_setting_up_hint')}</p>
       </div>
-    </div>
-  );
+    );
+  }
+  if (introState === 'setup-failed') {
+    return (
+      <div className='flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center'>
+        <p className='font-medium'>{t('chat_setup_failed')}</p>
+        <Button variant='outline' onClick={onRetry}>{t('chat_setup_retry')}</Button>
+      </div>
+    );
+  }
+  return null;
 }
 
 // The send path, wrapped so that sending also jumps to the latest (you'll want to see your own message
@@ -64,10 +66,6 @@ function useSendAndFollow(sendText: SendText): SendText {
     scrollToEnd({ behavior: 'smooth' });
     return sendText(text, attachmentPaths);
   };
-}
-
-function ChatEmptyStateWithSend({ sendText, isDisabled }: { sendText: SendText; isDisabled: boolean }) {
-  return <ChatEmptyState onPickSuggestion={useSendAndFollow(sendText)} isDisabled={isDisabled} />;
 }
 
 function ChatComposerWithSend({ sendText, ...composerProps }: Omit<ComponentProps<typeof ChatComposer>, 'onSend'> & { sendText: SendText }) {
@@ -110,29 +108,44 @@ function OlderMessagesLoader({ hasOlder, isLoading, hasFailed, onLoad }: {
   return null;
 }
 
+type AgentChatTab = 'chat' | 'documents' | 'preview' | 'deploy';
+
 // Original purpose: talking to a project's site-building agent.
-// Intentions: fills whatever box it's given (no width or height of its own) — it's a full page column
-// today, and is meant to drop into a narrow side panel next to the site preview later.
-// Layout: two tabs. Chat = transcript (official message-scroller: follows new messages, jump-to-latest
+// Intentions: fills whatever box it's given (no width or height of its own) — a full page column while
+// spec-ing, a side panel next to the site preview once building.
+// Layout: tabs. Chat = transcript (official message-scroller: follows new messages, jump-to-latest
 // button) with the composer — or the agent's open question — pinned underneath. Documents = the files the
-// agent wrote; a file card in the chat switches over with that file open.
-// Mount with `key={projectId}` (see useAgentChat).
-export default function AgentChat({ projectId, className }: { projectId: number; className?: string }) {
+// agent wrote; a file card in the chat switches over with that file open. Preview = whatever `preview` is
+// given, as a tab of its own — for screens too narrow to show it beside the chat. Deploy = likewise
+// `deploy`, once there's a finished site to publish.
+// The chat's state comes from the parent (`useAgentChat`), which also needs it to lay the page out.
+export default function AgentChat({ projectId, chat, onRetrySession, preview, isPreviewBuilding = false, deploy, className }: {
+  projectId: number;
+  chat: ReturnType<typeof useAgentChat>;
+  // Opens the project again after it failed to (see useProjectSession).
+  onRetrySession: () => void;
+  preview?: ReactNode;
+  // The agent is building the site: the Preview tab gets a twinkle so it's noticed from the chat.
+  isPreviewBuilding?: boolean;
+  deploy?: ReactNode;
+  className?: string;
+}) {
   const { t } = useTranslation();
   const {
-    conversationId, messages, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting, sendText, submitAnswers,
-    uploadFiles, getFileUrl, loadOlderMessages, isLoadingOlder, hasLoadOlderFailed, hasOlder,
-  } = useAgentChat(projectId);
-  const [activeTab, setActiveTab] = useState<'chat' | 'documents'>('chat');
+    conversationId, latestAssistantSeq, messages, introState, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting,
+    sendText, submitAnswers, uploadFiles, getFileUrl, loadOlderMessages, isLoadingOlder, hasLoadOlderFailed, hasOlder,
+  } = chat;
+  const [selectedTab, setSelectedTab] = useState<AgentChatTab>('chat');
+  // Preview and Deploy can go away while selected (e.g. the window got wider and they moved beside the
+  // chat): fall back to chat.
+  const activeTab = (selectedTab === 'preview' && !preview) || (selectedTab === 'deploy' && !deploy) ? 'chat' : selectedTab;
   // The artifact open in the Documents tab; null = showing the list.
   const [openArtifactPath, setOpenArtifactPath] = useState<string | null>(null);
   // One thing at a time: no sending while history loads, a message is in flight, or the agent is replying.
   // "Replying" is inferred (see isAgentPresumedWorking) and only ever for a message this tab sent: if that
   // reply never comes, it stays locked until a refresh — older or failed messages never lock it.
-  const isSendDisabled = _.isNull(messages) || isPosting || isAgentWorking;
-  // The agent can revise a document without showing it again, so the Documents list refetches whenever it
-  // says anything new.
-  const latestAssistantSeq = _.findLast(messages, { role: 'assistant' })?.seq;
+  // Nor before the conversation has started: the agent speaks first, once its project is set up.
+  const isSendDisabled = introState !== 'started' || isPosting || isAgentWorking;
 
   const renderContext = useMemo((): ChatRenderContext => ({
     toolUsesById: indexToolUses(messages || []),
@@ -142,7 +155,7 @@ export default function AgentChat({ projectId, className }: { projectId: number;
     getFileUrl,
     onOpenArtifact: path => {
       setOpenArtifactPath(path);
-      setActiveTab('documents');
+      setSelectedTab('documents');
     },
   }), [messages, pendingInteractions, isAgentWorking, getFileUrl]);
   const visibleMessages = useMemo(
@@ -161,7 +174,7 @@ export default function AgentChat({ projectId, className }: { projectId: number;
   return (
     <Tabs
       value={activeTab}
-      onValueChange={setActiveTab}
+      onValueChange={setSelectedTab}
       data-component='agent-chat'
       data-projectid={projectId}
       data-agentworking={isAgentWorking}
@@ -170,6 +183,13 @@ export default function AgentChat({ projectId, className }: { projectId: number;
       <TabsList variant='line' className='w-full justify-start border-b px-3'>
         <TabsTrigger value='chat' className='flex-none px-3'>{t('chat_tab_chat')}</TabsTrigger>
         <TabsTrigger value='documents' className='flex-none px-3'>{t('chat_tab_documents')}</TabsTrigger>
+        {preview && (
+          <TabsTrigger value='preview' className='flex-none px-3' data-building={isPreviewBuilding || undefined}>
+            {t('chat_tab_preview')}
+            {isPreviewBuilding && <BuildGlyph className='text-base' />}
+          </TabsTrigger>
+        )}
+        {deploy && <TabsTrigger value='deploy' className='flex-none px-3'>{t('chat_tab_deploy')}</TabsTrigger>}
       </TabsList>
 
       {/* Kept mounted while hidden so the draft, scroll position and any half-answered question survive a
@@ -191,8 +211,7 @@ export default function AgentChat({ projectId, className }: { projectId: number;
                     <Spinner className='size-5 text-muted-foreground' />
                   </div>
                 )}
-                {/* Empty only if there's truly nothing — not just a newest page with nothing to draw. */}
-                {!_.isNull(messages) && _.isEmpty(visibleMessages) && !hasOlder && <ChatEmptyStateWithSend sendText={sendText} isDisabled={isSendDisabled} />}
+                <ChatSetupState introState={introState} onRetry={onRetrySession} />
                 {_.map(visibleMessages, message => (
                   <MessageScrollerItem key={message.seq} messageId={String(message.seq)} className={_SCROLLER_ITEM_CLASS}>
                     <ChatMessageItem message={message} renderContext={renderContext} />
@@ -233,6 +252,8 @@ export default function AgentChat({ projectId, className }: { projectId: number;
       </TabsContent>
 
       <TabsContent value='documents' className='flex min-h-0 flex-col text-base'>
+        {/* The agent can revise a document without showing it again, so the list refetches whenever it
+            says anything new. */}
         {conversationId && (
           <ArtifactsPanel
             conversationId={conversationId}
@@ -243,6 +264,10 @@ export default function AgentChat({ projectId, className }: { projectId: number;
           />
         )}
       </TabsContent>
+
+      {/* Kept mounted so switching tabs doesn't reload the site or lose where it was. */}
+      {preview && <TabsContent value='preview' keepMounted className='flex min-h-0 flex-col'>{preview}</TabsContent>}
+      {deploy && <TabsContent value='deploy' className='flex min-h-0 flex-col'>{deploy}</TabsContent>}
     </Tabs>
   );
 }

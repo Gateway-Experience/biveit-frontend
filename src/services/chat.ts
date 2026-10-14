@@ -9,7 +9,7 @@ import type { AiConversation, AiMessage, Artifact, Attachment, PostChatMessageBo
 
 // Messages per page (opening the chat, and each scroll-up). The BE allows up to 200.
 const _MESSAGES_PAGE_SIZE = 20;
-// How long to wait before reopening a stream the browser gave up on (see subscribeToMessages).
+// How long to wait before reopening a stream the browser gave up on (see subscribeToConversationEvents).
 const _STREAM_RESTART_DELAY_MS = 5000;
 
 // The project's current conversation (the BE creates it on first call).
@@ -61,12 +61,20 @@ async function getConversationFileText(conversationId: number, path: string): Pr
   });
 }
 
-// Streams every message after `afterSeq`, the user's own included. Returns the unsubscribe function.
+// Streams every message after `afterSeq`, the user's own included, plus dev environment nudges. Returns
+// the unsubscribe function.
 // EventSource reconnects on its own after a dropped connection (the BE closes streams every 30 min) and
 // resends the last event id (= seq), so the BE resumes right after it. But if a reconnect gets an HTTP
 // error (a 502 mid-deploy, a 401...), it gives up for good — so then we open a fresh stream ourselves,
 // after a pause, from the newest seq seen. Either way nothing is lost or repeated.
-function subscribeToMessages(conversationId: number, afterSeq: number, onMessage: (message: AiMessage) => void) {
+function subscribeToConversationEvents(conversationId: number, afterSeq: number, handlers: {
+  onMessage: (message: AiMessage) => void;
+  // Every time the stream (re)connects — anything that changed while it was down was missed.
+  onConnect?: () => void;
+  // The dev environment changed (a setup finished, servers started/stopped...). A bare nudge with no data
+  // and no id: re-read GET /conversations/{id}/devenv.
+  onDevenvChange?: () => void;
+}) {
   // Mutable on purpose: the subscription's own lifecycle (current connection, retry timer, resume point).
   let eventSource: EventSource;
   let restartTimer: ReturnType<typeof setTimeout> | undefined;
@@ -82,8 +90,10 @@ function subscribeToMessages(conversationId: number, afterSeq: number, onMessage
     eventSource.addEventListener('message', (event: MessageEvent) => {
       const message: AiMessage = JSON.parse(event.data);
       newestSeq = Math.max(newestSeq, message.seq);
-      onMessage(message);
+      handlers.onMessage(message);
     });
+    eventSource.addEventListener('open', () => handlers.onConnect?.());
+    eventSource.addEventListener('devenv', () => handlers.onDevenvChange?.());
     eventSource.addEventListener('error', () => {
       if (eventSource.readyState === EventSource.CLOSED && !isUnsubscribed) {
         restartTimer = setTimeout(connect, _STREAM_RESTART_DELAY_MS);
@@ -113,6 +123,6 @@ export {
   getConversationFileUrl,
   getMessages,
   postChatMessage,
-  subscribeToMessages,
+  subscribeToConversationEvents,
   uploadAttachments,
 };

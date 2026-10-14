@@ -182,22 +182,38 @@ function useElapsed(updateInterval?: number) {
   return [ticks, stop] as const;
 }
 
+// Whether a CSS media query currently matches, kept live. E.g. `useMediaQuery('(min-width: 1024px)')`.
+function useMediaQuery(query: string) {
+  const subscribe = useCallback((onChange: () => void) => {
+    const mql = window.matchMedia(query);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
+  return useSyncExternalStore(subscribe, () => window.matchMedia(query).matches, () => false);
+}
+
 // Self-explanatory. Heavily used for mobile-responsiveness.
 // Matches tailwind's `sm` breakpoint, so `useIsMobile()` and `sm:` classes agree.
 const MOBILE_QUERY = '(max-width: 639.98px)';
 
-function subscribeToMobileQuery(onChange: () => void) {
-  const mql = window.matchMedia(MOBILE_QUERY);
-  mql.addEventListener('change', onChange);
-  return () => mql.removeEventListener('change', onChange);
+function useIsMobile() {
+  return useMediaQuery(MOBILE_QUERY);
 }
 
-function useIsMobile() {
-  return useSyncExternalStore(
-    subscribeToMobileQuery,
-    () => window.matchMedia(MOBILE_QUERY).matches,
-    () => false,
-  );
+// The element's current content-box size, kept live; 0x0 until it's measured. Pass the returned
+// callback as the element's `ref`.
+function useElementSize<T extends HTMLElement>() {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [element, setElement] = useState<T | null>(null);
+  useEffect(() => {
+    if (!element) {
+      return;
+    }
+    const observer = new ResizeObserver(([entry]) => setSize({ width: entry.contentRect.width, height: entry.contentRect.height }));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element]);
+  return [setElement, size] as const;
 }
 
 // Return the previous value of a value.
@@ -295,6 +311,8 @@ export {
   useIndexedList,
   useElapsed,
   useIsMobile,
+  useMediaQuery,
+  useElementSize,
   usePrevious,
   useInterval,
   useOneTimeQueryParams,

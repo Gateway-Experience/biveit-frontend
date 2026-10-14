@@ -7,7 +7,7 @@ import {
   Attachment, AttachmentAction, AttachmentActions, AttachmentContent, AttachmentDescription, AttachmentMedia,
   AttachmentTitle, AttachmentTrigger,
 } from 'src/components/shadui/attachment';
-import { Spinner } from 'src/components/shadui/spinner';
+import { Spinner } from 'src/components/common/Spinner';
 import { formatFileSize } from 'src/utils/common';
 
 // Images are bare thumbnails: no card border or padding around them, just the rounded picture.

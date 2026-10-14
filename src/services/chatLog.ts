@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import type { AiMessage, InteractionResult, ToolResultBlock, ToolUseBlock } from 'src/types/chat';
+import type { AgentSessionStatus, AiMessage, ChatIntroState, InteractionResult, ToolResultBlock, ToolUseBlock } from 'src/types/chat';
 
 // Intentions: everything the UI needs to know is derived from the message log on the fly — the log is the
 // only state. All [Pure].
@@ -72,8 +72,23 @@ function isAgentPresumedWorking(messages: AiMessage[], sentSeqs: number[]) {
   return !_.some(answers, answer => _.some(getInteractionResults(answer), { status: 'aborted' }));
 }
 
+// [Pure] The agent always speaks first (its welcome and first question, from the bootstrap form's
+// answers), so an empty log means it hasn't yet — and why is down to where opening the session is at:
+// still opening (it's being set up), failed (offer a retry), or done (its first message is on its way).
+// Anything in the log at all = the conversation has started. null messages = not loaded yet.
+function getChatIntroState(messages: AiMessage[] | null, sessionStatus: AgentSessionStatus): ChatIntroState {
+  if (_.isNull(messages)) {
+    return 'loading';
+  }
+  if (!_.isEmpty(messages)) {
+    return 'started';
+  }
+  return ({ opening: 'setting-up', failed: 'setup-failed', ready: 'awaiting-agent' } as const)[sessionStatus];
+}
+
 export {
   findPendingInteractions,
+  getChatIntroState,
   getInteractionResults,
   hasOlderMessages,
   indexToolResults,

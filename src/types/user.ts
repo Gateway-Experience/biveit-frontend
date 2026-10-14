@@ -9,6 +9,7 @@ export type User = {
   user_type: UserType;
   full_name?: string;
   profile_picture?: string;
+  language?: string; // the language picker's choice ('en' | 'vi'), saved by LanguageSelector
   google_id?: string;
   social_data?: {
     email?: string;
