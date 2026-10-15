@@ -10,7 +10,6 @@ import AgentChat from 'src/components/pages/projects/chat/AgentChat';
 import DeployPanel from 'src/components/pages/projects/deploy/DeployPanel';
 import SiteReadyModal from 'src/components/pages/projects/deploy/SiteReadyModal';
 import useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
-import { BuildStatus } from 'src/components/pages/projects/preview/BuildIndicator';
 import SitePreview from 'src/components/pages/projects/preview/SitePreview';
 import useDevenvStatus from 'src/components/pages/projects/preview/useDevenvStatus';
 import useProjectSession from 'src/components/pages/projects/useProjectSession';
@@ -125,7 +124,6 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
                   <TabsTrigger value='preview' className='flex-none px-3'>{t('chat_tab_preview')}</TabsTrigger>
                   {deploy && <TabsTrigger value='deploy' className='flex-none px-3'>{t('chat_tab_deploy')}</TabsTrigger>}
                 </TabsList>
-                {activeBuild && <BuildStatus since={activeBuild.since} className='shrink-0 animate-in fade-in-0' />}
               </div>
               {/* Kept mounted so a trip to Deploy doesn't reload the site or lose where it was. */}
               <TabsContent value='preview' keepMounted className='flex min-h-0 flex-col'>{preview}</TabsContent>

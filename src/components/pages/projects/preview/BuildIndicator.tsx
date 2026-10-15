@@ -60,7 +60,7 @@ export function BuildGlyph({ className }: { className?: string }) {
   );
 }
 
-// Intentions: "Shenaniganing… (1m 23s) ✻" — the agent is building the site, said playfully: the star
+// Intentions: "✻ Shenaniganing… (1m 23s)" — the agent is building the site, said playfully: the star
 // twinkles, the phrase changes every few seconds, and the time counts up from when the build started.
 export function BuildStatus({ since, className }: { since: string; className?: string }) {
   const { t } = useTranslation();
@@ -75,11 +75,9 @@ export function BuildStatus({ since, className }: { since: string; className?: s
 
   return (
     <span role='status' className={cn('inline-flex items-center gap-1.5 text-xs text-muted-foreground', className)}>
+      <BuildGlyph className='text-sm' />
       <span className='font-medium text-foreground'>{t(phraseKey)}</span>
       <span className='tabular-nums'>({_formatElapsed(elapsedSeconds)})</span>
-      {/* Last, so it stays put when this sits against a right edge (the tab strip) and the phrase changes
-          length. */}
-      <BuildGlyph className='text-sm' />
     </span>
   );
 }

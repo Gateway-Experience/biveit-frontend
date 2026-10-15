@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { ArrowLeftIcon, ArrowRightIcon, MonitorIcon, RotateCwIcon, SmartphoneIcon, TriangleAlertIcon } from 'lucide-react';
 
+import { BuildStatus } from 'src/components/pages/projects/preview/BuildIndicator';
 import { Button } from 'src/components/shadui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from 'src/components/shadui/input-group';
 import { Spinner } from 'src/components/common/Spinner';
@@ -172,14 +173,14 @@ export default function SitePreview({ state, siteUrl, build, className }: {
           </div>
         )}
         {/* While the agent builds, a see-through layer keeps hands off the half-done site, which still shows
-            (hot-reloading as the agent works). A spinner in the middle says it's busy at a glance; the details
-            are in the Preview tab's strip. The layer covers the panel rather than the page inside the frame,
-            so it stays centred however long the site is. */}
+            (hot-reloading as the agent works). The playful build status in the middle is the one place that
+            says it's busy. The layer covers the panel rather than the page inside the frame, so it stays
+            centred however long the site is. */}
         {isLive && build && (
           <div data-section='preview-building' className='absolute inset-0 flex items-center justify-center bg-background/40 animate-in fade-in-0 duration-300'>
-            {/* On a card-coloured disc so it stands out over whatever the site shows underneath. */}
-            <div className='rounded-full bg-card p-3 shadow-lg ring-1 ring-foreground/10'>
-              <Spinner className='size-8 text-ring' />
+            {/* On a card-coloured pill so it stands out over whatever the site shows underneath. */}
+            <div className='rounded-full bg-card px-5 py-2.5 shadow-lg ring-1 ring-foreground/10'>
+              <BuildStatus since={build.since} className='text-sm' />
             </div>
           </div>
         )}
