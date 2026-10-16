@@ -1,11 +1,11 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
+import BrandLogo from 'src/components/common/BrandLogo';
 import GoogleSignInButton from 'src/components/common/GoogleSignInButton';
 import LanguageSelector from 'src/components/common/LanguageSelector';
 import { Card, CardContent } from 'src/components/shadui/card';
-import { APP_NAME, PATHS } from 'src/utils/constants';
-import brandLogoPath from 'src/assets/logo.svg';
+import { PATHS } from 'src/utils/constants';
 
 type AuthPageLayoutProps = {
   pageName: string;
@@ -34,10 +34,7 @@ export default function AuthPageLayout({
   return (
     <div data-page={pageName} className='flex min-h-svh flex-col'>
       <header className='flex h-16 shrink-0 items-center justify-between border-b px-4 md:px-6'>
-        <div className='flex cursor-default items-center gap-2 select-none'>
-          <img src={brandLogoPath} alt='' className='size-9' />
-          <span className='font-heading text-xl font-bold tracking-[-0.02em]'>{APP_NAME}</span>
-        </div>
+        <BrandLogo className='cursor-default select-none' />
         <LanguageSelector />
       </header>
 

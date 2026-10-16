@@ -5,7 +5,9 @@
 @import "@fontsource-variable/space-grotesk";
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:is(.dark *));
+/* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. the landing
+   page): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
+@custom-variant dark (&:is(.dark *):not(.force-light, .force-light *));
 
 @theme inline {
   --color-success: var(--success);
@@ -18,6 +20,20 @@
   --color-scrim-strong: var(--scrim-strong);
   --color-scrim-foreground: var(--scrim-foreground);
   --color-highlight: var(--highlight);
+  --color-brand-light: var(--brand-light);
+  --color-brand-deep: var(--brand-deep);
+  --color-site-moto: var(--site-moto);
+  --color-site-moto-soft: var(--site-moto-soft);
+  --color-site-home: var(--site-home);
+  --color-site-home-soft: var(--site-home-soft);
+  --color-site-hotel: var(--site-hotel);
+  --color-site-hotel-gold: var(--site-hotel-gold);
+  --color-site-boutique: var(--site-boutique);
+  --color-site-boutique-soft: var(--site-boutique-soft);
+  --color-site-perfume: var(--site-perfume);
+  --color-site-perfume-soft: var(--site-perfume-soft);
+  --color-site-cafe: var(--site-cafe);
+  --color-site-cafe-soft: var(--site-cafe-soft);
   --font-heading: 'Space Grotesk Variable', sans-serif;
   --font-sans: 'DM Sans Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -60,30 +76,30 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(0.973 0.007 124.4);
-  --foreground: oklch(0.249 0.024 157.2);
+:root, .force-light {
+  --background: oklch(0.99 0.004 300);
+  --foreground: oklch(0.21 0.035 285);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.249 0.024 157.2);
+  --card-foreground: oklch(0.21 0.035 285);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.249 0.024 157.2);
-  --primary: oklch(0.912 0.172 124.5);
-  --primary-foreground: oklch(0.296 0.058 133.2);
-  --secondary: oklch(0.943 0.022 123.6);
-  --secondary-foreground: oklch(0.249 0.024 157.2);
-  --muted: oklch(0.943 0.022 123.6);
-  --muted-foreground: oklch(0.583 0.025 155.5);
-  --accent: oklch(0.912 0.172 124.5);
-  --accent-foreground: oklch(0.296 0.058 133.2);
+  --popover-foreground: oklch(0.21 0.035 285);
+  --primary: oklch(0.53 0.245 293);
+  --primary-foreground: oklch(0.99 0.003 300);
+  --secondary: oklch(0.96 0.018 298);
+  --secondary-foreground: oklch(0.3 0.08 290);
+  --muted: oklch(0.967 0.01 298);
+  --muted-foreground: oklch(0.52 0.03 285);
+  --accent: oklch(0.95 0.03 298);
+  --accent-foreground: oklch(0.38 0.17 292);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.915 0.015 132.5);
-  --input: oklch(0.915 0.015 132.5);
-  --ring: oklch(0.70 0.15 128);
-  --chart-1: oklch(0.912 0.172 124.5);
-  --chart-2: oklch(0.80 0.17 128);
-  --chart-3: oklch(0.66 0.15 135);
-  --chart-4: oklch(0.50 0.10 145);
-  --chart-5: oklch(0.36 0.06 150);
+  --border: oklch(0.92 0.014 295);
+  --input: oklch(0.92 0.014 295);
+  --ring: oklch(0.6 0.2 293);
+  --chart-1: oklch(0.53 0.245 293);
+  --chart-2: oklch(0.65 0.2 300);
+  --chart-3: oklch(0.75 0.14 305);
+  --chart-4: oklch(0.43 0.2 285);
+  --chart-5: oklch(0.86 0.07 300);
   --radius: 0.625rem;
   /* Status colours for notifications and inline feedback. `--destructive` already
      covers errors, so error maps to it rather than duplicating a red. */
@@ -99,52 +115,71 @@
   --scrim: oklch(0 0 0 / 40%);
   --scrim-strong: oklch(0 0 0 / 80%);
   --scrim-foreground: oklch(1 0 0);
-  /* Marker-pen highlight behind emphasised headline words. */
-  --highlight: oklch(0.912 0.090 121.7);
-  /* The bar (navbar) wears the brand colour. Derived from --primary rather than copied, so
-     retheming the primary moves the bar with it — and since these only reference other tokens,
-     they resolve correctly under .dark too without being redeclared there. */
-  --sidebar: var(--primary);
-  --sidebar-foreground: var(--primary-foreground);
-  --sidebar-primary: var(--primary-foreground);
-  --sidebar-primary-foreground: var(--primary);
-  --sidebar-accent: color-mix(in oklch, var(--primary) 85%, var(--primary-foreground));
-  --sidebar-accent-foreground: var(--primary-foreground);
-  --sidebar-border: color-mix(in oklch, var(--primary-foreground) 15%, transparent);
-  --sidebar-ring: var(--primary-foreground);
+  /* Soft tint behind emphasised words and other light brand washes. */
+  --highlight: oklch(0.93 0.05 300);
+  /* The two ends of the brand gradient (logo, primary buttons, emphasised headline words), with
+     --primary in the middle. */
+  --brand-light: oklch(0.72 0.17 302);
+  --brand-deep: oklch(0.42 0.22 288);
+  /* Brand colors of the made-up example sites in the landing page's showcase. Each one is a different
+     "customer", so each gets its own look rather than ours. Light-only, like the landing page. */
+  --site-moto: oklch(0.68 0.19 45);
+  --site-moto-soft: oklch(0.95 0.04 60);
+  --site-home: oklch(0.55 0.1 195);
+  --site-home-soft: oklch(0.94 0.03 190);
+  --site-hotel: oklch(0.28 0.06 260);
+  --site-hotel-gold: oklch(0.8 0.12 85);
+  --site-boutique: oklch(0.62 0.15 15);
+  --site-boutique-soft: oklch(0.95 0.025 20);
+  --site-perfume: oklch(0.32 0.08 330);
+  --site-perfume-soft: oklch(0.95 0.025 340);
+  --site-cafe: oklch(0.42 0.07 55);
+  --site-cafe-soft: oklch(0.95 0.025 75);
+  /* The bar (navbar) is a plain surface with a hairline border, so the purple logo and buttons carry
+     the brand. These only reference other tokens, so they follow .dark without being redeclared. */
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--muted);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
-  --background: oklch(0.205 0.022 158);
-  --foreground: oklch(0.955 0.010 130);
-  --card: oklch(0.250 0.025 157);
-  --card-foreground: oklch(0.955 0.010 130);
-  --popover: oklch(0.250 0.025 157);
-  --popover-foreground: oklch(0.955 0.010 130);
-  --primary: oklch(0.912 0.172 124.5);
-  --primary-foreground: oklch(0.296 0.058 133.2);
-  --secondary: oklch(0.300 0.030 150);
-  --secondary-foreground: oklch(0.955 0.010 130);
-  --muted: oklch(0.290 0.028 152);
-  --muted-foreground: oklch(0.777 0.029 150.3);
-  --accent: oklch(0.912 0.172 124.5);
-  --accent-foreground: oklch(0.296 0.058 133.2);
+  --background: oklch(0.17 0.03 285);
+  --foreground: oklch(0.96 0.01 295);
+  --card: oklch(0.22 0.035 286);
+  --card-foreground: oklch(0.96 0.01 295);
+  --popover: oklch(0.22 0.035 286);
+  --popover-foreground: oklch(0.96 0.01 295);
+  --primary: oklch(0.64 0.21 293);
+  --primary-foreground: oklch(0.99 0.003 300);
+  --secondary: oklch(0.28 0.04 288);
+  --secondary-foreground: oklch(0.96 0.01 295);
+  --muted: oklch(0.27 0.035 288);
+  --muted-foreground: oklch(0.72 0.03 290);
+  --accent: oklch(0.3 0.06 290);
+  --accent-foreground: oklch(0.9 0.05 298);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.60 0.12 128);
-  --chart-1: oklch(0.912 0.172 124.5);
-  --chart-2: oklch(0.80 0.17 128);
-  --chart-3: oklch(0.66 0.15 135);
-  --chart-4: oklch(0.55 0.11 145);
-  --chart-5: oklch(0.45 0.08 150);
+  --ring: oklch(0.6 0.18 293);
+  --chart-1: oklch(0.64 0.21 293);
+  --chart-2: oklch(0.72 0.17 300);
+  --chart-3: oklch(0.8 0.12 305);
+  --chart-4: oklch(0.55 0.2 288);
+  --chart-5: oklch(0.42 0.12 292);
   --success: oklch(0.70 0.14 150);
   --success-foreground: oklch(0.205 0 0);
   --warning: oklch(0.80 0.15 75);
   --warning-foreground: oklch(0.205 0 0);
   --info: oklch(0.70 0.14 250);
   --info-foreground: oklch(0.205 0 0);
-  --highlight: oklch(0.912 0.172 124.5 / 30%);
+  --highlight: oklch(0.64 0.21 293 / 25%);
+  --brand-light: oklch(0.78 0.14 302);
+  --brand-deep: oklch(0.52 0.23 289);
 }
 
 /* Rendered markdown (`prose`, from @tailwindcss/typography) takes its colours from the theme instead of

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation, Link } from 'react-router';
 import { MenuIcon, ChevronDownIcon } from 'lucide-react';
 
+import BrandLogo from 'src/components/common/BrandLogo';
 import LanguageSelector from 'src/components/common/LanguageSelector';
 import LinkButton from 'src/components/common/LinkButton';
 import Popover from 'src/components/common/Popover';
@@ -17,8 +18,7 @@ import { resetAnalytics } from 'src/services/analytics';
 import type { User } from 'src/types/user';
 import { useIsMobile } from 'src/utils/hooks';
 import { getUsername } from 'src/services/user';
-import logoPath from 'src/assets/logo.svg';
-import { MAIN_CONTENT_WIDTH_CLASS, APP_NAME, PATHS } from 'src/utils/constants';
+import { MAIN_CONTENT_WIDTH_CLASS, PATHS } from 'src/utils/constants';
 import { buildLoginPath } from 'src/utils/authRedirect';
 
 type NavItem = {
@@ -138,7 +138,7 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
   };
 
   return (
-    <header className='fixed inset-x-0 top-0 z-50 bg-sidebar text-sidebar-foreground'>
+    <header className='fixed inset-x-0 top-0 z-50 border-b border-sidebar-border bg-sidebar text-sidebar-foreground'>
       {/* The bar spans the viewport; the row inside lines up with page content.
           `layout='FULL'` widens that row for pages that use the full width. */}
       <div className={cn('mx-auto flex h-16 w-full items-center px-4', layout === 'FULL' ? MAIN_CONTENT_WIDTH_CLASS : 'max-w-none')}>
@@ -147,7 +147,7 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
           <div className='flex flex-1 items-center justify-between gap-4'>
             <div className='flex flex-1 items-center gap-4'>
               <Link to='/' className='rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-foreground/40'>
-                <img src={logoPath} alt={APP_NAME} className='h-9' />
+                <BrandLogo />
               </Link>
               {navItems.map(item => {
                 if (item.subItems) {
@@ -240,7 +240,7 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
           <>
             <div className='flex-1'>
               <Link to='/' className='rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-foreground/40'>
-                <img src={logoPath} alt={APP_NAME} className='h-9' />
+                <BrandLogo />
               </Link>
             </div>
             <Button

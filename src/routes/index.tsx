@@ -11,10 +11,20 @@ import Register from 'src/components/pages/auth/Register';
 import PrivacyPolicy from 'src/components/pages/PrivacyPolicy';
 import { PATHS } from 'src/utils/constants';
 import ShowCase from 'src/components/pages/ShowCase';
+import Landing from 'src/components/pages/landing/Landing';
+import { useStore } from 'src/state-store';
+import { isSignedInUser } from 'src/services/user';
 import { useTrackPageViews } from 'src/utils/hooks';
 
 // Use ProtectedRoute for routes that are for logged in users only.
 // Unauthorized users going there will be redirected to the login page.
+
+// `/` is the public landing page; signed-in users skip it and go straight to their projects
+// (so the logo, Home and post-login redirects to "/" still land them in the app).
+function HomeRoute() {
+  const user = useStore(state => state.user);
+  return isSignedInUser(user) ? <Navigate to={PATHS.projects} replace /> : <Landing />;
+}
 
 // Page views are tracked here rather than in a layout, so routes that don't use
 // DefaultLayout (/, /dummy, /login) are counted too.
@@ -23,9 +33,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path = '/' element={<DefaultLayout />}>
-        {/* Home is the user's project list. Links to "/" (logo, Home, after login) land there too. */}
-        <Route index element={<Navigate to={PATHS.projects} replace />} />
+      <Route path='/' element={<HomeRoute />} />
+      <Route element={<DefaultLayout />}>
         <Route path={PATHS.projects} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         {/* The same list, with the new-project form open over it. */}
         <Route path={PATHS.newProject} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
