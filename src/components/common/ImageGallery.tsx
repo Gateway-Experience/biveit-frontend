@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import _ from 'lodash';
 import ReactImageGallery from 'react-image-gallery';
 import { XIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import 'react-image-gallery/styles/css/image-gallery.css';
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
@@ -19,6 +20,7 @@ type ImageGalleryProps = {
 const ImageGallery_ = ({
   thumbnailSize, images, selectedImage, setSelectedImage, ...rest
 }: ImageGalleryProps) => {
+  const { t } = useTranslation();
   const [selectedImageLocal, setSelectedImageLocal] = useState<GalleryImage | null>(null);
   const [startIndex, setStartIndex] = useState(-1);
 
@@ -61,11 +63,11 @@ const ImageGallery_ = ({
           showCloseButton={false}
           className='flex h-full max-h-full w-full max-w-full gap-0 rounded-none border-none bg-scrim-strong p-0 sm:max-w-full'
         >
-          <DialogTitle className='sr-only'>Image gallery</DialogTitle>
-          <DialogDescription className='sr-only'>Browse images</DialogDescription>
+          <DialogTitle className='sr-only'>{t('image_gallery_title')}</DialogTitle>
+          <DialogDescription className='sr-only'>{t('image_gallery_description')}</DialogDescription>
           <button
             type='button'
-            aria-label='Close gallery'
+            aria-label={t('image_gallery_close')}
             onClick={handleClose}
             className='absolute top-5 right-5 z-10 inline-flex size-10 cursor-pointer items-center justify-center rounded-md text-scrim-foreground hover:bg-scrim-foreground/10'
           >

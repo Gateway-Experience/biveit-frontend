@@ -22,31 +22,31 @@ import { MAIN_CONTENT_WIDTH_CLASS, PATHS } from 'src/utils/constants';
 import { buildLoginPath } from 'src/utils/authRedirect';
 
 type NavItem = {
-  label: string;
+  labelKey: string;
   path?: string;
-  subItems?: { label: string; path: string }[];
+  subItems?: { labelKey: string; path: string }[];
 };
 
 // Navigation items with sub-items
 const navItems: NavItem[] = [
   {
-    label: 'Home',
+    labelKey: 'nav_home',
     path: '/',
   },
   {
-    label: 'Dummy',
+    labelKey: 'nav_dummy',
     path: '/dummy',
   },
   {
-    label: 'Protected',
+    labelKey: 'nav_protected',
     subItems: [
-      { label: 'Dummy', path: '/protected-dummy' }, { label: 'Test more', path: '/protected-dummy' },
+      { labelKey: 'nav_dummy', path: '/protected-dummy' }, { labelKey: 'nav_test_more', path: '/protected-dummy' },
     ],
   },
   {
-    label: 'Protected2',
+    labelKey: 'nav_protected_2',
     subItems: [
-      { label: 'Dummy', path: '/protected-dummy' },
+      { labelKey: 'nav_dummy', path: '/protected-dummy' },
     ],
   },
 ];
@@ -75,8 +75,8 @@ const NAV_ITEM_CLASS = [
 ].join(' ');
 
 const profileItems = [
-  { label: 'Privacy Policy', path: PATHS.privacyPolicy },
-  { label: 'Profile Settings', path: PATHS.userProfile },
+  { labelKey: 'privacy_policy_title', path: PATHS.privacyPolicy },
+  { labelKey: 'nav_profile_settings', path: PATHS.userProfile },
 ];
 
 // One row in the mobile drawer. Plain button rather than MUI's List/ListItem.
@@ -153,23 +153,23 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                 if (item.subItems) {
                   return (
                     <Popover
-                      key={item.label}
+                      key={item.labelKey}
                       trigger='hover'
                       contentRenderer={() => (
                         item.subItems!.map(subItem => (
                           <LinkButton
-                            key={subItem.label}
+                            key={subItem.labelKey}
                             variant='ghost'
                             href={subItem.path}
                             className='w-full justify-start'
                           >
-                            {subItem.label}
+                            {t(subItem.labelKey)}
                           </LinkButton>
                         ))
                       )}
                     >
                       <Button variant='ghost' className={NAV_ITEM_CLASS}>
-                        {item.label}
+                        {t(item.labelKey)}
                         <ChevronDownIcon className='size-4' />
                       </Button>
                     </Popover>
@@ -178,11 +178,11 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                 return (
                   <LinkButton
                     href={item.path}
-                    key={item.label}
+                    key={item.labelKey}
                     variant='ghost'
                     className={NAV_ITEM_CLASS}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </LinkButton>
                 );
               })}
@@ -206,12 +206,12 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                     <p className='px-3 py-2 font-bold'>{getUsername(user)}</p>
                     {profileItems.map(item => (
                       <LinkButton
-                        key={item.label}
+                        key={item.labelKey}
                         variant='ghost'
                         href={item.path}
                         className='w-full justify-start'
                       >
-                        {item.label}
+                        {t(item.labelKey)}
                       </LinkButton>
                     ))}
                     <Button
@@ -227,7 +227,7 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                   </div>
                 )}
               >
-                <button type='button' aria-label='Account menu' className='cursor-pointer'>
+                <button type='button' aria-label={t('nav_account_menu')} className='cursor-pointer'>
                   <UserAvatar user={user} />
                 </button>
               </Popover>}
@@ -246,7 +246,7 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
             <Button
               variant='ghost'
               size='icon'
-              aria-label='Open menu'
+              aria-label={t('nav_open_menu')}
               onClick={() => setDrawerOpen(true)}
               className='hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground'
             >
@@ -255,35 +255,35 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
 
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
               <SheetContent side='right' className='w-[250px] p-0'>
-                <SheetTitle className='sr-only'>Menu</SheetTitle>
-                <SheetDescription className='sr-only'>Site navigation</SheetDescription>
+                <SheetTitle className='sr-only'>{t('nav_menu')}</SheetTitle>
+                <SheetDescription className='sr-only'>{t('nav_site_navigation')}</SheetDescription>
                 <nav className='mt-8 flex flex-col'>
                   {navItems.map(item => (
                     item.subItems
                       ? (
-                        <Collapsible key={item.label}>
+                        <Collapsible key={item.labelKey}>
                           <CollapsibleTrigger
                             render={<DrawerRow className='justify-between' />}
                           >
-                            <span className='flex-1'>{item.label}</span>
+                            <span className='flex-1'>{t(item.labelKey)}</span>
                             <ChevronDownIcon className='size-4' />
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             {item.subItems.map(subItem => (
                               <DrawerRow
-                                key={subItem.label}
+                                key={subItem.labelKey}
                                 indented
                                 onClick={() => goAndClose(subItem.path)}
                               >
-                                {subItem.label}
+                                {t(subItem.labelKey)}
                               </DrawerRow>
                             ))}
                           </CollapsibleContent>
                         </Collapsible>
                       )
                       : (
-                        <DrawerRow key={item.label} onClick={() => goAndClose(item.path!)}>
-                          {item.label}
+                        <DrawerRow key={item.labelKey} onClick={() => goAndClose(item.path!)}>
+                          {t(item.labelKey)}
                         </DrawerRow>
                       )
                   ))}
@@ -302,8 +302,8 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         {profileItems.map(item => (
-                          <DrawerRow key={item.label} indented onClick={() => goAndClose(item.path)}>
-                            {item.label}
+                          <DrawerRow key={item.labelKey} indented onClick={() => goAndClose(item.path)}>
+                            {t(item.labelKey)}
                           </DrawerRow>
                         ))}
                         <DrawerRow

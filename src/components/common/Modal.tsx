@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { useTranslation } from 'react-i18next';
 
 import {
   Dialog,
@@ -61,6 +62,7 @@ export default function Modal({
   maskClosable = false,
   keyboard = true,
 }: ModalProps) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const fullScreen = isMobile && fullScreenMobile;
 
@@ -89,8 +91,8 @@ export default function Modal({
             <>
               <div className='flex flex-row items-center justify-between p-7 pr-5 pb-4'>
                 <DialogTitle className='text-lg font-bold'>{title || ''}</DialogTitle>
-                <DialogDescription className='sr-only'>{title || 'Dialog'}</DialogDescription>
-                <Button variant='ghost' size='icon-sm' aria-label='Close' onClick={onClose}>
+                <DialogDescription className='sr-only'>{title || t('modal_dialog')}</DialogDescription>
+                <Button variant='ghost' size='icon-sm' aria-label={t('modal_close')} onClick={onClose}>
                   <XIcon className='size-5' />
                 </Button>
               </div>

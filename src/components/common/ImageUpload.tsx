@@ -1,6 +1,7 @@
 import { memo, useCallback } from 'react';
 import _ from 'lodash';
 import { CircleXIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { v4 } from 'uuid';
 
 import { Button } from 'src/components/shadui/button';
@@ -19,8 +20,9 @@ type ImageUploadProps = {
 // `images` are array of object of the format: { id, url } (represent uploaded images)
 // or { id, file } (represent images user selected that would be uploaded).
 const ImageUpload = ({
-  text = 'Upload Pictures', error, helperText, value: images, onChange: setImages,
+  text, error, helperText, value: images, onChange: setImages,
 }: ImageUploadProps) => {
+  const { t } = useTranslation();
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = Array.from(e.target.files || []).filter(file => file.type.startsWith('image/'));
     setImages([...images, ..._.map(newFiles, nf => ({ file: nf, id: v4() }))]);
@@ -33,7 +35,7 @@ const ImageUpload = ({
   return (
     <div>
       <Button nativeButton={false} render={<label />} className='cursor-pointer'>
-        {text}
+        {text ?? t('image_upload_text')}
         <input type='file' hidden multiple accept='image/*' onChange={handleFileChange} />
       </Button>
       <Images images={images} removeImage={removeImage} />
@@ -57,13 +59,14 @@ const Images = memo(function Images({ images, removeImage }: {
   images: Image[];
   removeImage: (index: number) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className='mt-4 flex flex-wrap gap-4'>
       {images.map((image, index) => (
         <ImageThumbnailItem key={image.id} url={_toBackgroundImage(image)} className='group'>
           <button
             type='button'
-            aria-label='Remove image'
+            aria-label={t('image_upload_remove')}
             onClick={() => removeImage(index)}
             className='absolute -top-2.5 -right-2.5 inline-flex size-6 cursor-pointer items-center justify-center rounded-full bg-foreground/60 text-background opacity-0 transition-opacity group-hover:opacity-100'
           >

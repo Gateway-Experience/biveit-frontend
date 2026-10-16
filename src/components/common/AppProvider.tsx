@@ -9,11 +9,12 @@ import { useStore } from 'src/state-store';
 import FullScreenLoading from 'src/components/common/FullScreenLoading';
 import i18nMappings from 'src/utils/i18nMappings';
 import { initAnalytics, identifyUser } from 'src/services/analytics';
+import { SUPPORTED_LANGUAGES } from 'src/utils/constants';
 
 // i18nMappings is keyed by text, then language. Flip it into one resource bundle per language;
 // keys missing a translation are left out so i18next falls back to the default language for them.
-const SUPPORTED_LANGUAGES = ['en', 'vi'];
-const i18nResources = _.fromPairs(_.map(SUPPORTED_LANGUAGES, language => [
+const SUPPORTED_LANGUAGE_CODES = _.map(SUPPORTED_LANGUAGES, 'code');
+const i18nResources = _.fromPairs(_.map(SUPPORTED_LANGUAGE_CODES, language => [
   language,
   { translation: _.omitBy(_.mapValues(i18nMappings, language), _.isNil) },
 ]));
@@ -29,15 +30,25 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       return;
     }
     initAnalytics();
+    // Keeps <html lang> in step with the UI language, for screen readers, browser translation prompts
+    // and search engines. Registered before init so the first language counts too.
+    i18next.on('languageChanged', language => {
+      document.documentElement.lang = language;
+    });
     i18next
       .use(LanguageDetector)
       .use(initReactI18next)
       .init({
         // No forced `lng`: the detector restores the language the user picked last time (it's cached
-        // in localStorage by changeLanguage), and first-time visitors get the env default.
+        // in localStorage by changeLanguage). First-time visitors get their browser's language if we
+        // support it (region dropped, so "vi-VN" counts as "vi"), otherwise the env default.
         fallbackLng: import.meta.env.VITE_APP_LANGUAGE || 'en',
-        supportedLngs: SUPPORTED_LANGUAGES,
-        detection: { order: ['localStorage'], caches: ['localStorage'] },
+        supportedLngs: SUPPORTED_LANGUAGE_CODES,
+        detection: {
+          order: ['localStorage', 'navigator'],
+          caches: ['localStorage'],
+          convertDetectedLanguage: (detectedLanguage: string) => detectedLanguage.split('-')[0],
+        },
         resources: i18nResources,
       });
     callBe('/me')

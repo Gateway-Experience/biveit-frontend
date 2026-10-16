@@ -3,15 +3,15 @@ import { cn } from 'cn';
 
 import { APP_NAME } from 'src/utils/constants';
 
-// Intentions: the brand mark, "V3". A folded ribbon "V" whose long right stroke doubles as a check mark
-// ("you say it, it's done"), then a "3" drawn as one rounded ribbon stroke, with a small spark for the
-// AI. The gradients (light → brand → deep) give it the folded-ribbon depth. Drawn with theme tokens; the
-// square favicon (public/logo.svg, src/assets/logo.svg) keeps just the "V", in light-theme colors.
+// Intentions: the brand mark. A folded ribbon "V" whose long right stroke doubles as a check mark
+// ("you say it, it's done"), a half-height "3" sitting next to the V's lower half (V…3, as in Vib3), and
+// a spark for the AI. The gradients (light → brand → deep) give it the folded-ribbon depth. Drawn with theme tokens;
+// the favicon copy (public/logo.svg, src/assets/logo.svg) is the same shapes in light-theme colors.
 function BrandMark({ className }: { className?: string }) {
   // Gradient ids must be unique per instance, since the mark can appear more than once on a page.
   const gradientId = useId().replace(/[^a-zA-Z0-9-]/g, '');
   return (
-    <svg viewBox='0 0 80 48' aria-hidden='true' className={cn('h-9 w-auto shrink-0', className)}>
+    <svg viewBox='0 0 52 48' aria-hidden='true' className={cn('h-9 w-auto shrink-0', className)}>
       <defs>
         <linearGradient id={`${gradientId}-left`} x1='0' y1='0' x2='1' y2='1'>
           <stop offset='0' style={{ stopColor: 'var(--brand-light)' }} />
@@ -24,15 +24,16 @@ function BrandMark({ className }: { className?: string }) {
       </defs>
       <path d='M5 13.5Q3.5 9 8 9H13Q16 9 17.3 11.7L25 27.5L20.5 37Q19.5 39 17.8 37.2Z' fill={`url(#${gradientId}-left)`} />
       <path d='M17.8 37.2Q19.5 39.6 21.6 39.6H24.4Q27.2 39.6 28.6 37L41.8 12.2Q43.5 9 40 9H36.6Q34 9 32.7 11.4Z' fill={`url(#${gradientId}-right)`} />
+      {/* The "3": half the V's height, bottom-aligned with it, drawn as a ribbon stroke in the same gradient */}
       <path
-        d='M50.5 12.5H67L57.5 22.8Q71.5 22.4 71.5 31.6Q71.5 40.6 60.5 40.6Q53.6 40.6 50 36.2'
+        d='M39.6 26.6H46.6L42.6 31.4Q48.4 31.2 48.4 34.5Q48.4 37.8 44 37.8Q41 37.8 39.4 36.2'
         fill='none'
         stroke={`url(#${gradientId}-right)`}
-        strokeWidth={7.5}
+        strokeWidth={4.2}
         strokeLinecap='round'
         strokeLinejoin='round'
       />
-      <path d='M75 1.5L76.2 4.8L79.5 6L76.2 7.2L75 10.5L73.8 7.2L70.5 6L73.8 4.8Z' fill='var(--brand-light)' />
+      <path d='M41 1.5L42.2 4.8L45.5 6L42.2 7.2L41 10.5L39.8 7.2L36.5 6L39.8 4.8Z' fill='var(--brand-light)' />
     </svg>
   );
 }

@@ -183,12 +183,13 @@ function HeroSection() {
     <section data-section='hero' className='relative isolate overflow-hidden'>
       <SoftGlowBackdrop />
       <div className={cn(LANDING_WIDTH_CLASS, 'grid items-center gap-14 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pt-24 lg:pb-28')}>
-        <div>
+        {/* min-w-0 lets this column shrink below its longest word, so long words wrap instead of overflowing */}
+        <div className='min-w-0'>
           <span className='inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
             <SparklesIcon className='size-3.5 text-primary' />
             {t('landing_hero_eyebrow')}
           </span>
-          <h1 className='mt-6 font-heading text-5xl leading-[0.98] font-bold tracking-[-0.035em] uppercase sm:text-6xl xl:text-7xl'>
+          <h1 className='mt-6 font-heading text-[clamp(2.25rem,11vw,3rem)] leading-[1.06] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl xl:text-7xl'>
             <span className='block'>{t('landing_hero_title_lead')}</span>
             <span className={cn('block', BRAND_TEXT_CLASS)}>{t('landing_hero_title_build')}</span>
             <span className='block'>{t('landing_hero_title_rest')}</span>
@@ -319,7 +320,7 @@ function AdvantagesSection() {
       <SoftGlowBackdrop />
       <div className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
         <span className='text-xs font-bold tracking-[0.18em] text-primary uppercase'>{t('landing_adv_eyebrow', { appName: APP_NAME })}</span>
-        <h2 className='mt-3 max-w-3xl font-heading text-4xl leading-[1] font-bold tracking-[-0.035em] uppercase sm:text-6xl'>
+        <h2 className='mt-3 max-w-3xl font-heading text-[clamp(2rem,9.5vw,2.25rem)] leading-[1.04] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl'>
           {t('landing_adv_title_lead')}{' '}
           <span className={BRAND_TEXT_CLASS}>{t('landing_adv_title_highlight')}</span>
         </h2>
