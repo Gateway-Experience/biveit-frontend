@@ -25,8 +25,11 @@ const MAIN_CONTENT_WIDTH_CLASS = 'max-w-4xl';
 const PATHS = {
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   userProfile: '/user-profile',
   privacyPolicy: '/privacy-policy',
+  cookiePolicy: '/cookie-policy',
   projects: '/projects',
   newProject: '/projects/new',
 };

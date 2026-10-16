@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { cn } from 'cn';
 
 import { Button } from 'src/components/shadui/button';
 import { useStore } from 'src/state-store';
@@ -37,7 +38,8 @@ export default function LanguageSelector({ className }: { className?: string }) 
       <DropdownMenuTrigger
         aria-label={t('language_select')}
         data-language={currentLanguage.code}
-        render={<Button variant='ghost' size='sm' className={className} />}
+        // Same text size as regular buttons (the `sm` size shrinks it), so "EN" shares a baseline with neighbours like "Log in".
+        render={<Button variant='ghost' size='sm' className={cn('text-sm', className)} />}
       >
         <currentLanguage.Flag aria-hidden='true' className='h-3.5 w-auto rounded-[2px] shadow-[0_0_0_1px_var(--border)]' />
         {/* Fixed width so the button (and whatever sits next to it) doesn't shift when the code changes. */}

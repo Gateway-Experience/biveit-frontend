@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { ArrowLeftIcon, ArrowRightIcon, MonitorIcon, RotateCwIcon, SmartphoneIcon, TriangleAlertIcon } from 'lucide-react';
 
+import BuildConsole from 'src/components/pages/projects/preview/BuildConsole';
 import { BuildStatus } from 'src/components/pages/projects/preview/BuildIndicator';
 import { Button } from 'src/components/shadui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from 'src/components/shadui/input-group';
@@ -43,12 +44,14 @@ function PreviewFrame({ src, ...frameProps }: ComponentProps<'iframe'> & { src: 
 // The site only shows while it's `live`; otherwise the area says why (being set up, or not running).
 // Where the user was browsing survives those in-betweens, so a restart lands them back on the same page.
 // Fills whatever box it's given.
-export default function SitePreview({ state, siteUrl, build, className }: {
+export default function SitePreview({ state, siteUrl, build, buildConsoleLines, className }: {
   state: Exclude<PreviewState, 'specing'>;
   // The dev site's origin, e.g. http://localhost:10102. Always there when `live`.
   siteUrl: string | null;
   // The agent's build in progress, if any: the site may be half-done meanwhile.
   build: DevenvBuild | null;
+  // What scrolls past in the build console meanwhile (see buildConsoleScript).
+  buildConsoleLines: string[];
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -172,15 +175,17 @@ export default function SitePreview({ state, siteUrl, build, className }: {
             />
           </div>
         )}
-        {/* While the agent builds, a see-through layer keeps hands off the half-done site, which still shows
-            (hot-reloading as the agent works). The playful build status in the middle is the one place that
-            says it's busy. The layer covers the panel rather than the page inside the frame, so it stays
-            centred however long the site is. */}
+        {/* While the agent builds, a console of code typing itself out covers the panel (and keeps hands off
+            the half-done site underneath, which keeps hot-reloading as the agent works). The playful build
+            status sits on top, the one place that says in plain words that it's busy. */}
         {isLive && build && (
-          <div data-section='preview-building' className='absolute inset-0 flex items-center justify-center bg-background/40 animate-in fade-in-0 duration-300'>
-            {/* On a card-coloured pill so it stands out over whatever the site shows underneath. */}
-            <div className='rounded-full bg-card px-5 py-2.5 shadow-lg ring-1 ring-foreground/10'>
-              <BuildStatus since={build.since} className='text-sm' />
+          <div data-section='preview-building' className='absolute inset-0 animate-in fade-in-0 duration-500'>
+            <BuildConsole lines={buildConsoleLines} className='absolute inset-0' />
+            <div className='absolute inset-x-0 bottom-8 flex justify-center'>
+              {/* On a card-coloured pill so it stands out over the console. */}
+              <div className='rounded-full bg-card px-5 py-2.5 shadow-lg ring-1 ring-foreground/10'>
+                <BuildStatus since={build.since} className='text-sm' />
+              </div>
             </div>
           </div>
         )}

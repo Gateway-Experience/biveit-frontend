@@ -6,6 +6,7 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 
 import routes from 'src/routes';
 import AppProvider from 'src/components/common/AppProvider';
+import CookieConsent from 'src/components/common/CookieConsent';
 import { NotificationProvider } from 'src/components/common/NotificationProvider';
 import ThemeProvider from 'src/components/common/ThemeProvider';
 import 'src/styles/index.css';
@@ -33,6 +34,7 @@ createRoot(document.getElementById('root')!).render(
         <NotificationProvider>
           <BrowserRouter>
             {routes}
+            <CookieConsent />
           </BrowserRouter>
         </NotificationProvider>
       </ThemeProvider>

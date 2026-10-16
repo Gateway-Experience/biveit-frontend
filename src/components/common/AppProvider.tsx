@@ -8,7 +8,7 @@ import { callBe } from 'src/utils/request';
 import { useStore } from 'src/state-store';
 import FullScreenLoading from 'src/components/common/FullScreenLoading';
 import i18nMappings from 'src/utils/i18nMappings';
-import { initAnalytics, identifyUser } from 'src/services/analytics';
+import { setAnalyticsEnabled, identifyUser } from 'src/services/analytics';
 import { SUPPORTED_LANGUAGES } from 'src/utils/constants';
 
 // i18nMappings is keyed by text, then language. Flip it into one resource bundle per language;
@@ -22,6 +22,7 @@ const i18nResources = _.fromPairs(_.map(SUPPORTED_LANGUAGE_CODES, language => [
 export default function AppProvider({ children }: { children: React.ReactNode }) {
   const set = useStore(state => state.set);
   const user = useStore(state => state.user);
+  const isAnalyticsAllowed = Boolean(useStore(state => state.cookieConsent?.analytics));
   const [initialized, setInitialized] = useState(false);
 
   // All initialization should be done here.
@@ -29,7 +30,6 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     if (initialized) {
       return;
     }
-    initAnalytics();
     // Keeps <html lang> in step with the UI language, for screen readers, browser translation prompts
     // and search engines. Registered before init so the first language counts too.
     i18next.on('languageChanged', language => {
@@ -76,11 +76,18 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       });
   }, [set, initialized, setInitialized]);
 
+  // Tracking follows the visitor's cookie choice: off until they say OK (or tick analytics in the
+  // preferences), and back off the moment they untick it.
+  useEffect(() => {
+    setAnalyticsEnabled(isAnalyticsAllowed);
+  }, [isAnalyticsAllowed]);
+
   // Keeps analytics attribution in step with whoever is signed in. Logout clears `user`,
   // and resetAnalytics() is called there directly since identify() has no "nobody" state.
+  // Re-runs when analytics gets switched on too, so someone who allows it mid-session still gets identified.
   useEffect(() => {
     identifyUser(user);
-  }, [user]);
+  }, [user, isAnalyticsAllowed]);
 
   if (!initialized) {
     return <FullScreenLoading loading={true} />;

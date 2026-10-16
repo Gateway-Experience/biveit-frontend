@@ -17,7 +17,7 @@ import { callBe } from 'src/utils/request';
 import { resetAnalytics } from 'src/services/analytics';
 import type { User } from 'src/types/user';
 import { useIsMobile } from 'src/utils/hooks';
-import { getUsername } from 'src/services/user';
+import { getUsername, isSignedInUser } from 'src/services/user';
 import { MAIN_CONTENT_WIDTH_CLASS, PATHS } from 'src/utils/constants';
 import { buildLoginPath } from 'src/utils/authRedirect';
 
@@ -27,28 +27,11 @@ type NavItem = {
   subItems?: { labelKey: string; path: string }[];
 };
 
-// Navigation items with sub-items
-const navItems: NavItem[] = [
-  {
-    labelKey: 'nav_home',
-    path: '/',
-  },
-  {
-    labelKey: 'nav_dummy',
-    path: '/dummy',
-  },
-  {
-    labelKey: 'nav_protected',
-    subItems: [
-      { labelKey: 'nav_dummy', path: '/protected-dummy' }, { labelKey: 'nav_test_more', path: '/protected-dummy' },
-    ],
-  },
-  {
-    labelKey: 'nav_protected_2',
-    subItems: [
-      { labelKey: 'nav_dummy', path: '/protected-dummy' },
-    ],
-  },
+// Signed-in users get nothing on the bar itself (Projects lives in the account menu, see
+// `accountMenuItems`); everyone else (guests included) gets a way back to the landing page.
+const signedInNavItems: NavItem[] = [];
+const signedOutNavItems: NavItem[] = [
+  { labelKey: 'nav_home', path: '/' },
 ];
 
 // Nav items should read as plain text on the bar, not as buttons.
@@ -74,8 +57,10 @@ const NAV_ITEM_CLASS = [
   'focus-visible:ring-sidebar-foreground/40',
 ].join(' ');
 
-const profileItems = [
-  { labelKey: 'privacy_policy_title', path: PATHS.privacyPolicy },
+// The account menu (avatar on desktop, the user's section in the mobile drawer). The policy pages are
+// in the footer instead (AppFooter).
+const accountMenuItems = [
+  { labelKey: 'nav_projects', path: PATHS.projects },
   { labelKey: 'nav_profile_settings', path: PATHS.userProfile },
 ];
 
@@ -117,6 +102,8 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
   const isMobile = useIsMobile();
   // Login links come back to the current page afterwards.
   const loginPath = buildLoginPath(location.pathname + location.search + location.hash);
+  const isSignedIn = isSignedInUser(user);
+  const navItems = isSignedIn ? signedInNavItems : signedOutNavItems;
 
   // State for mobile drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -199,12 +186,15 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                   {t('nav_log_in')}
                 </LinkButton>
               )}
+              {!isSignedIn && (
+                <LinkButton href={PATHS.register} size='sm'>{t('register')}</LinkButton>
+              )}
               {user && <Popover
                 trigger='click'
                 contentRenderer={close => (
-                  <div className='min-w-40'>
-                    <p className='px-3 py-2 font-bold'>{getUsername(user)}</p>
-                    {profileItems.map(item => (
+                  <div className='w-56'>
+                    <p title={getUsername(user)} className='truncate px-3 py-2 text-sm font-bold'>{getUsername(user)}</p>
+                    {accountMenuItems.map(item => (
                       <LinkButton
                         key={item.labelKey}
                         variant='ghost'
@@ -293,15 +283,20 @@ const Navbar = ({ layout = 'FULL' }: { layout?: 'FULL' | 'MAIN' }) => {
                       {t('nav_log_in')}
                     </DrawerRow>
                   )}
+                  {!isSignedIn && (
+                    <DrawerRow indented onClick={() => goAndClose(PATHS.register)}>
+                      {t('register')}
+                    </DrawerRow>
+                  )}
                   {user && (
                     <Collapsible>
                       <CollapsibleTrigger render={<DrawerRow />}>
                         <UserAvatar user={user} className='mr-2 size-8' />
-                        <span className='flex-1'>{getUsername(user)}</span>
+                        <span className='min-w-0 flex-1 truncate'>{getUsername(user)}</span>
                         <ChevronDownIcon className='size-4' />
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        {profileItems.map(item => (
+                        {accountMenuItems.map(item => (
                           <DrawerRow key={item.labelKey} indented onClick={() => goAndClose(item.path)}>
                             {t(item.labelKey)}
                           </DrawerRow>

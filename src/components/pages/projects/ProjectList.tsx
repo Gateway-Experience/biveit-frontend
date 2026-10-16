@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import _ from 'lodash';
 import { useMatch, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { PlusIcon, SparklesIcon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 
 import LinkButton from 'src/components/common/LinkButton';
 import NewProjectModal from 'src/components/pages/projects/NewProjectModal';
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
+import { BuildFlowArt, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import { getProjects } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
@@ -37,11 +38,10 @@ function ProjectsEmptyState() {
   return (
     <div
       data-section='projects-empty'
-      className='flex flex-col items-center rounded-2xl border border-dashed border-foreground/15 bg-card/50 px-6 py-16 text-center animate-in fade-in-0 duration-500'
+      className='relative isolate flex flex-col items-center overflow-hidden rounded-3xl border bg-card/60 px-6 py-14 text-center animate-in fade-in-0 duration-500'
     >
-      <div className='mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm'>
-        <SparklesIcon className='size-6' />
-      </div>
+      <DotGridBackdrop />
+      <BuildFlowArt className='mb-8 w-full max-w-[340px]' />
       <h2 className='font-heading text-xl font-bold tracking-[-0.02em]'>{t('projects_empty_title')}</h2>
       <p className='mt-2 max-w-sm text-muted-foreground'>{t('projects_empty_body')}</p>
       <LinkButton href={PATHS.newProject} size='lg' className='mt-7'>
@@ -74,8 +74,13 @@ export default function ProjectList() {
       {/* Replace: closing shouldn't leave an entry that reopens the form on "back". */}
       <NewProjectModal open={isCreatingProject} onClose={() => navigate(PATHS.projects, { replace: true })} />
 
-      <div className='mb-8 flex flex-wrap items-end justify-between gap-4'>
-        <div>
+      {/* The page header: a soft panel with line art on the right (dropped on small screens, and when the
+          empty state below is already showing the same art). */}
+      <div className='relative isolate mb-8 flex flex-wrap items-end justify-between gap-4 overflow-hidden rounded-3xl border bg-card px-6 py-7 sm:px-8'>
+        <DotGridBackdrop />
+        <span aria-hidden='true' className='pointer-events-none absolute -top-24 right-24 -z-10 size-64 rounded-full bg-primary/10 blur-3xl' />
+        {hasProjects && <BuildFlowArt className='pointer-events-none absolute top-1/2 right-52 hidden h-[82%] -translate-y-1/2 lg:block' />}
+        <div className='relative'>
           <span className='mb-2 block text-[0.625rem] font-bold tracking-[0.18em] text-muted-foreground uppercase'>
             {t('projects_eyebrow')}
           </span>
@@ -86,7 +91,7 @@ export default function ProjectList() {
         </div>
         {/* The empty state carries its own, bigger CTA, so don't show two. */}
         {hasProjects && (
-          <LinkButton href={PATHS.newProject}>
+          <LinkButton href={PATHS.newProject} className='relative'>
             <PlusIcon data-icon='inline-start' />
             {t('projects_new')}
           </LinkButton>

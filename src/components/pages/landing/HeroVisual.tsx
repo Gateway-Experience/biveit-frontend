@@ -2,6 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { CircleCheckIcon, LockIcon, MousePointer2Icon, SparklesIcon, WandSparklesIcon } from 'lucide-react';
 import { cn } from 'cn';
 
+import ScaledFrame from 'src/components/common/ScaledFrame';
+import { MotoRentalSite } from 'src/components/pages/landing/ExampleSites';
+import { APP_NAME } from 'src/utils/constants';
+
 // Steps ticked off on the "building your site" card — the same chores listed under "Our part".
 const BUILD_STEP_KEYS = ['landing_deal_ours_design', 'landing_deal_ours_booking', 'landing_deal_ours_hosting', 'landing_deal_ours_domain'];
 
@@ -52,21 +56,60 @@ function ChatPreviewCard({ className }: { className?: string }) {
   );
 }
 
-// The address bar of a freshly launched site.
-function LiveSiteBadge({ domain, className }: { domain: string; className?: string }) {
+// Step one of the story: the user's whole contribution, one sentence in a prompt box.
+function PromptCard({ className }: { className?: string }) {
   const { t } = useTranslation();
 
   return (
-    <div className={cn(SNAPSHOT_CARD_CLASS, 'flex items-center gap-3 px-4 py-3', className)}>
-      <BrowserDots />
-      <span className='flex min-w-0 flex-1 items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-sm text-muted-foreground'>
-        <LockIcon className='size-3.5 shrink-0 text-success' />
-        <span className='truncate'>{domain}</span>
-      </span>
-      <span className='flex shrink-0 items-center gap-1.5 text-sm font-semibold text-success'>
-        <span className='size-2 rounded-full bg-success' />
-        {t('landing_scene_live')}
-      </span>
+    <div className={cn(SNAPSHOT_CARD_CLASS, 'p-4', className)}>
+      <p className='flex items-center gap-1.5 text-xs font-semibold text-muted-foreground'>
+        <SparklesIcon className='size-3.5 text-primary' />
+        {t('landing_hero_prompt_label')}
+      </p>
+      <p className='mt-2 rounded-xl border bg-background px-3 py-2.5 text-sm'>
+        {t('landing_scene_user_msg')}
+        <span className='ml-0.5 inline-block h-4 w-0.5 translate-y-0.5 bg-primary' />
+      </p>
+      <div className='mt-3 flex justify-end'>
+        <span className='inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-brand-light via-primary to-brand-deep px-3.5 py-1.5 text-xs font-semibold text-primary-foreground'>
+          <WandSparklesIcon className='size-3.5' />
+          {t('landing_hero_prompt_send')}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Intentions: the payoff, the finished site in a browser on its own (live) address. A "Vib3" cursor is
+// still at work on it, so it reads as a site that got built for you, not a stock screenshot.
+function GeneratedSiteWindow({ className }: { className?: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className={cn(SNAPSHOT_CARD_CLASS, 'overflow-hidden', className)}>
+      <div className='flex items-center gap-3 border-b px-3 py-2'>
+        <BrowserDots />
+        <span className='flex min-w-0 flex-1 items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs text-muted-foreground'>
+          <LockIcon className='size-3 shrink-0 text-success' />
+          <span className='truncate'>{t('landing_example_domain_moto')}</span>
+        </span>
+        <span className='flex shrink-0 items-center gap-1.5 text-xs font-semibold text-success'>
+          <span className='size-2 rounded-full bg-success' />
+          {t('landing_scene_live')}
+        </span>
+      </div>
+      <div className='relative'>
+        <ScaledFrame baseWidth={640} baseHeight={400}>
+          <MotoRentalSite />
+        </ScaledFrame>
+        <span className='absolute top-[13%] left-[47%] flex items-start'>
+          <MousePointer2Icon className='size-5 fill-primary text-primary' />
+          <span className='mt-4 -ml-1 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-md'>
+            <SparklesIcon className='size-3' />
+            {APP_NAME}
+          </span>
+        </span>
+      </div>
     </div>
   );
 }
@@ -98,16 +141,17 @@ function BuildProgressCard({ className }: { className?: string }) {
 }
 
 // Original purpose: the landing hero's visual.
-// Intentions: the whole pitch in three snapshots — you chat (tap an easy answer), we build (everything
-// ticked off), and the site is live on its own address. Overlapping on desktop, stacked on small screens.
+// Intentions: the whole pitch at a glance, read top to bottom. You type one sentence, we build it
+// (everything ticked off), and a real-looking site is live on its own address. Slightly overlapping on desktop, stacked on small screens.
 function HeroVisual() {
-  const { t } = useTranslation();
-
   return (
-    <div className='relative flex flex-col gap-4 lg:block lg:h-[540px]'>
-      <ChatPreviewCard className='lg:absolute lg:top-0 lg:left-0 lg:w-[360px] lg:-rotate-2' />
-      <BuildProgressCard className='lg:absolute lg:top-[45%] lg:right-0 lg:w-[290px] lg:rotate-2' />
-      <LiveSiteBadge domain={t('landing_example_domain_moto')} className='lg:absolute lg:bottom-0 lg:left-0 lg:w-[360px]' />
+    <div className='flex flex-col gap-4 lg:gap-0'>
+      <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-0'>
+        <PromptCard className='relative z-10 lg:w-[272px] lg:shrink-0 lg:-rotate-1' />
+        <BuildProgressCard className='relative z-20 lg:mt-10 lg:-ml-3 lg:flex-1 lg:rotate-2' />
+      </div>
+      {/* Tucked slightly under the cards above; in normal flow so longer translations just push it down. */}
+      <GeneratedSiteWindow className='relative z-30 lg:-mt-3 lg:ml-[4%]' />
     </div>
   );
 }

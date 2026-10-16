@@ -1,11 +1,15 @@
-import { Link } from 'react-router';
+import { Link, Navigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { ArrowUpIcon, LockIcon } from 'lucide-react';
+import { cn } from 'cn';
 
 import BrandLogo from 'src/components/common/BrandLogo';
 import GoogleSignInButton from 'src/components/common/GoogleSignInButton';
 import LanguageSelector from 'src/components/common/LanguageSelector';
-import { Card, CardContent } from 'src/components/shadui/card';
+import { useStore } from 'src/state-store';
+import { isSignedInUser } from 'src/services/user';
 import { PATHS } from 'src/utils/constants';
+import { useTypewriter } from 'src/utils/hooks';
 
 type AuthPageLayoutProps = {
   pageName: string;
@@ -13,8 +17,12 @@ type AuthPageLayoutProps = {
   // Optional small uppercase line above the title, and a muted line below it.
   eyebrow?: string;
   subtitle?: string;
-  // Where the BE lands the browser after a successful Google sign-in.
-  googleNextPath: string;
+  // Where to go once signed in: where the BE lands the browser after Google sign-in, and where someone
+  // who's already signed in gets bounced to if they reach this page (e.g. with the Back button).
+  nextPath: string;
+  // The "Continue with Google" button and the "or" under it. Off for pages that aren't a way to sign in
+  // (forgot / reset password).
+  hasGoogleSignIn?: boolean;
   // The "Don't have an account? Create one" line that links to the sibling auth page.
   switchPrompt: string;
   switchLinkLabel: string;
@@ -23,52 +31,110 @@ type AuthPageLayoutProps = {
   children: React.ReactNode;
 };
 
-// Intentions: the shared page for /login and /register — a slim top bar (brand on the left, language
-// switcher on the right) over a centered card: title, Google, "or use your email", the page's own form,
-// then the link to the other auth page and the policies line.
+// Intentions: the shared page for /login and /register, split in two. On the left, the form column: brand
+// (linking back to the landing page), title, Google, "or", the page's own form, then the link to the other
+// auth page and the policies line. On the right (wide screens only), a showcase panel that reminds people
+// what they're signing in for: a prompt box asking Vib3 to build something.
 export default function AuthPageLayout({
-  pageName, title, eyebrow, subtitle, googleNextPath, switchPrompt, switchLinkLabel, switchLinkTo, children,
+  pageName, title, eyebrow, subtitle, nextPath, hasGoogleSignIn = true, switchPrompt, switchLinkLabel, switchLinkTo, children,
 }: AuthPageLayoutProps) {
   const { t } = useTranslation();
+  const user = useStore(state => state.user);
+
+  // A signed-in user has no business on /login or /register. Without this, pressing Back after signing
+  // in shows the form again as if they were logged out. `replace` so Back doesn't keep landing here.
+  if (isSignedInUser(user)) {
+    return <Navigate to={nextPath} replace />;
+  }
 
   return (
-    <div data-page={pageName} className='flex min-h-svh flex-col'>
-      <header className='flex h-16 shrink-0 items-center justify-between border-b px-4 md:px-6'>
-        <BrandLogo className='cursor-default select-none' />
-        <LanguageSelector />
-      </header>
+    <div data-page={pageName} className='flex min-h-svh bg-background'>
+      <div className='relative flex flex-1 flex-col px-6 lg:w-1/2 lg:flex-none'>
+        <LanguageSelector className='absolute top-4 right-4' />
 
-      <main className='flex flex-1 items-center justify-center px-4 py-14'>
-        <Card className='w-full max-w-[512px]'>
-          <CardContent>
+        <main className='flex flex-1 items-center justify-center py-16'>
+          <div className='w-full max-w-[360px]'>
+            {/* Back to the landing page ("/" shows it to anyone not signed in, i.e. everyone on these pages). */}
+            <Link to='/' className='inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
+              <BrandLogo markClassName='h-11' />
+            </Link>
+
             {eyebrow && (
-              <span className='mb-3 block text-[0.625rem] font-bold tracking-[0.18em] text-muted-foreground uppercase'>{eyebrow}</span>
+              <span className='mt-8 block text-[0.625rem] font-bold tracking-[0.18em] text-muted-foreground uppercase'>{eyebrow}</span>
             )}
-            <h1 className='font-heading text-[1.625rem] font-bold tracking-[-0.03em]'>{title}</h1>
+            <h1 className={cn('font-heading text-[1.75rem] font-bold tracking-[-0.03em]', eyebrow ? 'mt-2' : 'mt-8')}>{title}</h1>
             {subtitle && <p className='mt-2 text-muted-foreground'>{subtitle}</p>}
 
-            <GoogleSignInButton nextPath={googleNextPath} className='mt-6' />
-
-            <div className='my-3.5 flex items-center gap-3 text-[0.6875rem] text-muted-foreground'>
-              <span className='h-px flex-1 bg-border' />
-              {t('auth_or_use_email')}
-              <span className='h-px flex-1 bg-border' />
-            </div>
+            {hasGoogleSignIn
+              ? (
+                <>
+                  <GoogleSignInButton nextPath={nextPath} className='mt-8 h-11 rounded-full' />
+                  <div className='my-5 flex items-center gap-3 text-[0.6875rem] font-medium text-muted-foreground uppercase'>
+                    <span className='h-px flex-1 bg-linear-to-r from-transparent to-border' />
+                    {t('auth_or')}
+                    <span className='h-px flex-1 bg-linear-to-l from-transparent to-border' />
+                  </div>
+                </>
+              )
+              : <div className='mt-8' />}
 
             {children}
 
+            {/* `replace`: hopping between log in and sign up shouldn't pile up history entries for Back to walk through. */}
             <p className='mt-5 text-center text-sm text-muted-foreground'>
               {switchPrompt}
-              {' '}<Link to={switchLinkTo} className='font-semibold text-foreground underline-offset-3 hover:underline'>{switchLinkLabel}</Link>
+              {' '}<Link to={switchLinkTo} replace className='font-semibold text-foreground underline underline-offset-3'>{switchLinkLabel}</Link>
             </p>
 
-            <p className='mt-3 text-center text-[0.6875rem] leading-[1.65] text-muted-foreground'>
-              {t('auth_agree_policies_prefix')}
-              {' '}<Link to={PATHS.privacyPolicy} className='underline underline-offset-3 hover:text-foreground'>{t('auth_policies')}</Link>.
+            <p className='mt-5 flex items-center justify-center gap-1.5 border-t pt-5 text-center text-xs text-muted-foreground'>
+              <LockIcon className='size-3.5 shrink-0' />
+              <span>
+                {t('auth_agree_policies_prefix')}
+                {' '}<Link to={PATHS.privacyPolicy} className='font-medium text-foreground hover:underline'>{t('auth_policies')}</Link>
+              </span>
             </p>
-          </CardContent>
-        </Card>
-      </main>
+          </div>
+        </main>
+      </div>
+
+      <AuthShowcasePanel />
     </div>
+  );
+}
+
+// The prompts typed (and retyped) into the showcase panel's box.
+const SHOWCASE_PROMPT_KEYS = ['auth_showcase_prompt_1', 'auth_showcase_prompt_2', 'auth_showcase_prompt_3', 'auth_showcase_prompt_4'];
+
+// The right-hand panel: a dark-to-brand gradient (built from theme tokens, so no image to load) with a
+// prompt box in the middle where business ideas type themselves out one after another, as if someone
+// were asking Vib3 for a site right now.
+function AuthShowcasePanel() {
+  const { t } = useTranslation();
+  const typed = useTypewriter(SHOWCASE_PROMPT_KEYS.map(promptKey => t(promptKey)));
+
+  return (
+    <aside aria-hidden='true' className='hidden p-3 lg:block lg:w-1/2'>
+      <div
+        className='relative grid size-full place-items-center overflow-hidden rounded-3xl bg-brand-ink'
+        style={{
+          backgroundImage: [
+            'radial-gradient(85% 50% at 50% 105%, var(--brand-light) 0%, transparent 70%)',
+            'radial-gradient(130% 85% at 50% 100%, var(--primary) 0%, transparent 72%)',
+            'radial-gradient(170% 115% at 50% 100%, var(--brand-deep) 0%, transparent 78%)',
+          ].join(', '),
+        }}
+      >
+        <div className='flex w-[min(460px,80%)] items-center gap-3 rounded-2xl bg-card/90 py-3.5 pr-3.5 pl-5 text-card-foreground shadow-2xl shadow-brand-ink/40 backdrop-blur'>
+          <p data-phraseindex={typed.phraseIndex} className='min-h-6 flex-1'>
+            {typed.text}
+            {/* Solid while typing, blinking while it waits, like a real text cursor. */}
+            <span className={cn('ml-0.5 inline-block h-4.5 w-0.5 translate-y-0.5 bg-primary', typed.isIdle && 'animate-caret-blink')} />
+          </p>
+          <span className='grid size-10 shrink-0 place-items-center rounded-full bg-foreground text-background'>
+            <ArrowUpIcon className='size-4.5' />
+          </span>
+        </div>
+      </div>
+    </aside>
   );
 }

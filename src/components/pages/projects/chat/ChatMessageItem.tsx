@@ -5,6 +5,7 @@ import { cn } from 'cn';
 
 import Markdown from 'src/components/common/Markdown';
 import ChatAttachment from 'src/components/pages/projects/chat/ChatAttachment';
+import { CHAT_TEXT_SIZE_CLASS } from 'src/components/pages/projects/chat/chatStyles';
 import {
   Attachment, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle, AttachmentTrigger,
 } from 'src/components/shadui/attachment';
@@ -29,10 +30,11 @@ export type ChatRenderContext = {
   onOpenArtifact: (path: string) => void;
 };
 
-// The registry's bubbles are sized for dense UIs (text-xs); chat reads better at body size.
-const _USER_BUBBLE_CONTENT_CLASS = 'rounded-2xl px-4 py-2.5 text-sm';
-// The agent writes markdown; Markdown sets its own (body-sized) type, so this only lets it use the full width.
-const _AGENT_TEXT_CLASS = 'w-full';
+// The registry's bubbles are sized for dense UIs (text-xs); chat reads better a notch above the UI's
+// usual text-sm. Same size on both sides of the conversation (see CHAT_TEXT_SIZE_CLASS).
+const _USER_BUBBLE_CONTENT_CLASS = cn('rounded-2xl px-4 py-2.5', CHAT_TEXT_SIZE_CLASS);
+// The agent writes markdown; Markdown's prose spacing is in em, so it scales along with the bigger size.
+const _AGENT_TEXT_CLASS = cn('w-full', CHAT_TEXT_SIZE_CLASS);
 
 const _isTextBlock = (block: ContentBlock): block is TextBlock => block.type === 'text';
 const _isAttachmentBlock = (block: ContentBlock): block is AttachmentBlock => block.type === 'attachment';
@@ -190,7 +192,7 @@ function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage
     if (_isTextBlock(block)) {
       return (
         <Bubble key={index} variant='ghost'>
-          <BubbleContent className={_AGENT_TEXT_CLASS}><Markdown>{block.text}</Markdown></BubbleContent>
+          <BubbleContent className='w-full'><Markdown className={_AGENT_TEXT_CLASS} options={{ keepsLineBreaks: true }}>{block.text}</Markdown></BubbleContent>
         </Bubble>
       );
     }

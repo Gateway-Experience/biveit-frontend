@@ -216,6 +216,91 @@ function useElementSize<T extends HTMLElement>() {
   return [setElement, size] as const;
 }
 
+// Flips to true the first time the element scrolls into view, and stays true (it stops watching after that).
+// Pass the returned callback as the element's `ref`. `bottomOffset` makes it wait until the element is
+// that far above the bottom edge of the screen (e.g. '10%'), so it isn't triggered by a barely-visible sliver.
+function useHasBeenInView<T extends HTMLElement>(options: { bottomOffset?: string } = {}) {
+  const { bottomOffset = '0px' } = options;
+  const [hasBeenInView, setHasBeenInView] = useState(false);
+  const [element, setElement] = useState<T | null>(null);
+  useEffect(() => {
+    if (!element || hasBeenInView) {
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        setHasBeenInView(true);
+      }
+    }, { rootMargin: `0px 0px -${bottomOffset} 0px` });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element, hasBeenInView, bottomOffset]);
+  return [setElement, hasBeenInView] as const;
+}
+
+type TypewriterState = { phraseIndex: number; typedLength: number; mode: 'typing' | 'pausing' | 'deleting' };
+
+const TYPEWRITER_TIMING = { typeMs: 55, deleteMs: 28, pauseMs: 1800, beforeNextMs: 300 };
+
+// [Pure] How many leading characters two phrases share (as arrays of characters).
+function _countSharedPrefix(phraseA: string[], phraseB: string[]) {
+  const firstMismatch = phraseA.findIndex((char, index) => char !== phraseB[index]);
+  return firstMismatch === -1 ? Math.min(phraseA.length, phraseB.length) : firstMismatch;
+}
+
+// [Pure] One tick of the typewriter: the state after the current one, and how long to wait before
+// showing it. Deleting only goes back to what the next phrase shares with this one (so "Build a shop…"
+// to "Build a menu…" keeps "Build a "), which also means a single text slice covers both phrases.
+function _stepTypewriter(state: TypewriterState, phrases: string[][]): { next: TypewriterState; delayMs: number } {
+  const phrase = phrases[state.phraseIndex];
+  const nextPhraseIndex = (state.phraseIndex + 1) % phrases.length;
+  if (state.mode === 'typing') {
+    return state.typedLength < phrase.length
+      ? { next: { ...state, typedLength: state.typedLength + 1 }, delayMs: TYPEWRITER_TIMING.typeMs }
+      : { next: { ...state, mode: 'pausing' }, delayMs: TYPEWRITER_TIMING.pauseMs };
+  }
+  if (state.mode === 'pausing') {
+    return { next: { ...state, mode: 'deleting' }, delayMs: TYPEWRITER_TIMING.deleteMs };
+  }
+  const sharedLength = _countSharedPrefix(phrase, phrases[nextPhraseIndex]);
+  return state.typedLength > sharedLength
+    ? { next: { ...state, typedLength: state.typedLength - 1 }, delayMs: TYPEWRITER_TIMING.deleteMs }
+    : { next: { phraseIndex: nextPhraseIndex, typedLength: sharedLength, mode: 'typing' }, delayMs: TYPEWRITER_TIMING.beforeNextMs };
+}
+
+// Types the phrases out one after another, like someone typing into a box: type, pause, backspace,
+// next one, forever. Returns the text to show right now, and whether it's paused on a finished phrase
+// (handy for blinking the cursor only while idle). With reduced motion on, it just shows the first phrase.
+function useTypewriter(phrases: string[]) {
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  // Characters, not UTF-16 units, so nothing gets cut in half mid-letter.
+  const phraseChars = phrases.map(phrase => Array.from(phrase));
+  const phrasesKey = phrases.join('\n');
+  const [state, setState] = useState<TypewriterState>({ phraseIndex: 0, typedLength: 0, mode: 'typing' });
+
+  // Start over when the phrases change (e.g. the language was switched).
+  useEffect(() => {
+    setState({ phraseIndex: 0, typedLength: 0, mode: 'typing' });
+  }, [phrasesKey]);
+
+  useEffect(() => {
+    if (prefersReducedMotion || _.isEmpty(phraseChars)) {
+      return;
+    }
+    const { next, delayMs } = _stepTypewriter(state, phraseChars);
+    const timer = setTimeout(() => setState(next), delayMs);
+    return () => clearTimeout(timer);
+    // phraseChars is rebuilt every render; phrasesKey stands in for it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, phrasesKey, prefersReducedMotion]);
+
+  if (prefersReducedMotion) {
+    return { text: phrases[0] ?? '', isIdle: true, phraseIndex: 0 };
+  }
+  const currentChars = phraseChars[state.phraseIndex] ?? [];
+  return { text: currentChars.slice(0, state.typedLength).join(''), isIdle: state.mode === 'pausing', phraseIndex: state.phraseIndex };
+}
+
 // Return the previous value of a value.
 // E.g. const [v, setV] = useState(1);
 // const vPrev = usePrevious(v);
@@ -313,6 +398,8 @@ export {
   useIsMobile,
   useMediaQuery,
   useElementSize,
+  useHasBeenInView,
+  useTypewriter,
   usePrevious,
   useInterval,
   useOneTimeQueryParams,

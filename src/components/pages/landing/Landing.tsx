@@ -11,6 +11,7 @@ import { cn } from 'cn';
 import BrandLogo from 'src/components/common/BrandLogo';
 import LanguageSelector from 'src/components/common/LanguageSelector';
 import LinkButton from 'src/components/common/LinkButton';
+import Reveal from 'src/components/common/Reveal';
 import ScaledFrame from 'src/components/common/ScaledFrame';
 import { Button } from 'src/components/shadui/button';
 import { BrowserDots, ChatPreviewCard, HeroVisual } from 'src/components/pages/landing/HeroVisual';
@@ -19,7 +20,6 @@ import {
   BoutiqueSite, CafeSite, HotelSite, LakeHouseSite, MotoRentalSite, PerfumeSite,
 } from 'src/components/pages/landing/ExampleSites';
 import PerfumeBottleIcon from 'src/components/pages/landing/PerfumeBottleIcon';
-import { useIsMobile } from 'src/utils/hooks';
 import { APP_NAME, PATHS } from 'src/utils/constants';
 import type { ArtIcon } from 'src/types/landing';
 
@@ -33,6 +33,9 @@ const START_PATH = PATHS.newProject;
 // The brand gradient, for primary buttons and for emphasised headline words.
 const BRAND_BUTTON_CLASS = 'bg-linear-to-r from-primary to-brand-deep text-primary-foreground shadow-lg shadow-primary/25 hover:opacity-90';
 const BRAND_TEXT_CLASS = 'bg-linear-to-r from-brand-light via-primary to-brand-deep bg-clip-text text-transparent';
+
+// Gap between neighbouring cards fading in on scroll (see Reveal), so a row arrives one card at a time.
+const STAGGER_MS = 120;
 
 const HERO_PERK_KEYS = ['landing_perk_no_code', 'landing_perk_no_jargon', 'landing_perk_all_included'];
 
@@ -136,11 +139,11 @@ function HeadlineAccent({ className }: { className?: string }) {
 
 function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
   return (
-    <div className='mx-auto max-w-2xl text-center'>
+    <Reveal className='mx-auto max-w-2xl text-center'>
       {eyebrow && <span className='text-xs font-bold tracking-[0.18em] text-primary uppercase'>{eyebrow}</span>}
       <h2 className='mt-3 font-heading text-3xl font-bold tracking-[-0.03em] text-balance sm:text-4xl'>{title}</h2>
       {subtitle && <p className='mt-4 text-pretty text-muted-foreground sm:text-lg'>{subtitle}</p>}
-    </div>
+    </Reveal>
   );
 }
 
@@ -154,7 +157,6 @@ function CheckBullet() {
 
 function LandingHeader() {
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
 
   return (
     <header className='sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md'>
@@ -164,7 +166,6 @@ function LandingHeader() {
         </Link>
         <div className='flex items-center gap-1 sm:gap-2'>
           <LanguageSelector />
-          {!isMobile && <LinkButton href={PATHS.login} variant='ghost'>{t('nav_log_in')}</LinkButton>}
           <LinkButton href={START_PATH} size='sm' className={BRAND_BUTTON_CLASS}>{t('landing_nav_start')}</LinkButton>
         </div>
       </div>
@@ -184,7 +185,7 @@ function HeroSection() {
       <SoftGlowBackdrop />
       <div className={cn(LANDING_WIDTH_CLASS, 'grid items-center gap-14 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pt-24 lg:pb-28')}>
         {/* min-w-0 lets this column shrink below its longest word, so long words wrap instead of overflowing */}
-        <div className='min-w-0'>
+        <Reveal className='min-w-0'>
           <span className='inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
             <SparklesIcon className='size-3.5 text-primary' />
             {t('landing_hero_eyebrow')}
@@ -213,8 +214,10 @@ function HeroSection() {
               </li>
             ))}
           </ul>
-        </div>
-        <HeroVisual />
+        </Reveal>
+        <Reveal delayMs={150}>
+          <HeroVisual />
+        </Reveal>
       </div>
     </section>
   );
@@ -225,7 +228,7 @@ function BusinessesStrip() {
 
   return (
     <section data-section='businesses' className='border-y bg-card'>
-      <div className={cn(LANDING_WIDTH_CLASS, 'py-10')}>
+      <Reveal className={cn(LANDING_WIDTH_CLASS, 'py-10')}>
         <p className='text-center text-sm font-semibold text-muted-foreground'>{t('landing_made_for_title')}</p>
         <ul className='mt-5 flex flex-wrap justify-center gap-2.5'>
           {BUSINESSES.map(business => (
@@ -235,7 +238,7 @@ function BusinessesStrip() {
             </li>
           ))}
         </ul>
-      </div>
+      </Reveal>
     </section>
   );
 }
@@ -295,14 +298,14 @@ function HowItWorksSection() {
         {STEPS.map((step, index) => {
           const StepVisual = STEP_VISUALS[step.id];
           return (
-            <li key={step.id} data-stepid={step.id} className='flex flex-col rounded-3xl border bg-card p-6 shadow-xs'>
+            <Reveal as='li' key={step.id} delayMs={index * STAGGER_MS} data-stepid={step.id} className='flex flex-col rounded-3xl border bg-card p-6 shadow-xs'>
               <div className='grid h-52 place-items-center overflow-hidden rounded-2xl bg-linear-to-br from-accent to-highlight'>
                 <StepVisual />
               </div>
               <span className='mt-6 font-heading text-sm font-bold text-primary'>{`0${index + 1}`}</span>
               <h3 className='mt-1 font-heading text-xl font-bold tracking-[-0.02em]'>{t(step.titleKey)}</h3>
               <p className='mt-2 text-muted-foreground'>{t(step.descKey)}</p>
-            </li>
+            </Reveal>
           );
         })}
       </ol>
@@ -319,18 +322,22 @@ function AdvantagesSection() {
     <section data-section='advantages' className='relative isolate overflow-hidden border-y bg-card'>
       <SoftGlowBackdrop />
       <div className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
-        <span className='text-xs font-bold tracking-[0.18em] text-primary uppercase'>{t('landing_adv_eyebrow', { appName: APP_NAME })}</span>
-        <h2 className='mt-3 max-w-3xl font-heading text-[clamp(2rem,9.5vw,2.25rem)] leading-[1.04] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl'>
-          {t('landing_adv_title_lead')}{' '}
-          <span className={BRAND_TEXT_CLASS}>{t('landing_adv_title_highlight')}</span>
-        </h2>
-        <HeadlineAccent className='mt-6' />
+        <Reveal>
+          <span className='text-xs font-bold tracking-[0.18em] text-primary uppercase'>{t('landing_adv_eyebrow', { appName: APP_NAME })}</span>
+          <h2 className='mt-3 max-w-3xl font-heading text-[clamp(2rem,9.5vw,2.25rem)] leading-[1.04] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl'>
+            {t('landing_adv_title_lead')}{' '}
+            <span className={BRAND_TEXT_CLASS}>{t('landing_adv_title_highlight')}</span>
+          </h2>
+          <HeadlineAccent className='mt-6' />
+        </Reveal>
 
         <div className='mt-10 grid items-center gap-10 lg:grid-cols-[1fr_320px] lg:gap-12'>
-          <LaptopShowcase />
+          <Reveal>
+            <LaptopShowcase />
+          </Reveal>
           <ul className='grid gap-4 sm:grid-cols-2 lg:grid-cols-1'>
-            {ADVANTAGES.map(advantage => (
-              <li key={advantage.id} data-advantageid={advantage.id} className='relative flex items-start gap-4 rounded-2xl border bg-card p-4 shadow-lg shadow-primary/5'>
+            {ADVANTAGES.map((advantage, index) => (
+              <Reveal as='li' key={advantage.id} delayMs={index * STAGGER_MS} data-advantageid={advantage.id} className='relative flex items-start gap-4 rounded-2xl border bg-card p-4 shadow-lg shadow-primary/5'>
                 <span className='absolute -top-2 -left-2 grid size-6 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/30'>
                   <CheckIcon className='size-3.5' strokeWidth={3} />
                 </span>
@@ -341,12 +348,12 @@ function AdvantagesSection() {
                   <h3 className='font-heading font-bold'>{t(advantage.titleKey)}</h3>
                   <p className='mt-0.5 text-sm text-muted-foreground'>{t(advantage.descKey)}</p>
                 </div>
-              </li>
+              </Reveal>
             ))}
           </ul>
         </div>
 
-        <div className='mt-16 text-center'>
+        <Reveal className='mt-16 text-center'>
           <p className='font-heading text-3xl font-bold tracking-[-0.03em] sm:text-4xl'>
             {t('landing_adv_cta_lead')}{' '}
             <span className={BRAND_TEXT_CLASS}>{t('landing_adv_cta_highlight')}</span>
@@ -363,7 +370,7 @@ function AdvantagesSection() {
               </li>
             ))}
           </ul>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -376,7 +383,7 @@ function DealSection() {
     <section data-section='deal' className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
       <SectionHeading eyebrow={t('landing_deal_eyebrow')} title={t('landing_deal_title')} subtitle={t('landing_deal_subtitle')} />
       <div className='mt-12 grid gap-4 lg:grid-cols-5'>
-        <div className='flex flex-col rounded-3xl border bg-card p-6 sm:p-8 lg:col-span-2'>
+        <Reveal className='flex flex-col rounded-3xl border bg-card p-6 sm:p-8 lg:col-span-2'>
           <h3 className='font-heading text-xl font-bold'>{t('landing_deal_yours')}</h3>
           <ol className='mt-6 mb-8 flex flex-col gap-4'>
             {YOUR_TASK_KEYS.map((taskKey, index) => (
@@ -390,8 +397,8 @@ function DealSection() {
             <CoffeeIcon className='size-4 shrink-0' />
             {t('landing_deal_yours_time')}
           </p>
-        </div>
-        <div className='rounded-3xl bg-linear-to-br from-primary to-brand-deep p-6 text-primary-foreground shadow-xl shadow-primary/20 sm:p-8 lg:col-span-3'>
+        </Reveal>
+        <Reveal delayMs={STAGGER_MS} className='rounded-3xl bg-linear-to-br from-primary to-brand-deep p-6 text-primary-foreground shadow-xl shadow-primary/20 sm:p-8 lg:col-span-3'>
           <div className='flex items-center justify-between gap-3'>
             <h3 className='font-heading text-xl font-bold'>{t('landing_deal_ours')}</h3>
             <span className='rounded-full bg-primary-foreground px-3 py-1 text-xs font-semibold text-primary'>{t('landing_deal_ours_badge')}</span>
@@ -404,7 +411,7 @@ function DealSection() {
               </li>
             ))}
           </ul>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -418,8 +425,9 @@ function ShowcaseSection() {
       <div className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
         <SectionHeading eyebrow={t('landing_showcase_eyebrow')} title={t('landing_showcase_title')} subtitle={t('landing_showcase_subtitle')} />
         <ul className='mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>
-          {SHOWCASE_SITES.map(site => (
-            <li key={site.id} data-siteid={site.id} className='overflow-hidden rounded-2xl border bg-background shadow-xs transition-shadow hover:shadow-lg hover:shadow-primary/10'>
+          {SHOWCASE_SITES.map((site, index) => (
+            // Staggered within each row of three; the next row starts its own wave as it scrolls in.
+            <Reveal as='li' key={site.id} delayMs={(index % 3) * STAGGER_MS} data-siteid={site.id} className='overflow-hidden rounded-2xl border bg-background shadow-xs transition-shadow hover:shadow-lg hover:shadow-primary/10'>
               <div className='flex items-center gap-3 border-b bg-card px-3 py-2'>
                 <BrowserDots />
                 <span className='truncate rounded-md bg-muted px-2 py-0.5 text-[0.6875rem] text-muted-foreground'>{t(site.domainKey)}</span>
@@ -431,7 +439,7 @@ function ShowcaseSection() {
                 <p className='text-xs font-bold tracking-[0.14em] text-muted-foreground uppercase'>{t(site.typeKey)}</p>
                 <p className='mt-1.5 font-medium'>{t(site.descKey)}</p>
               </div>
-            </li>
+            </Reveal>
           ))}
         </ul>
       </div>
@@ -446,7 +454,7 @@ function CompareSection() {
     <section data-section='compare' className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
       <SectionHeading title={t('landing_compare_title')} />
       {/* One grid of [usual, vib3] cell pairs (not two columns), so each row's cells share a height */}
-      <div className='mx-auto mt-10 grid max-w-3xl grid-cols-2 overflow-hidden rounded-3xl border bg-card shadow-xs'>
+      <Reveal className='mx-auto mt-10 grid max-w-3xl grid-cols-2 overflow-hidden rounded-3xl border bg-card shadow-xs'>
         <div className='border-r p-4 text-sm font-bold text-muted-foreground sm:p-5'>{t('landing_compare_usual')}</div>
         <div className='bg-accent p-4 font-heading text-sm font-bold text-accent-foreground sm:p-5'>{t('landing_compare_vib3', { appName: APP_NAME })}</div>
         {COMPARE_ROWS.map(row => [
@@ -459,7 +467,7 @@ function CompareSection() {
             {t(row.vib3Key)}
           </div>,
         ])}
-      </div>
+      </Reveal>
     </section>
   );
 }
@@ -470,7 +478,7 @@ function FaqSection() {
   return (
     <section data-section='faq' className={cn(LANDING_WIDTH_CLASS, 'pb-20 sm:pb-28')}>
       <SectionHeading title={t('landing_faq_title')} />
-      <div className='mx-auto mt-10 flex max-w-3xl flex-col gap-3'>
+      <Reveal className='mx-auto mt-10 flex max-w-3xl flex-col gap-3'>
         {FAQS.map(faq => (
           // Native <details>: open/close for free, no JS state, and it works with the keyboard.
           <details key={faq.id} data-faqid={faq.id} className='group rounded-2xl border bg-card px-5 py-4 open:shadow-sm'>
@@ -481,7 +489,7 @@ function FaqSection() {
             <p className='mt-3 text-muted-foreground'>{t(faq.answerKey)}</p>
           </details>
         ))}
-      </div>
+      </Reveal>
     </section>
   );
 }
@@ -491,7 +499,7 @@ function FinalCta() {
 
   return (
     <section data-section='final-cta' className={cn(LANDING_WIDTH_CLASS, 'pb-16')}>
-      <div className='relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-primary to-brand-deep px-6 py-12 text-center text-primary-foreground shadow-xl shadow-primary/25 sm:px-12 sm:py-14'>
+      <Reveal className='relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-primary to-brand-deep px-6 py-12 text-center text-primary-foreground shadow-xl shadow-primary/25 sm:px-12 sm:py-14'>
         <div aria-hidden='true' className='pointer-events-none absolute -top-40 -right-40 -z-10 grid size-[480px] place-items-center'>
           {['size-[260px]', 'size-[370px]', 'size-[480px]'].map(sizeClass => (
             <span key={sizeClass} className={cn('absolute rounded-full border border-primary-foreground/15', sizeClass)} />
@@ -503,7 +511,7 @@ function FinalCta() {
           {t('landing_cta_start')}
           <ArrowRightIcon data-icon='inline-end' />
         </LinkButton>
-      </div>
+      </Reveal>
     </section>
   );
 }
@@ -518,7 +526,10 @@ function LandingFooter() {
           <BrandLogo hasWordmark={false} markClassName='h-6' />
           {t('landing_footer_rights', { year: new Date().getFullYear(), appName: APP_NAME })}
         </div>
-        <Link to={PATHS.privacyPolicy} className='hover:text-foreground'>{t('landing_footer_privacy')}</Link>
+        <div className='flex items-center gap-4'>
+          <Link to={PATHS.privacyPolicy} className='hover:text-foreground'>{t('landing_footer_privacy')}</Link>
+          <Link to={PATHS.cookiePolicy} className='hover:text-foreground'>{t('cookie_policy_title')}</Link>
+        </div>
       </div>
     </footer>
   );

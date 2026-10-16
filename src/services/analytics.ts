@@ -5,29 +5,45 @@ import type { User } from 'src/types/user';
 import { getUsername } from 'src/services/user';
 
 // Mixpanel is optional per project: with no token configured every function here is a
-// no-op, so call sites never have to guard. `initAnalytics` is the only thing that
+// no-op, so call sites never have to guard. `setAnalyticsEnabled` is the only thing that
 // decides whether tracking happens at all.
 const _TOKEN = import.meta.env.VITE_MIXPANEL_TOKEN;
 const _PROJECT_NAME = import.meta.env.VITE_PROJECT_NAME;
 
+// _initialized: mixpanel.init has run (it can only run once). _enabled: tracking is currently allowed.
+let _initialized = false;
 let _enabled = false;
 
 type EventProps = Record<string, unknown>;
 
-// Intentions: called once from AppProvider, alongside the other site-wide init.
-function initAnalytics() {
-  if (!_TOKEN) {
+// Intentions: turns tracking on/off to follow the visitor's cookie choice (AppProvider calls it whenever
+// that changes). Mixpanel is only loaded once they allow it. Opting out wipes mixpanel's stored id, and
+// its opt-out flag lives in localStorage too — we use no cookies for analytics, as the cookie policy says.
+function setAnalyticsEnabled(allowed: boolean) {
+  if (!_TOKEN || allowed === _enabled) {
     return;
   }
-  mixpanel.init(_TOKEN, {
-    // We fire page views ourselves on route change — react-router doesn't do full page
-    // loads, so mixpanel's own pageview tracking would only ever see the first one.
-    track_pageview: false,
-    persistence: 'localStorage',
-    debug: import.meta.env.DEV,
-  });
-  _enabled = true;
-  _registerAppContext();
+  if (allowed && !_initialized) {
+    mixpanel.init(_TOKEN, {
+      // We fire page views ourselves on route change — react-router doesn't do full page
+      // loads, so mixpanel's own pageview tracking would only ever see the first one.
+      track_pageview: false,
+      persistence: 'localStorage',
+      opt_out_tracking_persistence_type: 'localStorage',
+      debug: import.meta.env.DEV,
+    });
+    _initialized = true;
+  }
+  if (allowed) {
+    if (mixpanel.has_opted_out_tracking()) {
+      mixpanel.opt_in_tracking();
+    }
+    // Opting out cleared persistence, super properties included, so they're re-added on every opt-in.
+    _registerAppContext();
+  } else {
+    mixpanel.opt_out_tracking();
+  }
+  _enabled = allowed;
 }
 
 // Super properties ride along on every event from here on, including ones mixpanel fires
@@ -74,7 +90,7 @@ function resetAnalytics() {
 }
 
 export {
-  initAnalytics,
+  setAnalyticsEnabled,
   trackEvent,
   identifyUser,
   resetAnalytics,

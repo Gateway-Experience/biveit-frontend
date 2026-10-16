@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import FormField from 'src/components/common/FormField';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import AuthPageLayout from 'src/components/pages/auth/AuthPageLayout';
-import { EMAIL_PATTERN, MIN_PASSWORD_LENGTH } from 'src/components/pages/auth/authForm';
+import { AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN, MIN_PASSWORD_LENGTH } from 'src/components/pages/auth/authForm';
 import { Button } from 'src/components/shadui/button';
 import { Spinner } from 'src/components/common/Spinner';
 import { useStore } from 'src/state-store';
@@ -46,7 +46,7 @@ export default function Register() {
         data: { username: email, password },
       });
       set({ user });
-      navigate(AFTER_REGISTER_PATH);
+      navigate(AFTER_REGISTER_PATH, { replace: true });
     } catch (error) {
       if (_.get(error, 'data.detail') === 'DUPLICATE_USERNAME') {
         setError('email', { message: t('register_email_exists') });
@@ -62,7 +62,7 @@ export default function Register() {
       eyebrow={t('register_eyebrow')}
       title={t('register_title')}
       subtitle={t('register_subtitle')}
-      googleNextPath={AFTER_REGISTER_PATH}
+      nextPath={AFTER_REGISTER_PATH}
       switchPrompt={t('register_have_account')}
       switchLinkLabel={t('register_log_in')}
       switchLinkTo={PATHS.login}
@@ -82,6 +82,7 @@ export default function Register() {
               autoComplete='email'
               placeholder={t('auth_email_placeholder')}
               fullWidth
+              inputClassName={AUTH_INPUT_CLASS}
               value={field.field.value}
               onChange={field.field.onChange}
               error={!_.isNil(_.get(field, 'fieldState.error'))}
@@ -107,6 +108,7 @@ export default function Register() {
               autoComplete='new-password'
               placeholder={t('auth_password_placeholder_new', { count: MIN_PASSWORD_LENGTH })}
               fullWidth
+              inputClassName={AUTH_INPUT_CLASS}
               value={field.field.value}
               onChange={field.field.onChange}
               error={!_.isNil(_.get(field, 'fieldState.error'))}
@@ -129,6 +131,7 @@ export default function Register() {
               autoComplete='new-password'
               placeholder={t('auth_repeat_password_placeholder')}
               fullWidth
+              inputClassName={AUTH_INPUT_CLASS}
               value={field.field.value}
               onChange={field.field.onChange}
               error={!_.isNil(_.get(field, 'fieldState.error'))}
@@ -137,7 +140,7 @@ export default function Register() {
           )}
         />
 
-        <Button type='submit' className='mt-1 w-full' disabled={isSubmitting}>
+        <Button type='submit' className={AUTH_SUBMIT_CLASS} disabled={isSubmitting}>
           {isSubmitting && <Spinner />}
           {t('register_submit')}
         </Button>

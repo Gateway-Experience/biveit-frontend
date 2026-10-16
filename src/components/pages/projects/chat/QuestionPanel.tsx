@@ -10,10 +10,11 @@ import { RadioGroup, RadioGroupItem } from 'src/components/shadui/radio-group';
 import {
   EMPTY_QUESTION_DRAFT, buildSubmissionAnswers, flattenQuestions, isQuestionDraftComplete, type QuestionDraft,
 } from 'src/services/chatQuestions';
+import { CHAT_TEXT_SIZE_CLASS } from 'src/components/pages/projects/chat/chatStyles';
 import type { InteractionAnswer, ToolUseBlock } from 'src/types/chat';
 
 // One option as a full-width clickable row; the radio/checkbox inside carries the checked state.
-const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15 has-disabled:pointer-events-none has-disabled:opacity-60';
+const _OPTION_ROW_CLASS = `flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 ${CHAT_TEXT_SIZE_CLASS} transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15 has-disabled:pointer-events-none has-disabled:opacity-60`;
 
 // Intentions: the agent's questions, one at a time, in place of the chat input (the BE won't take text until
 // they're answered or dismissed). An agent message can hold several `ask_user` calls; their questions run

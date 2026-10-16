@@ -3,9 +3,11 @@ import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { v4 } from 'uuid';
 import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
+import { cn } from 'cn';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
 import ChatAttachment from 'src/components/pages/projects/chat/ChatAttachment';
+import { CHAT_TEXT_SIZE_CLASS } from 'src/components/pages/projects/chat/chatStyles';
 import { AttachmentGroup } from 'src/components/shadui/attachment';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from 'src/components/shadui/input-group';
 import { formatFileSize } from 'src/utils/common';
@@ -157,7 +159,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
           aria-label={t('chat_placeholder')}
           // flex-none: the input-group stacks vertically here, and its default flex-1 would size the textarea
           // from its row count, ignoring the height set by the auto-grow above.
-          className='max-h-48 min-h-0 flex-none px-4 pt-2.5 pb-2 text-sm'
+          className={cn('max-h-48 min-h-0 flex-none px-4 pt-2.5 pb-2', CHAT_TEXT_SIZE_CLASS)}
         />
         {/* pt-0: the gap above the buttons lives in the textarea's pb-2 instead, so that strip is clickable text area. */}
         <InputGroupAddon align='block-end' className='justify-between pt-0'>

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import _ from 'lodash';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ import useDevenvStatus from 'src/components/pages/projects/preview/useDevenvStat
 import useProjectSession from 'src/components/pages/projects/useProjectSession';
 import { Spinner } from 'src/components/common/Spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
+import { getBuildConsoleLines } from 'src/services/buildConsoleScript';
 import { getPreviewState } from 'src/services/devenv';
 import { getProjects } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
@@ -50,8 +51,19 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   const isSideBySide = useMediaQuery(_SIDE_BY_SIDE_QUERY);
   // Until the status is known, assume specing: no preview, no wide layout.
   const previewState = devenv ? getPreviewState(devenv) : 'specing';
+  // The made-up code in the preview while building, about this project (its name, products, description).
+  const buildConsoleLines = useMemo(
+    () => (project ? getBuildConsoleLines(project, activeBuild) : []),
+    [project, activeBuild],
+  );
   const preview = previewState !== 'specing' && (
-    <SitePreview state={previewState} siteUrl={devenv?.preview_url || null} build={activeBuild} className='flex-1' />
+    <SitePreview
+      state={previewState}
+      siteUrl={devenv?.preview_url || null}
+      build={activeBuild}
+      buildConsoleLines={buildConsoleLines}
+      className='flex-1'
+    />
   );
   // Once the user has signed off the site, publishing is on offer from then on, whatever the stage.
   const implementationDoneAt = devenv?.implementation_done_at;

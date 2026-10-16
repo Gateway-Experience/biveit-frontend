@@ -1,12 +1,12 @@
 import _ from 'lodash';
-import { useNavigate, useSearchParams } from 'react-router';
-import { Controller, useForm } from 'react-hook-form';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import FormField from 'src/components/common/FormField';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import AuthPageLayout from 'src/components/pages/auth/AuthPageLayout';
-import { EMAIL_PATTERN } from 'src/components/pages/auth/authForm';
+import { AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN } from 'src/components/pages/auth/authForm';
 import { Button } from 'src/components/shadui/button';
 import { Spinner } from 'src/components/common/Spinner';
 import { useStore } from 'src/state-store';
@@ -48,6 +48,8 @@ export default function Login() {
     mode: 'onSubmit',
     defaultValues: { email: '', password: '' },
   });
+  // Carried over to the forgot-password page so they don't have to type it twice.
+  const typedEmail = useWatch({ control, name: 'email' });
 
   // Show a failed Google sign-in once, then strip `?error=` so a refresh doesn't show it again
   // (`next` is left alone).
@@ -86,7 +88,7 @@ export default function Login() {
     <AuthPageLayout
       pageName='login'
       title={t('login_title')}
-      googleNextPath={nextPath}
+      nextPath={nextPath}
       switchPrompt={t('login_no_account')}
       switchLinkLabel={t('login_create_account')}
       switchLinkTo={PATHS.register}
@@ -106,6 +108,7 @@ export default function Login() {
               autoComplete='email'
               placeholder={t('auth_email_placeholder')}
               fullWidth
+              inputClassName={AUTH_INPUT_CLASS}
               value={field.field.value}
               onChange={field.field.onChange}
               error={!_.isNil(_.get(field, 'fieldState.error'))}
@@ -126,6 +129,7 @@ export default function Login() {
               autoComplete='current-password'
               placeholder={t('auth_password_placeholder_current')}
               fullWidth
+              inputClassName={AUTH_INPUT_CLASS}
               value={field.field.value}
               onChange={field.field.onChange}
               error={!_.isNil(_.get(field, 'fieldState.error'))}
@@ -134,11 +138,18 @@ export default function Login() {
           )}
         />
 
+        <Link
+          to={typedEmail ? `${PATHS.forgotPassword}?${new URLSearchParams({ email: typedEmail })}` : PATHS.forgotPassword}
+          className='-mt-2 self-end text-sm font-medium text-muted-foreground hover:text-foreground hover:underline'
+        >
+          {t('login_forgot_password')}
+        </Link>
+
         {errors.root?.credentials && (
           <p data-loginerror='credentials' className='text-sm text-destructive'>{errors.root.credentials.message}</p>
         )}
 
-        <Button type='submit' className='mt-1 w-full' disabled={isSubmitting}>
+        <Button type='submit' className={AUTH_SUBMIT_CLASS} disabled={isSubmitting}>
           {isSubmitting && <Spinner />}
           {t('login_submit')}
         </Button>

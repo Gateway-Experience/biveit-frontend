@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeftIcon, ExternalLinkIcon, FilesIcon } from 'lucide-react';
+import { ChevronLeftIcon, ClipboardListIcon, ExternalLinkIcon, FilesIcon } from 'lucide-react';
 
 import ArtifactViewer, { ArtifactIcon } from 'src/components/pages/projects/chat/ArtifactViewer';
 import { Button } from 'src/components/shadui/button';
@@ -11,7 +11,15 @@ import { getArtifacts } from 'src/services/chat';
 import { formatFileSize } from 'src/utils/common';
 import type { Artifact } from 'src/types/chat';
 
-// Intentions: the Documents tab — everything the agent has written for this conversation. A list, and
+// Plain-words descriptions of the spec files the agent writes while planning (artifacts/*.md, see the
+// first-time flow). Other files just show their name and size.
+const _SPEC_DESCRIPTION_KEYS: Record<string, string> = {
+  'erd.md': 'artifact_desc_erd',
+  'flows.md': 'artifact_desc_flows',
+  'pages.md': 'artifact_desc_pages',
+};
+
+// Intentions: the Documents ("Site plan") tab — everything the agent has written for this conversation. A list, and
 // tapping one opens it full-size in place (list -> file -> back), which works in a narrow panel too.
 // Which file is open is owned by the parent, since chat cards open files here as well.
 // Always the latest: artifacts are rewritten in place, so the list is refetched on mount and whenever the
@@ -91,6 +99,14 @@ export default function ArtifactsPanel({ conversationId, refreshKey, openPath, o
   return (
     <div className='min-h-0 flex-1 overflow-y-auto'>
       <ItemGroup className='mx-auto w-full max-w-3xl gap-2 px-4 py-6'>
+        {/* What these files are, for people who've never seen a spec: they come from the chat, and the site is built from them. */}
+        <div data-component='artifacts-intro' className='mb-2 flex gap-3 rounded-xl bg-accent/60 p-4 text-sm'>
+          <ClipboardListIcon className='mt-0.5 size-4.5 shrink-0 text-primary' />
+          <div>
+            <p className='font-semibold'>{t('artifacts_intro_title')}</p>
+            <p className='mt-0.5 text-muted-foreground'>{t('artifacts_intro_body')}</p>
+          </div>
+        </div>
         {_.map(artifacts, artifact => (
           <Item
             key={artifact.path}
@@ -102,7 +118,10 @@ export default function ArtifactsPanel({ conversationId, refreshKey, openPath, o
             <ItemMedia variant='icon'><ArtifactIcon mime={artifact.mime} /></ItemMedia>
             <ItemContent className='min-w-0'>
               <ItemTitle className='truncate'>{artifact.title}</ItemTitle>
-              <ItemDescription className='truncate'>{artifact.name} · {formatFileSize(artifact.size)}</ItemDescription>
+              {_SPEC_DESCRIPTION_KEYS[artifact.name] && (
+                <ItemDescription>{t(_SPEC_DESCRIPTION_KEYS[artifact.name])}</ItemDescription>
+              )}
+              <ItemDescription className='truncate text-xs'>{artifact.name} · {formatFileSize(artifact.size)}</ItemDescription>
             </ItemContent>
           </Item>
         ))}
