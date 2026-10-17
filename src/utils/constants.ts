@@ -27,6 +27,19 @@ const MAIN_CONTENT_WIDTH_CLASS = 'max-w-4xl';
 const SIDEBAR_WIDTH_PX = { default: 256, min: 208, max: 480 };
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar_width';
 
+// What VibeIt costs, in USD — the one place prices live (formatted for display by services/pricing). Every
+// screen that mentions a price reads it from here: the Pricing page, the Deploy tab, Help, the landing FAQ.
+//   publishPrice     the regular one-time price to publish a site
+//   salePublishPrice what it's sold for while there's a sale; null = no sale, publishPrice applies
+//   monthlyPrice     charged every month after that
+//   freeDomainBelow  a domain costing less than this is included free
+const PRICING = {
+  publishPrice: 49,
+  salePublishPrice: 39 as number | null,
+  monthlyPrice: 9,
+  freeDomainBelow: 10,
+};
+
 const PATHS = {
   login: '/login',
   register: '/register',
@@ -37,12 +50,14 @@ const PATHS = {
   cookiePolicy: '/cookie-policy',
   projects: '/projects',
   newProject: '/projects/new',
+  pricing: '/pricing',
 };
 
 export {
   APP_NAME,
   USER_TYPES,
   PATHS,
+  PRICING,
   MAIN_CONTENT_WIDTH_CLASS,
   SIDEBAR_WIDTH_PX,
   SIDEBAR_WIDTH_STORAGE_KEY,

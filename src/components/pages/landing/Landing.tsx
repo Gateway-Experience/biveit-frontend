@@ -22,6 +22,7 @@ import {
 import PerfumeBottleIcon from 'src/components/pages/landing/PerfumeBottleIcon';
 import { APP_NAME, PATHS } from 'src/utils/constants';
 import type { ArtIcon } from 'src/types/landing';
+import { getPriceLabels } from 'src/services/pricing';
 
 // The landing page runs wider than the app's content column (MAIN_CONTENT_WIDTH_CLASS).
 const LANDING_WIDTH_CLASS = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
@@ -108,6 +109,8 @@ const FAQS = [
   { id: 'unsure', questionKey: 'landing_faq_unsure_q', answerKey: 'landing_faq_unsure_a' },
   { id: 'changes', questionKey: 'landing_faq_changes_q', answerKey: 'landing_faq_changes_a' },
   { id: 'hosting', questionKey: 'landing_faq_hosting_q', answerKey: 'landing_faq_hosting_a' },
+  // Takes the price params (services/pricing), like every text that mentions a price.
+  { id: 'cost', questionKey: 'landing_faq_cost_q', answerKey: 'landing_faq_cost_a' },
 ];
 
 // Static decoration behind a section: soft brand-coloured glows and a few faint concentric rings in the
@@ -165,6 +168,9 @@ function LandingHeader() {
           <BrandLogo />
         </Link>
         <div className='flex items-center gap-1 sm:gap-2'>
+          <Link to={PATHS.pricing} className='rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground'>
+            {t('pricing_nav')}
+          </Link>
           <LanguageSelector />
           <LinkButton href={START_PATH} size='sm' className={BRAND_BUTTON_CLASS}>{t('landing_nav_start')}</LinkButton>
         </div>
@@ -473,7 +479,8 @@ function CompareSection() {
 }
 
 function FaqSection() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const prices = getPriceLabels(i18n.language);
 
   return (
     <section data-section='faq' className={cn(LANDING_WIDTH_CLASS, 'pb-20 sm:pb-28')}>
@@ -486,7 +493,7 @@ function FaqSection() {
               {t(faq.questionKey)}
               <ChevronDownIcon className='size-4 shrink-0 text-brand-strong transition-transform group-open:rotate-180' />
             </summary>
-            <p className='mt-3 text-muted-foreground'>{t(faq.answerKey)}</p>
+            <p className='mt-3 text-muted-foreground'>{t(faq.answerKey, prices)}</p>
           </details>
         ))}
       </Reveal>
@@ -527,6 +534,7 @@ function LandingFooter() {
           {t('landing_footer_rights', { year: new Date().getFullYear(), appName: APP_NAME })}
         </div>
         <div className='flex items-center gap-4'>
+          <Link to={PATHS.pricing} className='hover:text-foreground'>{t('pricing_nav')}</Link>
           <Link to={PATHS.privacyPolicy} className='hover:text-foreground'>{t('landing_footer_privacy')}</Link>
           <Link to={PATHS.cookiePolicy} className='hover:text-foreground'>{t('cookie_policy_title')}</Link>
         </div>

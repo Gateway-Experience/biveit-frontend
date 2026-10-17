@@ -1,16 +1,20 @@
 import _ from 'lodash';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { CheckIcon, RocketIcon } from 'lucide-react';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
+import PriceTag from 'src/components/common/PriceTag';
 import { Button } from 'src/components/shadui/button';
 import { DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
+import { getPriceLabels } from 'src/services/pricing';
+import { PATHS } from 'src/utils/constants';
 
-// What publishing gets them. Keys of i18nMappings.
-// TODO: placeholder content — the price (a one-time payment) and what's included aren't final yet, and there's no
-// payment/deployment API. Swap in the real ones (and wire the button) once they exist.
-const _PLAN_FEATURE_KEYS = ['deploy_feature_live', 'deploy_feature_address', 'deploy_feature_hosting', 'deploy_feature_changes'];
+// What publishing gets them — the same list as the Pricing page. Keys of i18nMappings; they take the price
+// params (see services/pricing).
+// TODO: there's no payment/deployment API yet. Wire the button once there is.
+const _PLAN_FEATURE_KEYS = ['deploy_feature_live', 'pricing_feature_domain', 'deploy_feature_hosting', 'deploy_feature_changes'];
 
 // The celebration's blocks come in one after another, once the pop-up itself has risen into place.
 // `both` keeps each one hidden during its delay instead of flashing in first.
@@ -33,8 +37,9 @@ export default function DeployPanel({ variant = 'tab', onShowCelebration, classN
   onShowCelebration?: () => void;
   className?: string;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const notify = useNotification();
+  const prices = getPriceLabels(i18n.language);
   const isCelebration = variant === 'celebration';
   // Each block's entrance, only when celebrating.
   const enter = (order: number) => (isCelebration ? { className: _ENTER_CLASS, style: _getEnterStyle(order) } : {});
@@ -67,14 +72,12 @@ export default function DeployPanel({ variant = 'tab', onShowCelebration, classN
 
         <div {...enter(2)}>
           <div className='rounded-2xl border bg-card p-5'>
-            {/* A one-off price, not a subscription. */}
-            <p className='font-heading text-lg font-bold'>{t('deploy_plan_headline', { price: t('deploy_plan_price') })}</p>
-            <p className='mt-0.5 text-sm text-muted-foreground'>{t('deploy_plan_one_time')}</p>
+            <PriceTag />
             <ul className='mt-4 flex flex-col gap-2.5 text-sm'>
               {_.map(_PLAN_FEATURE_KEYS, key => (
                 <li key={key} className='flex items-start gap-2.5'>
                   <CheckIcon className='mt-0.5 size-4 shrink-0 text-ring' />
-                  {t(key)}
+                  {t(key, prices)}
                 </li>
               ))}
             </ul>
@@ -82,6 +85,10 @@ export default function DeployPanel({ variant = 'tab', onShowCelebration, classN
             <Button size='lg' className='mt-5 w-full' onClick={() => notify('info', t('deploy_coming_soon'))}>
               {t('deploy_cta')}
             </Button>
+            {/* A new tab: this sits in the project workspace (or its celebration pop-up), which shouldn't be left. */}
+            <Link to={PATHS.pricing} target='_blank' className='mt-3 block text-center text-xs text-muted-foreground hover:text-foreground hover:underline'>
+              {t('pricing_see_details')}
+            </Link>
           </div>
         </div>
 

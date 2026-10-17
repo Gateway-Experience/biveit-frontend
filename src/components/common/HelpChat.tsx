@@ -8,6 +8,7 @@ import { Button } from 'src/components/shadui/button';
 import { Input } from 'src/components/shadui/input';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from 'src/components/shadui/sheet';
 import { HELP_TOPICS, findHelpTopic } from 'src/services/helpTopics';
+import { getPriceLabels } from 'src/services/pricing';
 
 // What's been said in the help chat. Answers keep the topic id, not the text, so switching language
 // re-words the whole conversation.
@@ -21,7 +22,7 @@ const _BUBBLE_CLASS = 'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-rel
 // list of what it can help with. Lives in a side sheet so it can be opened from anywhere.
 // Original purpose: user feedback asked for a "chat button to ask how to use the website".
 export default function HelpChat({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [entries, setEntries] = useState<HelpEntry[]>([]);
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
@@ -30,7 +31,7 @@ export default function HelpChat({ open, onOpenChange }: { open: boolean; onOpen
   const topics = HELP_TOPICS.map(topic => ({
     ...topic,
     question: t(`help_q_${topic.id}`),
-    answer: t(`help_a_${topic.id}`, { price: t('deploy_plan_price') }),
+    answer: t(`help_a_${topic.id}`, getPriceLabels(i18n.language)),
   }));
 
   useEffect(() => {

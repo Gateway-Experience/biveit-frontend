@@ -6,7 +6,7 @@ import { cn } from 'cn';
 import {
   CheckIcon, ChevronRightIcon, ChevronsUpDownIcon, EllipsisIcon, FolderIcon, FolderInputIcon, FolderMinusIcon,
   FolderPlusIcon, HouseIcon, LifeBuoyIcon, LogInIcon, LogOutIcon, PencilIcon, PinIcon, PinOffIcon, PlusIcon,
-  SearchIcon, Trash2Icon, UserIcon, UserPlusIcon,
+  SearchIcon, TagIcon, Trash2Icon, UserIcon, UserPlusIcon,
 } from 'lucide-react';
 
 import BrandLogo from 'src/components/common/BrandLogo';
@@ -448,17 +448,30 @@ export default function AppSidebar({ onResized }: { onResized: (width: number) =
                 </>
               )
               : (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={location.pathname === '/'}
-                    tooltip={t('nav_home')}
-                    render={<Link to='/' onClick={closeIfMobile} />}
-                    className={_ITEM_TEXT_CLASS}
-                  >
-                    <HouseIcon />
-                    <span>{t('nav_home')}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location.pathname === '/'}
+                      tooltip={t('nav_home')}
+                      render={<Link to='/' onClick={closeIfMobile} />}
+                      className={_ITEM_TEXT_CLASS}
+                    >
+                      <HouseIcon />
+                      <span>{t('nav_home')}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location.pathname === PATHS.pricing}
+                      tooltip={t('pricing_nav')}
+                      render={<Link to={PATHS.pricing} onClick={closeIfMobile} />}
+                      className={_ITEM_TEXT_CLASS}
+                    >
+                      <TagIcon />
+                      <span>{t('pricing_nav')}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
           </SidebarMenu>
         </SidebarGroup>

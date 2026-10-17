@@ -11,6 +11,7 @@ import ForgotPassword from 'src/components/pages/auth/ForgotPassword';
 import ResetPassword from 'src/components/pages/auth/ResetPassword';
 import PrivacyPolicy from 'src/components/pages/PrivacyPolicy';
 import CookiePolicy from 'src/components/pages/CookiePolicy';
+import Pricing from 'src/components/pages/Pricing';
 import { PATHS } from 'src/utils/constants';
 import ShowCase from 'src/components/pages/ShowCase';
 import Landing from 'src/components/pages/landing/Landing';
@@ -43,6 +44,7 @@ function AppRoutes() {
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path={PATHS.privacyPolicy} element={<PrivacyPolicy />} />
         <Route path={PATHS.cookiePolicy} element={<CookiePolicy />} />
+        <Route path={PATHS.pricing} element={<Pricing />} />
         <Route path='/showcase' element={<ShowCase />} />
       </Route>
       <Route element={<DefaultLayout isWorkspace />}>
