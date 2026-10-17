@@ -15,6 +15,7 @@ import { Input } from 'src/components/shadui/input';
 import { Label } from 'src/components/shadui/label';
 import { Spinner } from 'src/components/common/Spinner';
 import { createProject } from 'src/services/project';
+import { useProjectListUpdaters } from 'src/components/pages/projects/useProjectLists';
 import { PATHS } from 'src/utils/constants';
 
 // The site kinds offered up front. Values are what the agent reads, so they stay in English; the labels
@@ -35,6 +36,12 @@ const _SHEET_CLASS = 'fixed inset-0 z-50 overflow-y-auto bg-card px-4 py-16 outl
 // Each block of the form fades up a beat after the one before, once the sheet is in. `both` keeps a block
 // hidden during its delay instead of flashing in first.
 const _ENTER_CLASS = 'animate-in fade-in-0 slide-in-from-bottom-3 duration-500 ease-out [animation-fill-mode:both]';
+
+// The description only needs to get the agent started; it asks about everything else in the chat. Some people
+// worry they have to put the whole site in here, so past the soft limit the hint turns into a friendly "that's
+// plenty", and the hard limit keeps a pasted essay out of the agent's opening brief.
+const _DESCRIPTION_SOFT_LIMIT = 600;
+const _DESCRIPTION_MAX_LENGTH = 4000;
 
 // [Pure]
 function _getEnterDelayStyle(order: number) {
@@ -61,6 +68,7 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
   const { t } = useTranslation();
   const notify = useNotification();
   const navigate = useNavigate();
+  const { reloadProjects } = useProjectListUpdaters();
   const { control, handleSubmit, formState: { isSubmitting } } = useForm<NewProjectFormValues>({
     mode: 'onSubmit',
     defaultValues: { name: '', description: '', siteKinds: [], otherSiteKind: '' },
@@ -75,6 +83,8 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
           site_kinds: _.compact([...values.siteKinds, _.trim(values.otherSiteKind)]),
         },
       });
+      // The sidebar's recents should have it. Not awaited: the project page doesn't need the list.
+      reloadProjects();
       // Replace: going back from the new project shouldn't land on a form that's already been sent.
       navigate(`${PATHS.projects}/${project.id}`, { replace: true });
     } catch {
@@ -129,12 +139,22 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
                       placeholder={t('new_project_description_placeholder')}
                       multiline
                       minRows={6}
+                      maxLength={_DESCRIPTION_MAX_LENGTH}
                       fullWidth
                       disabled={isSubmitting}
                       value={field.value}
                       onChange={field.onChange}
                       error={!_.isNil(fieldState.error)}
-                      helperText={fieldState.error?.message || t('new_project_description_help')}
+                      helperText={fieldState.error?.message || (
+                        _.size(field.value) > _DESCRIPTION_SOFT_LIMIT
+                          ? (
+                            <span data-hint='plenty' className='flex justify-between gap-3 text-brand-strong'>
+                              {t('new_project_description_plenty')}
+                              <span className='shrink-0 text-muted-foreground tabular-nums'>{_.size(field.value)} / {_DESCRIPTION_MAX_LENGTH}</span>
+                            </span>
+                          )
+                          : t('new_project_description_help')
+                      )}
                     />
                   )}
                 />

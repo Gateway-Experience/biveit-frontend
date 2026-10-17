@@ -118,6 +118,7 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
               projectId={project.id}
               chat={chat}
               onRetrySession={session.retry}
+              isRetryingSession={session.isRetrying}
               preview={hasSidePanel ? null : preview}
               isPreviewBuilding={!!activeBuild}
               deploy={hasSidePanel ? null : deploy}

@@ -63,7 +63,7 @@ function PromptCard({ className }: { className?: string }) {
   return (
     <div className={cn(SNAPSHOT_CARD_CLASS, 'p-4', className)}>
       <p className='flex items-center gap-1.5 text-xs font-semibold text-muted-foreground'>
-        <SparklesIcon className='size-3.5 text-primary' />
+        <SparklesIcon className='size-3.5 text-brand-strong' />
         {t('landing_hero_prompt_label')}
       </p>
       <p className='mt-2 rounded-xl border bg-background px-3 py-2.5 text-sm'>
@@ -71,7 +71,7 @@ function PromptCard({ className }: { className?: string }) {
         <span className='ml-0.5 inline-block h-4 w-0.5 translate-y-0.5 bg-primary' />
       </p>
       <div className='mt-3 flex justify-end'>
-        <span className='inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-brand-light via-primary to-brand-deep px-3.5 py-1.5 text-xs font-semibold text-primary-foreground'>
+        <span className='inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground'>
           <WandSparklesIcon className='size-3.5' />
           {t('landing_hero_prompt_send')}
         </span>
@@ -80,7 +80,7 @@ function PromptCard({ className }: { className?: string }) {
   );
 }
 
-// Intentions: the payoff, the finished site in a browser on its own (live) address. A "Vib3" cursor is
+// Intentions: the payoff, the finished site in a browser on its own (live) address. A "VibeIt" cursor is
 // still at work on it, so it reads as a site that got built for you, not a stock screenshot.
 function GeneratedSiteWindow({ className }: { className?: string }) {
   const { t } = useTranslation();
@@ -103,7 +103,7 @@ function GeneratedSiteWindow({ className }: { className?: string }) {
           <MotoRentalSite />
         </ScaledFrame>
         <span className='absolute top-[13%] left-[47%] flex items-start'>
-          <MousePointer2Icon className='size-5 fill-primary text-primary' />
+          <MousePointer2Icon className='size-5 fill-brand-strong text-brand-strong' />
           <span className='mt-4 -ml-1 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-md'>
             <SparklesIcon className='size-3' />
             {APP_NAME}
@@ -121,7 +121,7 @@ function BuildProgressCard({ className }: { className?: string }) {
   return (
     <div className={cn(SNAPSHOT_CARD_CLASS, 'p-4', className)}>
       <div className='flex items-center gap-2.5'>
-        <span className='grid size-8 place-items-center rounded-lg bg-linear-to-br from-brand-light to-brand-deep text-primary-foreground'>
+        <span className='grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground'>
           <WandSparklesIcon className='size-4' />
         </span>
         <span className='flex-1 text-sm font-semibold'>{t('landing_build_card_title')}</span>
@@ -130,12 +130,12 @@ function BuildProgressCard({ className }: { className?: string }) {
       <ul className='mt-3 flex flex-col gap-2 text-sm'>
         {BUILD_STEP_KEYS.map(stepKey => (
           <li key={stepKey} className='flex items-center gap-2'>
-            <CircleCheckIcon className='size-4 shrink-0 text-primary' />
+            <CircleCheckIcon className='size-4 shrink-0 text-brand-strong' />
             {t(stepKey)}
           </li>
         ))}
       </ul>
-      <div className='mt-3 h-1.5 rounded-full bg-linear-to-r from-brand-light via-primary to-brand-deep' />
+      <div className='mt-3 h-1.5 rounded-full bg-linear-to-r from-brand-light via-brand-strong to-brand-deep' />
     </div>
   );
 }

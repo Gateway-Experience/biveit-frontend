@@ -11,9 +11,28 @@ export type Project = {
   // The bootstrap form's answers ({} for projects from before the form). See ProjectBootstrapData.
   bootstrap_data: Record<string, unknown>;
   meta: Record<string, unknown>;
+  // When the user pinned it to the top of the sidebar; null = not pinned.
+  pinned_at: string | null;
+  // The sidebar folder it's filed under. Can point at a deleted folder, which counts as none — so group by
+  // the live folder list, never by this alone.
+  folder_id: number | null;
   created_at: string;
-  // "Last edited" — the list comes sorted by it, newest first.
+  // "Last edited" — the list comes sorted by it, newest first. Pinning and filing don't change it.
   updated_at: string;
+};
+
+// What PATCH /projects/{id} takes: any of these, only what changes. folder_id null = out of its folder.
+export type ProjectChanges = {
+  name?: string;
+  is_pinned?: boolean;
+  folder_id?: number | null;
+};
+
+// A folder the user groups projects into in the sidebar (vib3-backend dto/projects.py ProjectFolder).
+export type ProjectFolder = {
+  id: number;
+  name: string;
+  created_at: string;
 };
 
 // The bootstrap form's answers. Stored by the BE as-is and handed to the agent as its starting brief (as
@@ -29,4 +48,10 @@ export type ProjectBootstrapData = {
 export type CreateProjectBody = {
   name: string;
   bootstrap_data: ProjectBootstrapData;
+};
+
+// GET /projects/search: a project where the user wrote the query while prompting, with the bit around it.
+export type ProjectPromptMatch = {
+  project_id: number;
+  excerpt: string;
 };

@@ -34,7 +34,7 @@ type AuthPageLayoutProps = {
 // Intentions: the shared page for /login and /register, split in two. On the left, the form column: brand
 // (linking back to the landing page), title, Google, "or", the page's own form, then the link to the other
 // auth page and the policies line. On the right (wide screens only), a showcase panel that reminds people
-// what they're signing in for: a prompt box asking Vib3 to build something.
+// what they're signing in for: a prompt box asking VibeIt to build something.
 export default function AuthPageLayout({
   pageName, title, eyebrow, subtitle, nextPath, hasGoogleSignIn = true, switchPrompt, switchLinkLabel, switchLinkTo, children,
 }: AuthPageLayoutProps) {
@@ -107,7 +107,7 @@ const SHOWCASE_PROMPT_KEYS = ['auth_showcase_prompt_1', 'auth_showcase_prompt_2'
 
 // The right-hand panel: a dark-to-brand gradient (built from theme tokens, so no image to load) with a
 // prompt box in the middle where business ideas type themselves out one after another, as if someone
-// were asking Vib3 for a site right now.
+// were asking VibeIt for a site right now.
 function AuthShowcasePanel() {
   const { t } = useTranslation();
   const typed = useTypewriter(SHOWCASE_PROMPT_KEYS.map(promptKey => t(promptKey)));
@@ -119,7 +119,7 @@ function AuthShowcasePanel() {
         style={{
           backgroundImage: [
             'radial-gradient(85% 50% at 50% 105%, var(--brand-light) 0%, transparent 70%)',
-            'radial-gradient(130% 85% at 50% 100%, var(--primary) 0%, transparent 72%)',
+            'radial-gradient(130% 85% at 50% 100%, var(--brand-strong) 0%, transparent 72%)',
             'radial-gradient(170% 115% at 50% 100%, var(--brand-deep) 0%, transparent 78%)',
           ].join(', '),
         }}

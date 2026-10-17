@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } fro
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
+import { TriangleAlertIcon } from 'lucide-react';
 
 import { Marker, MarkerContent, MarkerIcon } from 'src/components/shadui/marker';
 import {
@@ -17,7 +18,8 @@ import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
 import ChatMessageItem, { hasVisibleContent, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
 import QuestionPanel from 'src/components/pages/projects/chat/QuestionPanel';
 import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
-import { indexToolResults, indexToolUses } from 'src/services/chatLog';
+import { getArtifacts } from 'src/services/chat';
+import { getAnsweredQuestions, indexToolResults, indexToolUses } from 'src/services/chatLog';
 import type { ChatIntroState } from 'src/types/chat';
 
 // Readable column inside a box of any width. Shared by the transcript and the composer so they line up.
@@ -39,7 +41,7 @@ function ChatSetupState({ introState, onRetry }: { introState: ChatIntroState; o
   if (introState === 'setting-up') {
     return (
       <div className='flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center animate-in fade-in-0 duration-500'>
-        <Spinner className='size-6 text-primary' />
+        <Spinner className='size-6 text-brand-strong' />
         <p className='font-medium'>{t('chat_setting_up')}</p>
         <p className='max-w-xs text-sm text-muted-foreground'>{t('chat_setting_up_hint')}</p>
       </div>
@@ -56,6 +58,24 @@ function ChatSetupState({ introState, onRetry }: { introState: ChatIntroState; o
   return null;
 }
 
+// Intentions: the chat can't reach the agent, and here's the one button that fixes it — instead of leaving the
+// user to guess (people typed "retry" into the chat). Two cases: a message that was stored but didn't get
+// through (try again = hand it over again), and the project failing to open with the chat already going
+// (try again = open it again).
+function ChatRetryBanner({ messageKey, isRetrying, onRetry }: { messageKey: string; isRetrying: boolean; onRetry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div role='alert' data-component='chat-retry' className='mb-2 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm animate-in fade-in-0'>
+      <TriangleAlertIcon className='size-4 shrink-0 text-destructive' />
+      <p className='flex-1'>{t(messageKey)}</p>
+      <Button size='sm' variant='outline' disabled={isRetrying} onClick={onRetry} className='shrink-0 bg-card'>
+        {isRetrying && <Spinner data-icon='inline-start' />}
+        {t('chat_setup_retry')}
+      </Button>
+    </div>
+  );
+}
+
 // The send path, wrapped so that sending also jumps to the latest (you'll want to see your own message
 // even if you'd scrolled up). Lives inside the scroller's provider so it can reach `scrollToEnd`.
 type SendText = (text: string, attachmentPaths?: string[]) => Promise<boolean>;
@@ -66,6 +86,22 @@ function useSendAndFollow(sendText: SendText): SendText {
     scrollToEnd({ behavior: 'smooth' });
     return sendText(text, attachmentPaths);
   };
+}
+
+// Ways out of the agent's questions that also say something (see QuestionPanel): dismiss, then send `text`,
+// following the chat to the end like any send.
+function QuestionPanelWithSend({ sendText, submitAnswers, ...panelProps }: Omit<ComponentProps<typeof QuestionPanel>, 'onSubmit' | 'onDismissAndSay'> & {
+  sendText: SendText;
+  submitAnswers: ComponentProps<typeof QuestionPanel>['onSubmit'];
+}) {
+  const sendAndFollow = useSendAndFollow(sendText);
+  return (
+    <QuestionPanel
+      onSubmit={submitAnswers}
+      onDismissAndSay={async (answers, text) => (await submitAnswers(answers)) && sendAndFollow(text)}
+      {...panelProps}
+    />
+  );
 }
 
 function ChatComposerWithSend({ sendText, ...composerProps }: Omit<ComponentProps<typeof ChatComposer>, 'onSend'> & { sendText: SendText }) {
@@ -119,11 +155,12 @@ type AgentChatTab = 'chat' | 'documents' | 'preview' | 'deploy';
 // given, as a tab of its own — for screens too narrow to show it beside the chat. Deploy = likewise
 // `deploy`, once there's a finished site to publish.
 // The chat's state comes from the parent (`useAgentChat`), which also needs it to lay the page out.
-export default function AgentChat({ projectId, chat, onRetrySession, preview, isPreviewBuilding = false, deploy, className }: {
+export default function AgentChat({ projectId, chat, onRetrySession, isRetryingSession = false, preview, isPreviewBuilding = false, deploy, className }: {
   projectId: number;
   chat: ReturnType<typeof useAgentChat>;
-  // Opens the project again after it failed to (see useProjectSession).
+  // Opens the project again after it failed to (see useProjectSession), and whether that's under way.
   onRetrySession: () => void;
+  isRetryingSession?: boolean;
   preview?: ReactNode;
   // The agent is building the site: the Preview tab gets a twinkle so it's noticed from the chat.
   isPreviewBuilding?: boolean;
@@ -134,6 +171,7 @@ export default function AgentChat({ projectId, chat, onRetrySession, preview, is
   const {
     conversationId, latestAssistantSeq, messages, introState, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting,
     sendText, submitAnswers, uploadFiles, getFileUrl, loadOlderMessages, isLoadingOlder, hasLoadOlderFailed, hasOlder,
+    hasUndeliveredMessage, resendUndelivered, isResending, isSessionDown,
   } = chat;
   const [selectedTab, setSelectedTab] = useState<AgentChatTab>('chat');
   // Preview and Deploy can go away while selected (e.g. the window got wider and they moved beside the
@@ -141,6 +179,23 @@ export default function AgentChat({ projectId, chat, onRetrySession, preview, is
   const activeTab = (selectedTab === 'preview' && !preview) || (selectedTab === 'deploy' && !deploy) ? 'chat' : selectedTab;
   // The artifact open in the Documents tab; null = showing the list.
   const [openArtifactPath, setOpenArtifactPath] = useState<string | null>(null);
+  // Names of the agent's documents so far: the question panel's encouragement follows the planning progress.
+  // Re-read whenever the agent says something new, since that's when a document can appear.
+  const [specDocNames, setSpecDocNames] = useState<string[]>([]);
+  useEffect(() => {
+    if (!conversationId) {
+      return;
+    }
+    let isStale = false;
+    getArtifacts(conversationId)
+      .then(artifacts => !isStale && setSpecDocNames(_.map(artifacts, 'name')))
+      // Only for encouragement: without it, the panel simply says less.
+      .catch(_.noop);
+    return () => {
+      isStale = true;
+    };
+  }, [conversationId, latestAssistantSeq]);
+  const answeredQuestions = useMemo(() => getAnsweredQuestions(messages || []), [messages]);
   // One thing at a time: no sending while history loads, a message is in flight, or the agent is replying.
   // "Replying" is inferred (see isAgentPresumedWorking) and only ever for a message this tab sent: if that
   // reply never comes, it stays locked until a refresh — older or failed messages never lock it.
@@ -234,8 +289,21 @@ export default function AgentChat({ projectId, chat, onRetrySession, preview, is
             {/* While the agent waits on an answer, the question takes the input's place (the BE refuses text
                 until then). The composer stays mounted underneath, just hidden, so a half-typed message and
                 its uploaded files are still there once the question is answered or dismissed. */}
+            {hasUndeliveredMessage && (
+              <ChatRetryBanner messageKey='chat_delivery_failed' isRetrying={isResending} onRetry={resendUndelivered} />
+            )}
+            {(isSessionDown || (isRetryingSession && introState === 'started')) && (
+              <ChatRetryBanner messageKey='chat_session_down' isRetrying={isRetryingSession} onRetry={onRetrySession} />
+            )}
             {!_.isEmpty(pendingInteractions) && (
-              <QuestionPanel key={_.map(pendingInteractions, 'id').join(',')} interactions={pendingInteractions} onSubmit={submitAnswers} />
+              <QuestionPanelWithSend
+                key={_.map(pendingInteractions, 'id').join(',')}
+                interactions={pendingInteractions}
+                submitAnswers={submitAnswers}
+                sendText={sendText}
+                answeredQuestions={answeredQuestions}
+                specDocNames={specDocNames}
+              />
             )}
             <div hidden={!_.isEmpty(pendingInteractions)}>
               <ChatComposerWithSend

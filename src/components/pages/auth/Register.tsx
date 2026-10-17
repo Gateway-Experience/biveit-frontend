@@ -6,7 +6,9 @@ import { useTranslation } from 'react-i18next';
 import FormField from 'src/components/common/FormField';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import AuthPageLayout from 'src/components/pages/auth/AuthPageLayout';
-import { AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN, MIN_PASSWORD_LENGTH } from 'src/components/pages/auth/authForm';
+import {
+  AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN, MIN_PASSWORD_LENGTH, NAME_MAX_LENGTH,
+} from 'src/components/pages/auth/authForm';
 import { Button } from 'src/components/shadui/button';
 import { Spinner } from 'src/components/common/Spinner';
 import { useStore } from 'src/state-store';
@@ -14,6 +16,8 @@ import { callBe } from 'src/utils/request';
 import { PATHS } from 'src/utils/constants';
 
 type RegisterFormValues = {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   repeatPassword: string;
@@ -33,17 +37,17 @@ export default function Register() {
 
   const { control, handleSubmit, getValues, setError, formState: { isSubmitting } } = useForm<RegisterFormValues>({
     mode: 'onSubmit',
-    defaultValues: { email: '', password: '', repeatPassword: '' },
+    defaultValues: { firstName: '', lastName: '', email: '', password: '', repeatPassword: '' },
   });
 
-  const registerWithEmail = async ({ email, password }: RegisterFormValues) => {
+  const registerWithEmail = async ({ firstName, lastName, email, password }: RegisterFormValues) => {
     try {
       // The BE contract calls it `username`; for us it's always the email. The BE sets the session as
       // an httpOnly cookie, so the `token` in the body is ignored on purpose.
       const { user } = await callBe({
         url: '/user/register',
         method: 'POST',
-        data: { username: email, password },
+        data: { username: email, password, first_name: _.trim(firstName), last_name: _.trim(lastName) },
       });
       set({ user });
       navigate(AFTER_REGISTER_PATH, { replace: true });
@@ -68,6 +72,44 @@ export default function Register() {
       switchLinkTo={PATHS.login}
     >
       <form noValidate onSubmit={handleSubmit(registerWithEmail)} className='flex flex-col gap-4'>
+        {/* What the app calls them from then on (instead of their email). Last name is optional: not
+            everyone has one. */}
+        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+          <Controller
+            name='firstName'
+            control={control}
+            rules={{ validate: value => !_.isEmpty(_.trim(value)) || t('auth_first_name_required') }}
+            render={({ field, fieldState }) => (
+              <FormField
+                label={t('auth_first_name_label')}
+                autoComplete='given-name'
+                maxLength={NAME_MAX_LENGTH}
+                fullWidth
+                inputClassName={AUTH_INPUT_CLASS}
+                value={field.value}
+                onChange={field.onChange}
+                error={!_.isNil(fieldState.error)}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+          <Controller
+            name='lastName'
+            control={control}
+            render={({ field }) => (
+              <FormField
+                label={t('auth_last_name_label')}
+                autoComplete='family-name'
+                maxLength={NAME_MAX_LENGTH}
+                fullWidth
+                inputClassName={AUTH_INPUT_CLASS}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </div>
+
         <Controller
           name='email'
           control={control}

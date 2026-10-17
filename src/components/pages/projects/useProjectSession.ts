@@ -29,5 +29,6 @@ export default function useProjectSession(projectId: number, options: { onReady?
     };
   }, [projectId, attemptCount, onReady]);
 
-  return { status, retry };
+  // A retry the user asked for is under way (as opposed to the first open of the visit).
+  return { status, retry, isRetrying: status === 'opening' && attemptCount > 0 };
 }

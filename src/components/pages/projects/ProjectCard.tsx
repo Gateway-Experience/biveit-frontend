@@ -2,7 +2,12 @@ import _ from 'lodash';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
+import { EllipsisIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 
+import { Button } from 'src/components/shadui/button';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from 'src/components/shadui/dropdown-menu';
 import { choose, formatRelativeTime } from 'src/utils/common';
 import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
@@ -81,33 +86,82 @@ function ProjectPreviewPlaceholder({ projectId }: { projectId: number }) {
   );
 }
 
-export default function ProjectCard({ project }: { project: Project }) {
+// The card's "⋯" menu. A sibling of the card's link, not inside it: a button nested in a link would open the
+// project on every click. On wide screens it shows on hover (or focus); on touch screens there's no hover,
+// so it's always there.
+function ProjectCardMenu({ project, onRename, onDelete }: {
+  project: Project;
+  onRename: (project: Project) => void;
+  onDelete: (project: Project) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={t('project_menu')}
+        render={(
+          <Button
+            variant='outline'
+            size='icon-sm'
+            className={cn(
+              'absolute top-2.5 right-2.5 z-10 rounded-full bg-card/90 shadow-sm backdrop-blur-sm',
+              'sm:opacity-0 sm:group-hover/projectcard:opacity-100 sm:focus-visible:opacity-100 sm:data-popup-open:opacity-100',
+            )}
+          />
+        )}
+      >
+        <EllipsisIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' className='w-auto min-w-0'>
+        <DropdownMenuItem onClick={() => onRename(project)}>
+          <PencilIcon />
+          {t('project_menu_rename')}
+        </DropdownMenuItem>
+        <DropdownMenuItem variant='destructive' onClick={() => onDelete(project)}>
+          <Trash2Icon />
+          {t('project_menu_delete')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// `onRename` / `onDelete`: the card's menu asks; the list owns the dialogs (see ProjectActionDialogs).
+export default function ProjectCard({ project, onRename, onDelete }: {
+  project: Project;
+  onRename: (project: Project) => void;
+  onDelete: (project: Project) => void;
+}) {
   const { t, i18n } = useTranslation();
 
   return (
-    // A real link (not LinkButton) so middle-click / cmd-click open the project in a new tab for free.
-    <Link
-      to={`${PATHS.projects}/${project.id}`}
-      data-projectid={project.id}
-      className={cn(
-        'group flex flex-col overflow-hidden rounded-2xl bg-card text-card-foreground ring-1 ring-foreground/10',
-        'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary',
-        'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-      )}
-    >
-      <div className='aspect-[16/10] overflow-hidden border-b'>
-        <ProjectPreviewPlaceholder projectId={project.id} />
-      </div>
+    <div className='group/projectcard relative flex *:flex-1'>
+      {/* A real link (not LinkButton) so middle-click / cmd-click open the project in a new tab for free. */}
+      <Link
+        to={`${PATHS.projects}/${project.id}`}
+        data-projectid={project.id}
+        className={cn(
+          'group flex flex-col overflow-hidden rounded-2xl bg-card text-card-foreground ring-1 ring-foreground/10',
+          'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary',
+          'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+        )}
+      >
+        <div className='aspect-[16/10] overflow-hidden border-b'>
+          <ProjectPreviewPlaceholder projectId={project.id} />
+        </div>
 
-      <div className='flex flex-1 flex-col gap-1.5 p-4'>
-        <h3 className='truncate font-heading text-base font-semibold tracking-[-0.01em]'>{project.name}</h3>
-        <p className='line-clamp-2 min-h-10 text-sm text-muted-foreground'>
-          {project.description || t('projects_no_description')}
-        </p>
-        <p className='mt-auto pt-2 text-xs text-muted-foreground'>
-          {t('projects_edited', { time: formatRelativeTime(project.updated_at, i18n.language) })}
-        </p>
-      </div>
-    </Link>
+        <div className='flex flex-1 flex-col gap-1.5 p-4'>
+          <h3 className='truncate font-heading text-base font-semibold tracking-[-0.01em]'>{project.name}</h3>
+          <p className='line-clamp-2 min-h-10 text-sm text-muted-foreground'>
+            {project.description || t('projects_no_description')}
+          </p>
+          <p className='mt-auto pt-2 text-xs text-muted-foreground'>
+            {t('projects_edited', { time: formatRelativeTime(project.updated_at, i18n.language) })}
+          </p>
+        </div>
+      </Link>
+      <ProjectCardMenu project={project} onRename={onRename} onDelete={onDelete} />
+    </div>
   );
 }

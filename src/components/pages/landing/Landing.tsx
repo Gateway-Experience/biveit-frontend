@@ -31,8 +31,8 @@ const LANDING_WIDTH_CLASS = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
 const START_PATH = PATHS.newProject;
 
 // The brand gradient, for primary buttons and for emphasised headline words.
-const BRAND_BUTTON_CLASS = 'bg-linear-to-r from-primary to-brand-deep text-primary-foreground shadow-lg shadow-primary/25 hover:opacity-90';
-const BRAND_TEXT_CLASS = 'bg-linear-to-r from-brand-light via-primary to-brand-deep bg-clip-text text-transparent';
+const BRAND_BUTTON_CLASS = 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/85';
+const BRAND_TEXT_CLASS = 'bg-linear-to-r from-brand-light via-brand-strong to-brand-deep bg-clip-text text-transparent';
 
 // Gap between neighbouring cards fading in on scroll (see Reveal), so a row arrives one card at a time.
 const STAGGER_MS = 120;
@@ -110,7 +110,7 @@ const FAQS = [
   { id: 'hosting', questionKey: 'landing_faq_hosting_q', answerKey: 'landing_faq_hosting_a' },
 ];
 
-// Static decoration behind a section: soft purple glows and a few faint concentric rings in the
+// Static decoration behind a section: soft brand-coloured glows and a few faint concentric rings in the
 // bottom-left corner. Needs a `relative isolate overflow-hidden` parent.
 function SoftGlowBackdrop() {
   return (
@@ -140,7 +140,7 @@ function HeadlineAccent({ className }: { className?: string }) {
 function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
   return (
     <Reveal className='mx-auto max-w-2xl text-center'>
-      {eyebrow && <span className='text-xs font-bold tracking-[0.18em] text-primary uppercase'>{eyebrow}</span>}
+      {eyebrow && <span className='text-xs font-bold tracking-[0.18em] text-brand-strong uppercase'>{eyebrow}</span>}
       <h2 className='mt-3 font-heading text-3xl font-bold tracking-[-0.03em] text-balance sm:text-4xl'>{title}</h2>
       {subtitle && <p className='mt-4 text-pretty text-muted-foreground sm:text-lg'>{subtitle}</p>}
     </Reveal>
@@ -149,7 +149,7 @@ function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title:
 
 function CheckBullet() {
   return (
-    <span className='grid size-5 shrink-0 place-items-center rounded-full bg-primary/12 text-primary'>
+    <span className='grid size-5 shrink-0 place-items-center rounded-full bg-primary/12 text-brand-strong'>
       <CheckIcon className='size-3' strokeWidth={3} />
     </span>
   );
@@ -187,7 +187,7 @@ function HeroSection() {
         {/* min-w-0 lets this column shrink below its longest word, so long words wrap instead of overflowing */}
         <Reveal className='min-w-0'>
           <span className='inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
-            <SparklesIcon className='size-3.5 text-primary' />
+            <SparklesIcon className='size-3.5 text-brand-strong' />
             {t('landing_hero_eyebrow')}
           </span>
           <h1 className='mt-6 font-heading text-[clamp(2.25rem,11vw,3rem)] leading-[1.06] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl xl:text-7xl'>
@@ -233,7 +233,7 @@ function BusinessesStrip() {
         <ul className='mt-5 flex flex-wrap justify-center gap-2.5'>
           {BUSINESSES.map(business => (
             <li key={business.id} data-businessid={business.id} className='flex items-center gap-2 rounded-full border bg-background px-3.5 py-2 text-sm font-medium'>
-              <business.Icon className='size-4 text-primary' strokeWidth={1.75} />
+              <business.Icon className='size-4 text-brand-strong' strokeWidth={1.75} />
               {t(business.labelKey)}
             </li>
           ))}
@@ -302,7 +302,7 @@ function HowItWorksSection() {
               <div className='grid h-52 place-items-center overflow-hidden rounded-2xl bg-linear-to-br from-accent to-highlight'>
                 <StepVisual />
               </div>
-              <span className='mt-6 font-heading text-sm font-bold text-primary'>{`0${index + 1}`}</span>
+              <span className='mt-6 font-heading text-sm font-bold text-brand-strong'>{`0${index + 1}`}</span>
               <h3 className='mt-1 font-heading text-xl font-bold tracking-[-0.02em]'>{t(step.titleKey)}</h3>
               <p className='mt-2 text-muted-foreground'>{t(step.descKey)}</p>
             </Reveal>
@@ -323,7 +323,7 @@ function AdvantagesSection() {
       <SoftGlowBackdrop />
       <div className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
         <Reveal>
-          <span className='text-xs font-bold tracking-[0.18em] text-primary uppercase'>{t('landing_adv_eyebrow', { appName: APP_NAME })}</span>
+          <span className='text-xs font-bold tracking-[0.18em] text-brand-strong uppercase'>{t('landing_adv_eyebrow', { appName: APP_NAME })}</span>
           <h2 className='mt-3 max-w-3xl font-heading text-[clamp(2rem,9.5vw,2.25rem)] leading-[1.04] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl'>
             {t('landing_adv_title_lead')}{' '}
             <span className={BRAND_TEXT_CLASS}>{t('landing_adv_title_highlight')}</span>
@@ -341,7 +341,7 @@ function AdvantagesSection() {
                 <span className='absolute -top-2 -left-2 grid size-6 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/30'>
                   <CheckIcon className='size-3.5' strokeWidth={3} />
                 </span>
-                <span className='grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-primary'>
+                <span className='grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-brand-strong'>
                   <advantage.Icon className='size-6' strokeWidth={1.75} />
                 </span>
                 <div>
@@ -398,7 +398,7 @@ function DealSection() {
             {t('landing_deal_yours_time')}
           </p>
         </Reveal>
-        <Reveal delayMs={STAGGER_MS} className='rounded-3xl bg-linear-to-br from-primary to-brand-deep p-6 text-primary-foreground shadow-xl shadow-primary/20 sm:p-8 lg:col-span-3'>
+        <Reveal delayMs={STAGGER_MS} className='rounded-3xl bg-linear-to-br from-highlight to-primary p-6 text-primary-foreground shadow-xl shadow-primary/20 sm:p-8 lg:col-span-3'>
           <div className='flex items-center justify-between gap-3'>
             <h3 className='font-heading text-xl font-bold'>{t('landing_deal_ours')}</h3>
             <span className='rounded-full bg-primary-foreground px-3 py-1 text-xs font-semibold text-primary'>{t('landing_deal_ours_badge')}</span>
@@ -463,7 +463,7 @@ function CompareSection() {
             {t(row.usualKey)}
           </div>,
           <div key={`${row.id}-vib3`} data-compareid={row.id} className='flex items-start gap-2.5 border-t bg-accent/50 p-4 text-sm font-semibold sm:p-5 sm:text-base'>
-            <CheckIcon className='mt-0.5 size-4 shrink-0 text-primary' strokeWidth={3} />
+            <CheckIcon className='mt-0.5 size-4 shrink-0 text-brand-strong' strokeWidth={3} />
             {t(row.vib3Key)}
           </div>,
         ])}
@@ -484,7 +484,7 @@ function FaqSection() {
           <details key={faq.id} data-faqid={faq.id} className='group rounded-2xl border bg-card px-5 py-4 open:shadow-sm'>
             <summary className='flex cursor-pointer list-none items-center justify-between gap-4 font-heading font-semibold [&::-webkit-details-marker]:hidden'>
               {t(faq.questionKey)}
-              <ChevronDownIcon className='size-4 shrink-0 text-primary transition-transform group-open:rotate-180' />
+              <ChevronDownIcon className='size-4 shrink-0 text-brand-strong transition-transform group-open:rotate-180' />
             </summary>
             <p className='mt-3 text-muted-foreground'>{t(faq.answerKey)}</p>
           </details>
@@ -499,7 +499,7 @@ function FinalCta() {
 
   return (
     <section data-section='final-cta' className={cn(LANDING_WIDTH_CLASS, 'pb-16')}>
-      <Reveal className='relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-primary to-brand-deep px-6 py-12 text-center text-primary-foreground shadow-xl shadow-primary/25 sm:px-12 sm:py-14'>
+      <Reveal className='relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-highlight to-primary px-6 py-12 text-center text-primary-foreground shadow-xl shadow-primary/25 sm:px-12 sm:py-14'>
         <div aria-hidden='true' className='pointer-events-none absolute -top-40 -right-40 -z-10 grid size-[480px] place-items-center'>
           {['size-[260px]', 'size-[370px]', 'size-[480px]'].map(sizeClass => (
             <span key={sizeClass} className={cn('absolute rounded-full border border-primary-foreground/15', sizeClass)} />

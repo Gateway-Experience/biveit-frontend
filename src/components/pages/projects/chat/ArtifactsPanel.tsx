@@ -101,7 +101,7 @@ export default function ArtifactsPanel({ conversationId, refreshKey, openPath, o
       <ItemGroup className='mx-auto w-full max-w-3xl gap-2 px-4 py-6'>
         {/* What these files are, for people who've never seen a spec: they come from the chat, and the site is built from them. */}
         <div data-component='artifacts-intro' className='mb-2 flex gap-3 rounded-xl bg-accent/60 p-4 text-sm'>
-          <ClipboardListIcon className='mt-0.5 size-4.5 shrink-0 text-primary' />
+          <ClipboardListIcon className='mt-0.5 size-4.5 shrink-0 text-brand-strong' />
           <div>
             <p className='font-semibold'>{t('artifacts_intro_title')}</p>
             <p className='mt-0.5 text-muted-foreground'>{t('artifacts_intro_body')}</p>

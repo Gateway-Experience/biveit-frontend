@@ -57,7 +57,7 @@ export default function ForgotPassword() {
         ? (
           <div className='flex flex-col gap-4'>
             <div className='flex gap-3 rounded-2xl border bg-muted/40 p-4 text-sm'>
-              <MailCheckIcon className='mt-0.5 size-5 shrink-0 text-primary' />
+              <MailCheckIcon className='mt-0.5 size-5 shrink-0 text-brand-strong' />
               <p>{t('forgot_password_sent_body', { email: sentToEmail })}</p>
             </div>
             {/* The BE allows one email per minute per address, so a quick second click is silently ignored. */}

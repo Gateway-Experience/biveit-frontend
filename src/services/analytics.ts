@@ -2,7 +2,7 @@ import mixpanel from 'mixpanel-browser';
 import _ from 'lodash';
 
 import type { User } from 'src/types/user';
-import { getUsername } from 'src/services/user';
+import { getDisplayName, getUsername } from 'src/services/user';
 
 // Mixpanel is optional per project: with no token configured every function here is a
 // no-op, so call sites never have to guard. `setAnalyticsEnabled` is the only thing that
@@ -72,8 +72,8 @@ function identifyUser(user?: User | null) {
   }
   mixpanel.identify(user._id);
   mixpanel.people.set(_.pickBy({
-    $name: getUsername(user),
-    $email: _.get(user, 'social_data.email'),
+    $name: getDisplayName(user),
+    $email: getUsername(user),
     userType: user.user_type,
   }, value => !_.isNil(value)));
 }

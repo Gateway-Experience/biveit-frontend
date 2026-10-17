@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
 import {
-  getChatErrorCode, getConversation, getConversationFileUrl, getMessages, postChatMessage, subscribeToConversationEvents,
-  uploadAttachments,
+  getChatErrorCode, getConversation, getConversationFileUrl, getMessages, postChatMessage, resendLastMessage,
+  subscribeToConversationEvents, uploadAttachments,
 } from 'src/services/chat';
 import {
   findPendingInteractions, getChatIntroState, hasOlderMessages, isAgentPresumedWorking, mergeMessages,
@@ -44,6 +44,11 @@ export default function useAgentChat(projectId: number, options: {
   // Seqs of the messages this tab posted successfully. Only those make the agent count as "working" (see
   // isAgentPresumedWorking), so a reply that never came for an older or failed message can't lock the chat.
   const [sentSeqs, setSentSeqs] = useState<number[]>([]);
+  // A message was stored but didn't reach the agent (AGENT_UNAVAILABLE): the newest seq we had when that
+  // happened, or null. It stops counting once the agent says anything after it (see `hasUndeliveredMessage`),
+  // which doesn't depend on the stored message itself arriving on the stream.
+  const [undeliveredAfterSeq, setUndeliveredAfterSeq] = useState<number | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
   const receiveMessages = useCallback((incomingMessages: AiMessage[]) => {
     setMessages(previousMessages => mergeMessages(previousMessages || [], incomingMessages));
@@ -113,12 +118,37 @@ export default function useAgentChat(projectId: number, options: {
       setSentSeqs(previous => [...previous, storedMessage.seq]);
       return true;
     } catch (error) {
+      // Stored, just not delivered: the message is in the log (it comes in on the stream), so the input
+      // is done with. The chat then offers to hand it over again rather than have the user retype it.
+      if (getChatErrorCode(error) === 'AGENT_UNAVAILABLE') {
+        setUndeliveredAfterSeq(_.last(messages)?.seq ?? 0);
+        return true;
+      }
       notifyError(error, 'chat_send_failed');
       return false;
     } finally {
       setIsPosting(false);
     }
-  }, [conversationId, receiveMessages, notifyError]);
+  }, [conversationId, receiveMessages, notifyError, messages]);
+
+  // The "try again" for an undelivered message: the BE hands the stored one over again (no duplicate).
+  const resendUndelivered = useCallback(async () => {
+    setIsResending(true);
+    try {
+      const resentMessage = await resendLastMessage(conversationId as number);
+      setUndeliveredAfterSeq(null);
+      setSentSeqs(previous => [...previous, resentMessage.seq]);
+    } catch (error) {
+      // The agent replied in the meantime: nothing left to resend.
+      if (getChatErrorCode(error) === 'NOTHING_TO_RESEND') {
+        setUndeliveredAfterSeq(null);
+      } else {
+        notify('error', t('chat_resend_failed'));
+      }
+    } finally {
+      setIsResending(false);
+    }
+  }, [conversationId, notify, t]);
 
   // `attachmentPaths` come from `uploadFiles`; a message needs text, attachments, or both.
   const sendText = useCallback(
@@ -145,6 +175,11 @@ export default function useAgentChat(projectId: number, options: {
 
   const pendingInteractions = useMemo(() => findPendingInteractions(messages || []), [messages]);
   const introState = getChatIntroState(messages, sessionStatus);
+  const hasUndeliveredMessage = !_.isNull(undeliveredAfterSeq)
+    && !_.some(messages, message => message.role === 'assistant' && message.seq > undeliveredAfterSeq);
+  // Opening the project failed with the conversation already under way: the empty-chat retry isn't showing,
+  // so the chat needs its own.
+  const isSessionDown = sessionStatus === 'failed' && introState === 'started';
   // Also "working" while its opening message is on the way: the session is up, it just hasn't spoken yet.
   const isAgentWorking = useMemo(
     () => introState === 'awaiting-agent' || isAgentPresumedWorking(messages || [], sentSeqs),
@@ -153,6 +188,7 @@ export default function useAgentChat(projectId: number, options: {
 
   return {
     conversationId, latestAssistantSeq, messages, introState, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting, sendText, submitAnswers,
+    hasUndeliveredMessage, resendUndelivered, isResending, isSessionDown,
     uploadFiles, getFileUrl, loadOlderMessages, isLoadingOlder, hasLoadOlderFailed,
     hasOlder: hasOlderMessages(messages || []),
   };

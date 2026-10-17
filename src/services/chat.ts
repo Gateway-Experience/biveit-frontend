@@ -45,6 +45,12 @@ function getConversationFileUrl(conversationId: number, path: string) {
   return `${import.meta.env.VITE_API_BASE_URL}/conversations/${conversationId}/files?path=${encodeURIComponent(path)}`;
 }
 
+// Hands the user's latest message to the agent again, after posting it came back AGENT_UNAVAILABLE (it was
+// stored, but never got through). Nothing new is stored. 409 NOTHING_TO_RESEND once the agent has replied.
+async function resendLastMessage(conversationId: number): Promise<AiMessage> {
+  return callBe({ method: 'POST', url: `/conversations/${conversationId}/resend` });
+}
+
 // Everything the agent has written for this conversation (the Documents tab), oldest first.
 async function getArtifacts(conversationId: number): Promise<Artifact[]> {
   return callBe(`/conversations/${conversationId}/artifacts`);
@@ -117,6 +123,7 @@ function getChatErrorCode(error: unknown): string | undefined {
 
 export {
   getArtifacts,
+  resendLastMessage,
   getChatErrorCode,
   getConversation,
   getConversationFileText,

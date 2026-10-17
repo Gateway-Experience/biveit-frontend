@@ -1,6 +1,8 @@
 import _ from 'lodash';
 
-import type { AgentSessionStatus, AiMessage, ChatIntroState, InteractionResult, ToolResultBlock, ToolUseBlock } from 'src/types/chat';
+import type {
+  AgentSessionStatus, AiMessage, AskUserQuestion, ChatIntroState, InteractionResult, ToolResultBlock, ToolUseBlock,
+} from 'src/types/chat';
 
 // Intentions: everything the UI needs to know is derived from the message log on the fly — the log is the
 // only state. All [Pure].
@@ -57,6 +59,22 @@ function getInteractionResults(toolResult: ToolResultBlock): InteractionResult[]
   return _.isArray(toolResult.content) ? toolResult.content : [];
 }
 
+// The questions the user has actually answered so far (dismissed ones don't count), oldest first, as the
+// agent worded them. Drives the question panel's encouragement and its "previous question" button.
+function getAnsweredQuestions(messages: AiMessage[]): string[] {
+  const toolUsesById = indexToolUses(messages);
+  return _.flatMap(_getBlocksOfType<ToolResultBlock>(messages, 'tool_result'), toolResult => {
+    const toolUse = toolUsesById[toolResult.tool_use_id];
+    if (!isAskUser(toolUse)) {
+      return [];
+    }
+    const questions = (toolUse.input.questions || []) as AskUserQuestion[];
+    return _.compact(_.map(getInteractionResults(toolResult), (result, index) => (
+      result.status === 'submitted' ? questions[index]?.question : null
+    )));
+  });
+}
+
 // Best guess at "the agent is on it" — the API has no status signal, so it's read off the log: the user
 // spoke last, that wasn't a dismiss (a dismiss closes the question without waking the agent), no question
 // is still open (the agent only resumes once every question in its message is answered), and this tab is
@@ -88,6 +106,7 @@ function getChatIntroState(messages: AiMessage[] | null, sessionStatus: AgentSes
 
 export {
   findPendingInteractions,
+  getAnsweredQuestions,
   getChatIntroState,
   getInteractionResults,
   hasOlderMessages,

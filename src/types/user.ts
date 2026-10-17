@@ -5,9 +5,12 @@ export type UserType = 'USER' | 'GUEST';
 
 export type User = {
   _id: string;
+  id?: number; // the BE's primary key
   username: string;
   user_type: UserType;
-  full_name?: string;
+  first_name?: string | null; // asked for at signup; null on guests and accounts from before that
+  last_name?: string | null; // can be '' — not everyone has one
+  has_password?: boolean; // false for Google-only accounts: the profile page then sets a first password
   profile_picture?: string;
   language?: string; // the language picker's choice ('en' | 'vi'), saved by LanguageSelector
   google_id?: string;

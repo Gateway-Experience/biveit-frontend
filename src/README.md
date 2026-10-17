@@ -108,7 +108,7 @@ Every shadcn variant is written for a component sitting on `--background`. Put o
 
 The focus/invalid ones are the sneaky pair: they only appear *after a click*, because focus persists, so they read as a random flicker rather than a style bug.
 
-Overriding one and not the others is worse than overriding none — a background fix alone leaves black text on a dark bar. See `NAV_ITEM_CLASS` in `components/common/Navbar.tsx` for the full set.
+Overriding one and not the others is worse than overriding none — a background fix alone leaves black text on a dark bar. Override the full set together whenever a component sits on a coloured surface.
 
 Keep the focus indicator when you suppress the border — swap it for a ring (`focus-visible:ring-primary-foreground/40`) rather than removing it, or keyboard navigation breaks.
 
@@ -143,7 +143,7 @@ name used for things like the logo alt text.
 Wired up already:
 - `initAnalytics()` in `AppProvider`, alongside the other site-wide init
 - `identifyUser()` on any change to the store's `user` — covers both the initial `/me` and a later login
-- `resetAnalytics()` in `Navbar`'s `logout`, so the next person on this browser isn't merged into the previous profile. It re-registers the super properties afterwards — mixpanel's `reset()` clears persistence, and without that the `project` tag would quietly vanish from every event after the first logout
+- `resetAnalytics()` in `useLogout` (`utils/hooks.ts`), so the next person on this browser isn't merged into the previous profile. It re-registers the super properties afterwards — mixpanel's `reset()` clears persistence, and without that the `project` tag would quietly vanish from every event after the first logout
 - `useTrackPageViews()` in `routes/index.tsx`, above `<Routes>` — react-router never does a full page load, so mixpanel's own `track_pageview` would only ever see the first one. It sits there rather than in a layout because `/`, `/dummy` and `/login` don't use `DefaultLayout`, and a layout-mounted hook would silently miss them
 
 **Bundle cost:** `mixpanel-browser` is imported normally, which adds ~126 kB gzipped

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import _ from 'lodash';
 import { useMatch, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -7,8 +7,9 @@ import { PlusIcon } from 'lucide-react';
 import LinkButton from 'src/components/common/LinkButton';
 import NewProjectModal from 'src/components/pages/projects/NewProjectModal';
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
+import { DeleteProjectModal, RenameProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
 import { BuildFlowArt, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
-import { getProjects } from 'src/services/project';
+import { useProjectListUpdaters, useProjects } from 'src/components/pages/projects/useProjectLists';
 import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
 
@@ -55,17 +56,18 @@ function ProjectsEmptyState() {
 // Original purpose: the home page — lists the current user's projects, or nudges them to make one.
 export default function ProjectList() {
   const { t } = useTranslation();
-  // null = still loading, [] = loaded but nothing there yet.
-  const [projects, setProjects] = useState<Project[] | null>(null);
-  const [hasLoadFailed, setHasLoadFailed] = useState(false);
+  // Shared with the sidebar. undefined = still loading, [] = loaded but nothing there yet. Most recently
+  // edited first (pinning and filing don't change that).
+  const { data: unsortedProjects, isError: hasLoadFailed } = useProjects();
+  const projects = unsortedProjects && _.orderBy(unsortedProjects, ['updated_at'], ['desc']);
+  const { setProject, removeProject } = useProjectListUpdaters();
+  // The project whose rename / delete dialog is open, if any.
+  const [renamingProject, setRenamingProject] = useState<Project | null>(null);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   // The new-project form is open exactly while we're on its URL: the "New project" buttons are plain links
   // (middle-click works), and the browser's back button closes it.
   const isCreatingProject = !!useMatch(PATHS.newProject);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    getProjects().then(setProjects).catch(() => setHasLoadFailed(true));
-  }, []);
 
   const hasProjects = !_.isEmpty(projects);
 
@@ -73,6 +75,9 @@ export default function ProjectList() {
     <div data-page='project-list'>
       {/* Replace: closing shouldn't leave an entry that reopens the form on "back". */}
       <NewProjectModal open={isCreatingProject} onClose={() => navigate(PATHS.projects, { replace: true })} />
+      {/* A rename counts as an edit (fresh updated_at), so the sort moves the project to the top. */}
+      <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
+      <DeleteProjectModal project={deletingProject} onClose={() => setDeletingProject(null)} onDeleted={removeProject} />
 
       {/* The page header: a soft panel with line art on the right (dropped on small screens, and when the
           empty state below is already showing the same art). */}
@@ -110,7 +115,7 @@ export default function ProjectList() {
               className='flex animate-in fade-in-0 slide-in-from-bottom-2 duration-500 fill-mode-both *:flex-1'
               style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
             >
-              <ProjectCard project={project} />
+              <ProjectCard project={project} onRename={setRenamingProject} onDelete={setDeletingProject} />
             </div>
           ))}
         </div>

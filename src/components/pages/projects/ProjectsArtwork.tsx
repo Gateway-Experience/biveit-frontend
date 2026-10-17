@@ -18,7 +18,7 @@ function _Sparkle({ x, y, size }: { x: number; y: number; size: number }) {
 // Original purpose: decoration for the projects page (its header and its empty state).
 function BuildFlowArt({ className }: { className?: string }) {
   return (
-    <svg viewBox='0 0 340 170' fill='none' aria-hidden='true' className={cn('text-primary', className)}>
+    <svg viewBox='0 0 340 170' fill='none' aria-hidden='true' className={cn('text-brand-strong', className)}>
       <g stroke='currentColor' strokeWidth={1.5} strokeLinecap='round' strokeLinejoin='round'>
         {/* The chat bubble */}
         <path d='M18 82a12 12 0 0 1 12-12h66a12 12 0 0 1 12 12v22a12 12 0 0 1-12 12H48l-14 11v-11h-4a12 12 0 0 1-12-12Z' fill='var(--card)' strokeOpacity={0.55} />

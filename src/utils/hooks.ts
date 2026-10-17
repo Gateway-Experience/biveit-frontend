@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback, useSyncExternalStore } from 'react';
-import { useSearchParams, useLocation } from 'react-router';
+import { useSearchParams, useLocation, useNavigate } from 'react-router';
 import _ from 'lodash';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useStore } from 'src/state-store';
 import { trackEvent, identifyUser, resetAnalytics } from 'src/services/analytics';
@@ -14,6 +14,7 @@ function _resolveUpdate<T>(update: Updater<T>, prev: T): T {
   return typeof update === 'function' ? (update as (prev: T) => T)(prev) : update;
 }
 import { callBe } from 'src/utils/request';
+import { PATHS } from 'src/utils/constants';
 
 // Manage an indexed list. Provide a function `keyedBy` to calculate the indexing key from the item.
 function useIndexedList<T>(initial: T[] | null | undefined, keyedBy: (item: T) => string) {
@@ -306,6 +307,17 @@ function useTypewriter(phrases: string[]) {
 // const vPrev = usePrevious(v);
 // setV(2);
 // console.log(v, vPrev) --> 2 1
+// `value`, but only once it has stopped changing for `delayMs` — e.g. a search box's text, so a request
+// goes out when the user pauses rather than on every keystroke.
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+
 function usePrevious<T>(value: T) {
   const ref = useRef<T | undefined>(undefined);
   useEffect(() => {
@@ -373,6 +385,23 @@ function useUpdateUser() {
   return update;
 }
 
+// Logs the user out and lands them on the login page. The session is an httpOnly cookie, so only the BE can
+// clear it: wait for that before dropping local state, or a reload would sign them straight back in. The
+// analytics identity is reset too, so the next person signing in on this browser isn't merged into this
+// one's profile, and so is the (localStorage-persisted) query cache, which holds their project list.
+function useLogout() {
+  const set = useStore(state => state.set);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  return useCallback(async () => {
+    await callBe({ url: '/auth/logout', method: 'POST' });
+    set({ user: null });
+    queryClient.clear();
+    resetAnalytics();
+    navigate(PATHS.login);
+  }, [set, navigate, queryClient]);
+}
+
 // Fires a page view whenever the route changes. Mounted once in the layout — react-router
 // never does a full page load, so this is the only thing that sees navigations.
 function useTrackPageViews() {
@@ -390,6 +419,7 @@ function useAnalytics() {
 }
 
 export {
+  useDebouncedValue,
   useAnalytics,
   useTrackPageViews,
   useArray,
@@ -407,4 +437,5 @@ export {
   useDeepCompareEffect,
   useRequest,
   useUpdateUser,
+  useLogout,
 };

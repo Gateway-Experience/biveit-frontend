@@ -7,7 +7,7 @@ import { useInterval, useMediaQuery } from 'src/utils/hooks';
 // How fast it "types": characters per tick, and the tick length.
 const _CHARS_PER_TICK = 4;
 const _TICK_MS = 35;
-// How many lines are kept on screen (older ones scroll off the top).
+// How many lines are kept on screen by default (older ones scroll off the top).
 const _VISIBLE_LINE_COUNT = 40;
 
 // [Pure] Where the typing is after `typedChars` characters, looping over `lines` forever: which line
@@ -37,7 +37,7 @@ function _highlightLine(line: string): { text: string; className?: string }[] {
     return [{ text: line, className: 'text-brand-light' }];
   }
   if (_.startsWith(_.trimStart(line), '//')) {
-    return [{ text: line, className: 'text-primary-foreground/40 italic' }];
+    return [{ text: line, className: 'text-brand-ink-foreground/40 italic' }];
   }
   const tokenPattern = /('[^']*'|"[^"]*")|\b(import|from|export|default|async|function|const|return|await)\b|(<\/?[A-Z]\w*)/g;
   const pieces: { text: string; className?: string }[] = [];
@@ -58,12 +58,18 @@ function _highlightLine(line: string): { text: string; className?: string }[] {
   return pieces;
 }
 
-// Intentions: while the agent builds, fill the preview with code typing itself out, movie-hacker style,
-// `lines` played in order and then from the top again (written from the project, see buildConsoleScript),
-// so the wait feels like watching the site being made rather than staring at a spinner. Newest line at
-// the bottom, older ones fading out at the top. With reduced motion on, it's a still screenful.
+// Intentions: code typing itself out, movie-hacker style, `lines` played in order and then from the top again
+// (written from the project, see buildConsoleScript), so a wait feels like something's being made rather than
+// a spinner. Newest line at the bottom, older ones fading out at the top. With reduced motion on, it's still.
+// Sized by the caller: `options.visibleLineCount` lines kept, `options.contentClassName` for the text block's
+// padding and type size.
 // Original purpose: the preview's "building" state (see SitePreview).
-export default function BuildConsole({ lines, className }: { lines: string[]; className?: string }) {
+export default function BuildConsole({ lines, className, options = {} }: {
+  lines: string[];
+  className?: string;
+  options?: { visibleLineCount?: number; contentClassName?: string };
+}) {
+  const { visibleLineCount = _VISIBLE_LINE_COUNT, contentClassName = 'px-5 pb-24 text-[0.8125rem] leading-6' } = options;
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   // The only state: how many characters have been typed so far. Everything on screen derives from it.
   const [typedChars, setTypedChars] = useState(0);
@@ -73,22 +79,22 @@ export default function BuildConsole({ lines, className }: { lines: string[]; cl
     return <div aria-hidden='true' className={cn('bg-brand-ink', className)} />;
   }
   const { lineNumber, typedInLine } = prefersReducedMotion
-    ? { lineNumber: _VISIBLE_LINE_COUNT - 1, typedInLine: Infinity }
+    ? { lineNumber: visibleLineCount - 1, typedInLine: Infinity }
     : _locateTyping(lines, typedChars);
-  const firstLineNumber = Math.max(0, lineNumber - _VISIBLE_LINE_COUNT + 1);
+  const firstLineNumber = Math.max(0, lineNumber - visibleLineCount + 1);
   const visibleLines = _.range(firstLineNumber, lineNumber + 1).map(number => {
     const fullLine = lines[number % lines.length];
     return { number, text: number === lineNumber ? fullLine.slice(0, typedInLine) : fullLine };
   });
 
   return (
-    // Solid backdrop, with only the lines fading out at the top, so nothing of the half-done site shows through.
+    // Solid backdrop, with only the lines fading out at the top.
     <div aria-hidden='true' className={cn('overflow-hidden bg-brand-ink', className)}>
-      <div className='flex h-full flex-col justify-end px-5 pb-24 font-mono text-[0.8125rem] leading-6 text-primary-foreground/85 mask-t-from-55%'>
+      <div className={cn('flex h-full flex-col justify-end font-mono text-brand-ink-foreground/85 mask-t-from-55%', contentClassName)}>
         {visibleLines.map(line => (
           // whitespace-pre keeps the indentation; the line itself clips with an ellipsis instead of wrapping.
           <div key={line.number} className='flex gap-4 whitespace-pre'>
-            <span className='w-8 shrink-0 text-right text-primary-foreground/25 tabular-nums'>{line.number + 1}</span>
+            <span className='w-6 shrink-0 text-right text-brand-ink-foreground/25 tabular-nums'>{line.number + 1}</span>
             <span className='min-w-0 overflow-hidden text-ellipsis'>
               {_highlightLine(line.text).map((piece, index) => (
                 <span key={index} className={piece.className}>{piece.text}</span>

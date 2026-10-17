@@ -175,17 +175,25 @@ export default function SitePreview({ state, siteUrl, build, buildConsoleLines, 
             />
           </div>
         )}
-        {/* While the agent builds, a console of code typing itself out covers the panel (and keeps hands off
-            the half-done site underneath, which keeps hot-reloading as the agent works). The playful build
-            status sits on top, the one place that says in plain words that it's busy. */}
+        {/* While the agent builds, the site itself stays in view, hot-reloading as the agent works on it, so
+            people watch their site come together. On top, a see-through layer keeps hands off the half-done
+            page; a light sweeps down it and a small console in the corner types out what's being made. The
+            playful status says in plain words that it's busy. */}
         {isLive && build && (
           <div data-section='preview-building' className='absolute inset-0 animate-in fade-in-0 duration-500'>
-            <BuildConsole lines={buildConsoleLines} className='absolute inset-0' />
-            <div className='absolute inset-x-0 bottom-8 flex justify-center'>
-              {/* On a card-coloured pill so it stands out over the console. */}
+            <div aria-hidden='true' className='pointer-events-none absolute inset-0 overflow-hidden ring-2 ring-primary/40 ring-inset'>
+              <div className='absolute inset-0 animate-build-scan bg-linear-to-b from-transparent from-35% via-primary/15 to-transparent to-65% motion-reduce:hidden' />
+            </div>
+            <div className='absolute inset-x-3 bottom-3 flex flex-col items-end gap-2.5 sm:inset-x-auto sm:right-4 sm:bottom-4'>
+              {/* On a card-coloured pill so it stands out over whatever the site shows. */}
               <div className='rounded-full bg-card px-5 py-2.5 shadow-lg ring-1 ring-foreground/10'>
                 <BuildStatus since={build.since} className='text-sm' />
               </div>
+              <BuildConsole
+                lines={buildConsoleLines}
+                className='h-36 w-full rounded-xl shadow-2xl ring-1 ring-foreground/10 sm:w-[360px]'
+                options={{ visibleLineCount: 7, contentClassName: 'px-3 pb-2.5 text-[0.6875rem] leading-[1.15rem]' }}
+              />
             </div>
           </div>
         )}

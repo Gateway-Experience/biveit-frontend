@@ -9,6 +9,16 @@
    page): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
 @custom-variant dark (&:is(.dark *):not(.force-light, .force-light *));
 
+/* The light that sweeps down the site preview while the agent builds (SitePreview): the band sits in the
+   middle of a full-height layer, which travels from just above the panel to just below it. */
+@theme {
+  --animate-build-scan: build-scan 3.2s ease-in-out infinite;
+  @keyframes build-scan {
+    from { transform: translateY(-60%); }
+    to { transform: translateY(60%); }
+  }
+}
+
 @theme inline {
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
@@ -23,6 +33,8 @@
   --color-brand-light: var(--brand-light);
   --color-brand-deep: var(--brand-deep);
   --color-brand-ink: var(--brand-ink);
+  --color-brand-ink-foreground: var(--brand-ink-foreground);
+  --color-brand-strong: var(--brand-strong);
   --color-site-moto: var(--site-moto);
   --color-site-moto-soft: var(--site-moto-soft);
   --color-site-home: var(--site-home);
@@ -82,29 +94,29 @@
 }
 
 :root, .force-light {
-  --background: oklch(0.99 0.004 300);
-  --foreground: oklch(0.21 0.035 285);
+  --background: oklch(0.985 0.008 238);
+  --foreground: oklch(0.24 0.035 248);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.035 285);
+  --card-foreground: oklch(0.24 0.035 248);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.035 285);
-  --primary: oklch(0.53 0.245 293);
-  --primary-foreground: oklch(0.99 0.003 300);
-  --secondary: oklch(0.96 0.018 298);
-  --secondary-foreground: oklch(0.3 0.08 290);
-  --muted: oklch(0.967 0.01 298);
-  --muted-foreground: oklch(0.52 0.03 285);
-  --accent: oklch(0.95 0.03 298);
-  --accent-foreground: oklch(0.38 0.17 292);
+  --popover-foreground: oklch(0.24 0.035 248);
+  --primary: oklch(0.798 0.065 242.3);
+  --primary-foreground: oklch(0.24 0.035 248);
+  --secondary: oklch(0.982 0.026 92.4);
+  --secondary-foreground: oklch(0.3 0.035 245);
+  --muted: oklch(0.965 0.012 238);
+  --muted-foreground: oklch(0.5 0.035 245);
+  --accent: oklch(0.951 0.02 238.7);
+  --accent-foreground: oklch(0.42 0.1 245);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.014 295);
-  --input: oklch(0.92 0.014 295);
-  --ring: oklch(0.6 0.2 293);
-  --chart-1: oklch(0.53 0.245 293);
-  --chart-2: oklch(0.65 0.2 300);
-  --chart-3: oklch(0.75 0.14 305);
-  --chart-4: oklch(0.43 0.2 285);
-  --chart-5: oklch(0.86 0.07 300);
+  --border: oklch(0.915 0.02 238);
+  --input: oklch(0.915 0.02 238);
+  --ring: oklch(0.62 0.1 242);
+  --chart-1: oklch(0.52 0.11 242);
+  --chart-2: oklch(0.798 0.065 242.3);
+  --chart-3: oklch(0.839 0.061 241.7);
+  --chart-4: oklch(0.42 0.1 250);
+  --chart-5: oklch(0.898 0.042 225.6);
   --radius: 0.625rem;
   /* Status colours for notifications and inline feedback. `--destructive` already
      covers errors, so error maps to it rather than duplicating a red. */
@@ -121,13 +133,24 @@
   --scrim-strong: oklch(0 0 0 / 80%);
   --scrim-foreground: oklch(1 0 0);
   /* Soft tint behind emphasised words and other light brand washes. */
-  --highlight: oklch(0.93 0.05 300);
-  /* The two ends of the brand gradient (logo, primary buttons, emphasised headline words), with
+  --highlight: oklch(0.898 0.042 225.6);
+  /* Brand palette (sky blue + cream): #E3F1FB (--accent), #C1E4F3 (--highlight, --chart-5), #A8D0EF and
+     #99C3E4 (--chart-3/2, and the dark theme's --brand-light), #FFF9E6 (--secondary). They're all pale, so the
+     colours that carry text (--brand-strong, --brand-deep, --brand-light here, the foregrounds) are deeper
+     shades of the same blue, picked for contrast. --primary IS #99C3E4: buttons are pale blue with navy labels
+     (--primary-foreground, about 8:1).
+     The two ends of the brand gradient (logo, primary buttons, emphasised headline words), with
      --primary in the middle. */
-  --brand-light: oklch(0.72 0.17 302);
-  --brand-deep: oklch(0.42 0.22 288);
-  /* A near-black purple for big dark brand surfaces (the auth pages' showcase panel), same in both themes. */
-  --brand-ink: oklch(0.19 0.04 290);
+  --brand-light: oklch(0.66 0.1 238);
+  --brand-deep: oklch(0.42 0.1 250);
+  /* A near-black navy for big dark brand surfaces (the auth pages' showcase panel), same in both themes. */
+  --brand-ink: oklch(0.21 0.035 248);
+  /* Light text on --brand-ink (e.g. the build console). */
+  --brand-ink-foreground: oklch(0.96 0.01 240);
+  /* The brand blue for things read on the page: links, icons, labels, the wordmark's "It", the logo, the
+     middle of gradient text. --primary is the (pale) button fill, too light to read as text on white, so
+     anything coloured "brand" as text or line art uses this instead. Dark theme: the light blue. */
+  --brand-strong: oklch(0.52 0.11 242);
   /* Brand colors of the made-up example sites in the landing page's showcase. Each one is a different
      "customer", so each gets its own look rather than ours. Light-only, like the landing page. */
   --site-moto: oklch(0.68 0.19 45);
@@ -142,7 +165,7 @@
   --site-perfume-soft: oklch(0.95 0.025 340);
   --site-cafe: oklch(0.42 0.07 55);
   --site-cafe-soft: oklch(0.95 0.025 75);
-  /* The bar (navbar) is a plain surface with a hairline border, so the purple logo and buttons carry
+  /* The sidebar is a plain surface with a hairline border, so the blue logo and buttons carry
      the brand. These only reference other tokens, so they follow .dark without being redeclared. */
   --sidebar: var(--card);
   --sidebar-foreground: var(--foreground);
@@ -155,39 +178,41 @@
 }
 
 .dark {
-  --background: oklch(0.17 0.03 285);
-  --foreground: oklch(0.96 0.01 295);
-  --card: oklch(0.22 0.035 286);
-  --card-foreground: oklch(0.96 0.01 295);
-  --popover: oklch(0.22 0.035 286);
-  --popover-foreground: oklch(0.96 0.01 295);
-  --primary: oklch(0.64 0.21 293);
-  --primary-foreground: oklch(0.99 0.003 300);
-  --secondary: oklch(0.28 0.04 288);
-  --secondary-foreground: oklch(0.96 0.01 295);
-  --muted: oklch(0.27 0.035 288);
-  --muted-foreground: oklch(0.72 0.03 290);
-  --accent: oklch(0.3 0.06 290);
-  --accent-foreground: oklch(0.9 0.05 298);
+  --background: oklch(0.17 0.025 245);
+  --foreground: oklch(0.96 0.01 240);
+  --card: oklch(0.215 0.03 245);
+  --card-foreground: oklch(0.96 0.01 240);
+  --popover: oklch(0.215 0.03 245);
+  --popover-foreground: oklch(0.96 0.01 240);
+  --primary: oklch(0.74 0.1 240);
+  --primary-foreground: oklch(0.2 0.04 248);
+  --secondary: oklch(0.28 0.02 85);
+  --secondary-foreground: oklch(0.982 0.026 92.4);
+  --muted: oklch(0.26 0.03 245);
+  --muted-foreground: oklch(0.72 0.03 240);
+  --accent: oklch(0.29 0.05 242);
+  --accent-foreground: oklch(0.898 0.042 225.6);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.18 293);
-  --chart-1: oklch(0.64 0.21 293);
-  --chart-2: oklch(0.72 0.17 300);
-  --chart-3: oklch(0.8 0.12 305);
-  --chart-4: oklch(0.55 0.2 288);
-  --chart-5: oklch(0.42 0.12 292);
+  --ring: oklch(0.68 0.1 240);
+  --chart-1: oklch(0.74 0.1 240);
+  --chart-2: oklch(0.839 0.061 241.7);
+  --chart-3: oklch(0.898 0.042 225.6);
+  --chart-4: oklch(0.55 0.11 245);
+  --chart-5: oklch(0.42 0.08 245);
   --success: oklch(0.70 0.14 150);
   --success-foreground: oklch(0.205 0 0);
   --warning: oklch(0.80 0.15 75);
   --warning-foreground: oklch(0.205 0 0);
   --info: oklch(0.70 0.14 250);
   --info-foreground: oklch(0.205 0 0);
-  --highlight: oklch(0.64 0.21 293 / 25%);
-  --brand-light: oklch(0.78 0.14 302);
-  --brand-deep: oklch(0.52 0.23 289);
-  --brand-ink: oklch(0.19 0.04 290);
+  --highlight: oklch(0.74 0.1 240 / 25%);
+  --brand-light: oklch(0.839 0.061 241.7);
+  --brand-deep: oklch(0.55 0.11 245);
+  --brand-ink: oklch(0.21 0.035 248);
+  --brand-ink-foreground: oklch(0.96 0.01 240);
+  --brand-strong: oklch(0.74 0.1 240);
 }
 
 /* Rendered markdown (`prose`, from @tailwindcss/typography) takes its colours from the theme instead of
@@ -234,4 +259,14 @@
   :lang(ko) {
     word-break: keep-all;
   }
+}
+/* While the sidebar's edge is being dragged (AppSidebar's SidebarResizeHandle flags the wrapper), its width
+   follows the pointer straight away instead of easing after it, and the page doesn't select text or flash
+   other cursors along the way. */
+[data-slot='sidebar-wrapper'][data-resizing] {
+  cursor: col-resize;
+  user-select: none;
+}
+[data-slot='sidebar-wrapper'][data-resizing] :is([data-slot='sidebar-gap'], [data-slot='sidebar-container']) {
+  transition: none;
 }

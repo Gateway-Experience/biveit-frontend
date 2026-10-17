@@ -14,7 +14,7 @@ function FullScreenLoading({ loading = true }: FullScreenLoadingProps) {
       className='fixed inset-0 z-[2147483647] flex flex-col items-center justify-center gap-4 bg-scrim text-scrim-foreground'
       role='presentation'
     >
-      <Spinner className='size-[70px] text-primary' />
+      <Spinner className='size-[70px] text-brand-strong' />
     </div>
   );
 }

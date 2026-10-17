@@ -40,7 +40,7 @@ function ExampleSiteDesktop() {
         <div>
           <span className='rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-accent-foreground'>{t('landing_laptop_badge')}</span>
           <p className='mt-4 font-heading text-[34px] leading-[1.05] font-bold tracking-tight'>
-            {t('landing_laptop_heading_1')} <span className='text-primary'>{t('landing_laptop_heading_2')}</span>
+            {t('landing_laptop_heading_1')} <span className='text-brand-strong'>{t('landing_laptop_heading_2')}</span>
           </p>
           <p className='mt-3 text-[13px] leading-relaxed text-muted-foreground'>{t('landing_laptop_subtitle')}</p>
           <div className='mt-5 flex gap-2 text-[12px] font-semibold'>
@@ -48,7 +48,7 @@ function ExampleSiteDesktop() {
             <span className='rounded-full border px-4 py-2'>{t('landing_laptop_secondary_cta')}</span>
           </div>
           <div className='mt-5 flex items-center gap-2 text-[11px] text-muted-foreground'>
-            <span className='flex text-primary'>
+            <span className='flex text-brand-strong'>
               {[0, 1, 2, 3, 4].map(index => <StarIcon key={index} className='size-3 fill-current' />)}
             </span>
             {t('landing_laptop_rating')}
@@ -56,7 +56,7 @@ function ExampleSiteDesktop() {
         </div>
         <div className='relative'>
           <div className='grid h-[200px] place-items-center rounded-2xl bg-linear-to-br from-brand-light/45 via-primary/25 to-brand-deep/40'>
-            <MotorbikeIcon className='size-24 text-primary' strokeWidth={1.25} />
+            <MotorbikeIcon className='size-24 text-brand-strong' strokeWidth={1.25} />
           </div>
           <div className='absolute inset-x-5 -bottom-8 rounded-xl border bg-card p-3 shadow-lg'>
             <div className='grid grid-cols-2 gap-2 text-[10px]'>
@@ -76,13 +76,13 @@ function ExampleSiteDesktop() {
         {EXAMPLE_BIKES.map(bike => (
           <div key={bike.id} data-bikeid={bike.id} className='flex items-center gap-3 rounded-xl border p-3'>
             <span className='grid size-11 place-items-center rounded-lg bg-accent'>
-              <MotorbikeIcon className='size-5 text-primary' />
+              <MotorbikeIcon className='size-5 text-brand-strong' />
             </span>
             <div className='flex-1'>
               <p className='text-[12px] font-semibold'>{bike.name}</p>
               <p className='text-[11px] text-muted-foreground'>{bike.price}{t('landing_laptop_per_day')}</p>
             </div>
-            <span className='rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary'>{t('landing_laptop_nav_cta')}</span>
+            <span className='rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-brand-strong'>{t('landing_laptop_nav_cta')}</span>
           </div>
         ))}
       </div>
@@ -105,15 +105,15 @@ function ExampleSiteMobile() {
         </span>
       </div>
       <p className='font-heading text-[24px] leading-[1.1] font-bold'>
-        {t('landing_laptop_heading_1')} <span className='text-primary'>{t('landing_laptop_heading_2')}</span>
+        {t('landing_laptop_heading_1')} <span className='text-brand-strong'>{t('landing_laptop_heading_2')}</span>
       </p>
       <div className='grid h-32 place-items-center rounded-2xl bg-linear-to-br from-brand-light/45 via-primary/25 to-brand-deep/40'>
-        <MotorbikeIcon className='size-16 text-primary' strokeWidth={1.25} />
+        <MotorbikeIcon className='size-16 text-brand-strong' strokeWidth={1.25} />
       </div>
       <span className='rounded-full bg-primary py-2.5 text-center text-[13px] font-semibold text-primary-foreground'>{t('landing_laptop_cta')}</span>
       <div className='flex items-center gap-3 rounded-xl border p-3'>
         <span className='grid size-10 place-items-center rounded-lg bg-accent'>
-          <MotorbikeIcon className='size-5 text-primary' />
+          <MotorbikeIcon className='size-5 text-brand-strong' />
         </span>
         <div>
           <p className='text-[13px] font-semibold'>{EXAMPLE_BIKES[0].name}</p>
@@ -141,11 +141,11 @@ function SpeedScoreCard({ className }: { className?: string }) {
   const { t } = useTranslation();
   return (
     <div className={cn(FLOATING_CARD_CLASS, 'flex items-center gap-3', className)}>
-      <span className='grid size-12 place-items-center rounded-full bg-[conic-gradient(var(--primary)_0_100%)] p-1'>
-        <span className='grid size-full place-items-center rounded-full bg-card font-heading text-sm font-bold text-primary'>100</span>
+      <span className='grid size-12 place-items-center rounded-full bg-[conic-gradient(var(--brand-strong)_0_100%)] p-1'>
+        <span className='grid size-full place-items-center rounded-full bg-card font-heading text-sm font-bold text-brand-strong'>100</span>
       </span>
       <div>
-        <p className='flex items-center gap-1 text-sm font-semibold'><ZapIcon className='size-3.5 fill-primary text-primary' />{t('landing_laptop_speed_title')}</p>
+        <p className='flex items-center gap-1 text-sm font-semibold'><ZapIcon className='size-3.5 fill-brand-strong text-brand-strong' />{t('landing_laptop_speed_title')}</p>
         <p className='text-xs text-muted-foreground'>{t('landing_laptop_speed_label')}</p>
       </div>
     </div>
@@ -162,12 +162,12 @@ function BookingsChartCard({ className }: { className?: string }) {
       <svg viewBox='0 0 200 64' className='mt-2 h-14 w-full' aria-hidden='true'>
         <defs>
           <linearGradient id='landing-bookings-area' x1='0' y1='0' x2='0' y2='1'>
-            <stop offset='0' style={{ stopColor: 'var(--primary)', stopOpacity: 0.35 }} />
-            <stop offset='1' style={{ stopColor: 'var(--primary)', stopOpacity: 0 }} />
+            <stop offset='0' style={{ stopColor: 'var(--brand-strong)', stopOpacity: 0.35 }} />
+            <stop offset='1' style={{ stopColor: 'var(--brand-strong)', stopOpacity: 0 }} />
           </linearGradient>
         </defs>
         <path d='M0 56 L28 48 L56 52 L84 36 L112 40 L140 24 L168 26 L200 8 V64 H0 Z' fill='url(#landing-bookings-area)' />
-        <path d='M0 56 L28 48 L56 52 L84 36 L112 40 L140 24 L168 26 L200 8' fill='none' stroke='var(--primary)' strokeWidth={2.5} strokeLinejoin='round' strokeLinecap='round' />
+        <path d='M0 56 L28 48 L56 52 L84 36 L112 40 L140 24 L168 26 L200 8' fill='none' stroke='var(--brand-strong)' strokeWidth={2.5} strokeLinejoin='round' strokeLinecap='round' />
       </svg>
     </div>
   );
@@ -186,7 +186,7 @@ function SearchResultCard({ className }: { className?: string }) {
         <span className='rounded-full bg-primary px-2 py-0.5 font-bold text-primary-foreground'>#1</span>
         <span className='text-success'>{t('landing_example_domain_moto')}</span>
       </div>
-      <p className='mt-1 text-sm font-semibold text-primary'>{t('landing_laptop_search_title')}</p>
+      <p className='mt-1 text-sm font-semibold text-brand-strong'>{t('landing_laptop_search_title')}</p>
     </div>
   );
 }
