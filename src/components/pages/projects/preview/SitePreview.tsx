@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { ArrowLeftIcon, ArrowRightIcon, MonitorIcon, RotateCwIcon, SmartphoneIcon, TriangleAlertIcon } from 'lucide-react';
 
-import BuildConsole from 'src/components/pages/projects/preview/BuildConsole';
+import BuildSketch from 'src/components/pages/projects/preview/BuildSketch';
 import { BuildStatus } from 'src/components/pages/projects/preview/BuildIndicator';
 import { Button } from 'src/components/shadui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from 'src/components/shadui/input-group';
@@ -44,14 +44,14 @@ function PreviewFrame({ src, ...frameProps }: ComponentProps<'iframe'> & { src: 
 // The site only shows while it's `live`; otherwise the area says why (being set up, or not running).
 // Where the user was browsing survives those in-betweens, so a restart lands them back on the same page.
 // Fills whatever box it's given.
-export default function SitePreview({ state, siteUrl, build, buildConsoleLines, className }: {
+export default function SitePreview({ state, siteUrl, build, buildSketch, className }: {
   state: Exclude<PreviewState, 'specing'>;
   // The dev site's origin, e.g. http://localhost:10102. Always there when `live`.
   siteUrl: string | null;
   // The agent's build in progress, if any: the site may be half-done meanwhile.
   build: DevenvBuild | null;
-  // What scrolls past in the build console meanwhile (see buildConsoleScript).
-  buildConsoleLines: string[];
+  // What the building animation shows the site as (see BuildSketch): the project's name and a tagline.
+  buildSketch: { siteName: string; tagline?: string };
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -175,25 +175,17 @@ export default function SitePreview({ state, siteUrl, build, buildConsoleLines, 
             />
           </div>
         )}
-        {/* While the agent builds, the site itself stays in view, hot-reloading as the agent works on it, so
-            people watch their site come together. On top, a see-through layer keeps hands off the half-done
-            page; a light sweeps down it and a small console in the corner types out what's being made. The
-            playful status says in plain words that it's busy. */}
+        {/* While the agent builds, an animation of the site being put together covers the panel: the real site
+            underneath may be half-done or still the previous build, which reads as "nothing's happening". It
+            also keeps hands off the page meanwhile. The playful status says in plain words that it's busy. */}
         {isLive && build && (
           <div data-section='preview-building' className='absolute inset-0 animate-in fade-in-0 duration-500'>
-            <div aria-hidden='true' className='pointer-events-none absolute inset-0 overflow-hidden ring-2 ring-primary/40 ring-inset'>
-              <div className='absolute inset-0 animate-build-scan bg-linear-to-b from-transparent from-35% via-primary/15 to-transparent to-65% motion-reduce:hidden' />
-            </div>
-            <div className='absolute inset-x-3 bottom-3 flex flex-col items-end gap-2.5 sm:inset-x-auto sm:right-4 sm:bottom-4'>
-              {/* On a card-coloured pill so it stands out over whatever the site shows. */}
+            <BuildSketch siteName={buildSketch.siteName} tagline={buildSketch.tagline} className='absolute inset-0' />
+            <div className='absolute inset-x-0 bottom-4 flex justify-center'>
+              {/* On a card-coloured pill so it stands out over the sketch. */}
               <div className='rounded-full bg-card px-5 py-2.5 shadow-lg ring-1 ring-foreground/10'>
                 <BuildStatus since={build.since} className='text-sm' />
               </div>
-              <BuildConsole
-                lines={buildConsoleLines}
-                className='h-36 w-full rounded-xl shadow-2xl ring-1 ring-foreground/10 sm:w-[360px]'
-                options={{ visibleLineCount: 7, contentClassName: 'px-3 pb-2.5 text-[0.6875rem] leading-[1.15rem]' }}
-              />
             </div>
           </div>
         )}

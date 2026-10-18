@@ -54,7 +54,7 @@ export default function BrandLogo({ className, markClassName, hasWordmark = true
     <span className={cn('inline-flex items-center gap-2', className)} aria-label={APP_NAME}>
       <BrandMark className={markClassName} />
       {hasWordmark && (
-        <span aria-hidden='true' className='font-heading text-[1.45rem] leading-none font-bold tracking-[-0.04em]'>
+        <span aria-hidden='true' className='font-heading text-[1.45rem] leading-none font-bold tracking-[-0.04em] whitespace-nowrap'>
           {APP_NAME.slice(0, -_WORDMARK_ACCENT_LENGTH)}
           <span className='text-brand-strong'>
             {_.map(APP_NAME.slice(-_WORDMARK_ACCENT_LENGTH), (letter, index) => (

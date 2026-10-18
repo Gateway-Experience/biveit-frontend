@@ -27,7 +27,14 @@ const _SITE_KIND_OPTIONS = [
   { value: 'web app', labelKey: 'new_project_kind_web_app' },
 ];
 
-const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-sm transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15';
+const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-3.5 py-3 text-base transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15';
+
+// The form fills the screen, so it reads a size up from the app's compact fields: 16px labels, fields and
+// options, 14px hints.
+const _LABEL_CLASS = 'text-base';
+const _INPUT_CLASS = 'h-12 px-4 text-base';
+const _TEXTAREA_CLASS = 'px-4 py-3 text-base';
+const _HINT_CLASS = 'text-sm';
 
 // A full-screen sheet of plain card colour that fades and rises in over the page, and scrolls itself when the
 // form is taller than the screen.
@@ -103,7 +110,7 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
           <div data-page='new-project' className='mx-auto w-full max-w-2xl'>
             <div className={_ENTER_CLASS} style={_getEnterDelayStyle(0)}>
               <DialogTitle className='font-heading text-3xl font-bold tracking-[-0.03em] sm:text-4xl'>{t('new_project_title')}</DialogTitle>
-              <DialogDescription className='mt-3 text-base text-muted-foreground'>{t('new_project_intro')}</DialogDescription>
+              <DialogDescription className='mt-3 text-lg text-muted-foreground'>{t('new_project_intro')}</DialogDescription>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className='mt-10 flex flex-col gap-6'>
@@ -117,6 +124,8 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
                       label={t('new_project_name_label')}
                       placeholder={t('new_project_name_placeholder')}
                       maxLength={200}
+                      labelClassName={_LABEL_CLASS}
+                      inputClassName={_INPUT_CLASS}
                       fullWidth
                       disabled={isSubmitting}
                       value={field.value}
@@ -140,6 +149,9 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
                       multiline
                       minRows={6}
                       maxLength={_DESCRIPTION_MAX_LENGTH}
+                      labelClassName={_LABEL_CLASS}
+                      inputClassName={_TEXTAREA_CLASS}
+                      helperClassName={_HINT_CLASS}
                       fullWidth
                       disabled={isSubmitting}
                       value={field.value}
@@ -161,8 +173,8 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
               </div>
 
               <div className={cn('flex flex-col gap-2', _ENTER_CLASS)} style={_getEnterDelayStyle(3)}>
-                <Label>{t('new_project_kind_label')}</Label>
-                <p className='text-xs text-muted-foreground'>{t('new_project_kind_help')}</p>
+                <Label className={_LABEL_CLASS}>{t('new_project_kind_label')}</Label>
+                <p className={cn(_HINT_CLASS, 'text-muted-foreground')}>{t('new_project_kind_help')}</p>
                 <Controller
                   name='siteKinds'
                   control={control}
@@ -188,6 +200,7 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
                     <Input
                       placeholder={t('new_project_kind_other_placeholder')}
                       aria-label={t('new_project_kind_other_placeholder')}
+                      className={_INPUT_CLASS}
                       disabled={isSubmitting}
                       value={field.value}
                       onChange={field.onChange}
@@ -197,7 +210,7 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
               </div>
 
               <div className={_ENTER_CLASS} style={_getEnterDelayStyle(4)}>
-                <Button type='submit' size='lg' disabled={isSubmitting}>
+                <Button type='submit' size='lg' disabled={isSubmitting} className='text-base'>
                   {isSubmitting && <Spinner data-icon='inline-start' />}
                   {t('new_project_submit')}
                 </Button>

@@ -11,6 +11,9 @@ type FieldShellProps = {
   helperText?: React.ReactNode;
   fullWidth?: boolean;
   className?: string;
+  // For roomier forms that want a bigger label / hint than the default text-sm / text-xs.
+  labelClassName?: string;
+  helperClassName?: string;
   id?: string;
   children: (props: { id: string; 'aria-invalid'?: boolean }) => React.ReactNode;
 };
@@ -18,17 +21,17 @@ type FieldShellProps = {
 // MUI's TextField bundled label + helper text + error state into one component; shadcn splits
 // them. This keeps the old prop shape (`label`, `error`, `helperText`) so call sites don't change.
 export function FieldShell({
-  label, error, helperText, fullWidth, className, id, children,
+  label, error, helperText, fullWidth, className, labelClassName, helperClassName, id, children,
 }: FieldShellProps) {
   const generatedId = useId();
   const fieldId = id || generatedId;
 
   return (
     <div className={cn('flex flex-col gap-2', fullWidth && 'w-full', className)}>
-      {label && <Label htmlFor={fieldId}>{label}</Label>}
+      {label && <Label htmlFor={fieldId} className={labelClassName}>{label}</Label>}
       {children({ id: fieldId, 'aria-invalid': error || undefined })}
       {helperText && (
-        <p className={cn('text-xs', error ? 'text-destructive' : 'text-muted-foreground')}>
+        <p className={cn('text-xs', error ? 'text-destructive' : 'text-muted-foreground', helperClassName)}>
           {helperText}
         </p>
       )}
@@ -43,13 +46,15 @@ type FormFieldProps = Omit<React.ComponentProps<'input'>, 'className'> & {
   fullWidth?: boolean;
   className?: string;
   inputClassName?: string;
+  labelClassName?: string;
+  helperClassName?: string;
   // MUI's TextField grew a textarea via `multiline`; keep that spelling.
   multiline?: boolean;
   minRows?: number;
 };
 
 export default function FormField({
-  label, error, helperText, fullWidth, className, inputClassName, multiline, minRows, ...inputProps
+  label, error, helperText, fullWidth, className, inputClassName, labelClassName, helperClassName, multiline, minRows, ...inputProps
 }: FormFieldProps) {
   return (
     <FieldShell
@@ -58,6 +63,8 @@ export default function FormField({
       helperText={helperText}
       fullWidth={fullWidth}
       className={className}
+      labelClassName={labelClassName}
+      helperClassName={helperClassName}
       id={inputProps.id}
     >
       {shellProps => (multiline

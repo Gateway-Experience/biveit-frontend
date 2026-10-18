@@ -15,7 +15,6 @@ import useDevenvStatus from 'src/components/pages/projects/preview/useDevenvStat
 import useProjectSession from 'src/components/pages/projects/useProjectSession';
 import { Spinner } from 'src/components/common/Spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
-import { getBuildConsoleLines } from 'src/services/buildConsoleScript';
 import { getPreviewState } from 'src/services/devenv';
 import { getProjects } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
@@ -51,17 +50,18 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   const isSideBySide = useMediaQuery(_SIDE_BY_SIDE_QUERY);
   // Until the status is known, assume specing: no preview, no wide layout.
   const previewState = devenv ? getPreviewState(devenv) : 'specing';
-  // The made-up code in the preview while building, about this project (its name, products, description).
-  const buildConsoleLines = useMemo(
-    () => (project ? getBuildConsoleLines(project, activeBuild) : []),
-    [project, activeBuild],
-  );
+  // What the building animation calls the site: its name, and the first sentence of what it's about.
+  const buildSketch = useMemo(() => {
+    const description = _.trim(project?.description || _.toString(_.get(project, 'bootstrap_data.description', '')));
+    return { siteName: project?.name || '', tagline: _.truncate(_.first(description.split(/(?<=[.!?。！？])\s*/)), { length: 90 }) };
+  }, [project]);
+
   const preview = previewState !== 'specing' && (
     <SitePreview
       state={previewState}
       siteUrl={devenv?.preview_url || null}
       build={activeBuild}
-      buildConsoleLines={buildConsoleLines}
+      buildSketch={buildSketch}
       className='flex-1'
     />
   );

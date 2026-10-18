@@ -445,6 +445,18 @@ export default function AppSidebar({ onResized }: { onResized: (width: number) =
                       <span>{t('search_open')}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  {/* Signed-in users are the ones about to publish (and pay), so pricing stays a click away for them too. */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location.pathname === PATHS.pricing}
+                      tooltip={t('pricing_nav')}
+                      render={<Link to={PATHS.pricing} onClick={closeIfMobile} />}
+                      className={_ITEM_TEXT_CLASS}
+                    >
+                      <TagIcon />
+                      <span>{t('pricing_nav')}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </>
               )
               : (

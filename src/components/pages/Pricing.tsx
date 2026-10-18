@@ -55,7 +55,8 @@ export default function Pricing() {
             </li>
           ))}
         </ul>
-        <LinkButton href={PATHS.newProject} size='lg' className='relative mt-7 w-full'>{t('pricing_cta')}</LinkButton>
+        {/* To the projects page, like the landing page's start buttons: after logging in, people land on their list. */}
+        <LinkButton href={PATHS.projects} size='lg' className='relative mt-7 w-full'>{t('pricing_cta')}</LinkButton>
         <p className='relative mt-3 text-center text-xs text-muted-foreground'>{t('pricing_cta_note')}</p>
       </div>
 

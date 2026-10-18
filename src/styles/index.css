@@ -9,13 +9,13 @@
    page): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
 @custom-variant dark (&:is(.dark *):not(.force-light, .force-light *));
 
-/* The light that sweeps down the site preview while the agent builds (SitePreview): the band sits in the
-   middle of a full-height layer, which travels from just above the panel to just below it. */
+/* The landing page's sliding rows (the business chips): the row holds its items twice, so sliding it left by
+   half its width lands exactly where it started, and the loop is seamless. */
 @theme {
-  --animate-build-scan: build-scan 3.2s ease-in-out infinite;
-  @keyframes build-scan {
-    from { transform: translateY(-60%); }
-    to { transform: translateY(60%); }
+  --animate-marquee: marquee 45s linear infinite;
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 }
 
@@ -100,10 +100,10 @@
   --card-foreground: oklch(0.24 0.035 248);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.24 0.035 248);
-  --primary: oklch(0.798 0.065 242.3);
+  --primary: oklch(0.92 0.09 92);
   --primary-foreground: oklch(0.24 0.035 248);
-  --secondary: oklch(0.982 0.026 92.4);
-  --secondary-foreground: oklch(0.3 0.035 245);
+  --secondary: oklch(0.898 0.042 225.6);
+  --secondary-foreground: oklch(0.24 0.035 248);
   --muted: oklch(0.965 0.012 238);
   --muted-foreground: oklch(0.5 0.035 245);
   --accent: oklch(0.951 0.02 238.7);
@@ -135,10 +135,11 @@
   /* Soft tint behind emphasised words and other light brand washes. */
   --highlight: oklch(0.898 0.042 225.6);
   /* Brand palette (sky blue + cream): #E3F1FB (--accent), #C1E4F3 (--highlight, --chart-5), #A8D0EF and
-     #99C3E4 (--chart-3/2, and the dark theme's --brand-light), #FFF9E6 (--secondary). They're all pale, so the
+     #99C3E4 (--chart-3/2, and the dark theme's --brand-light), #FFF9E6 (the hue of --primary). They're all pale, so the
      colours that carry text (--brand-strong, --brand-deep, --brand-light here, the foregrounds) are deeper
-     shades of the same blue, picked for contrast. --primary IS #99C3E4: buttons are pale blue with navy labels
-     (--primary-foreground, about 8:1).
+     shades of the same blue, picked for contrast. Buttons (--primary) are the yellow side of the palette: a
+     butter yellow from #FFF9E6's hue (#FAE39F; the exact cream is invisible against the page), navy labels
+     at 13:1. Secondary surfaces like the user's chat bubbles (--secondary) are #C1E4F3 with navy text (12:1).
      The two ends of the brand gradient (logo, primary buttons, emphasised headline words), with
      --primary in the middle. */
   --brand-light: oklch(0.66 0.1 238);
@@ -184,10 +185,10 @@
   --card-foreground: oklch(0.96 0.01 240);
   --popover: oklch(0.215 0.03 245);
   --popover-foreground: oklch(0.96 0.01 240);
-  --primary: oklch(0.74 0.1 240);
+  --primary: oklch(0.88 0.1 92);
   --primary-foreground: oklch(0.2 0.04 248);
-  --secondary: oklch(0.28 0.02 85);
-  --secondary-foreground: oklch(0.982 0.026 92.4);
+  --secondary: oklch(0.34 0.06 242);
+  --secondary-foreground: oklch(0.96 0.01 240);
   --muted: oklch(0.26 0.03 245);
   --muted-foreground: oklch(0.72 0.03 240);
   --accent: oklch(0.29 0.05 242);

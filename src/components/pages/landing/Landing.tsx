@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import {
@@ -12,10 +13,12 @@ import BrandLogo from 'src/components/common/BrandLogo';
 import LanguageSelector from 'src/components/common/LanguageSelector';
 import LinkButton from 'src/components/common/LinkButton';
 import Reveal from 'src/components/common/Reveal';
-import ScaledFrame from 'src/components/common/ScaledFrame';
 import { Button } from 'src/components/shadui/button';
-import { BrowserDots, ChatPreviewCard, HeroVisual } from 'src/components/pages/landing/HeroVisual';
 import { LaptopShowcase } from 'src/components/pages/landing/DeviceMockups';
+import DotGridBackdrop from 'src/components/pages/landing/DotGridBackdrop';
+import HeroShowcase from 'src/components/pages/landing/HeroShowcase';
+import HowItWorks from 'src/components/pages/landing/HowItWorks';
+import ShowcaseZoom from 'src/components/pages/landing/ShowcaseZoom';
 import {
   BoutiqueSite, CafeSite, HotelSite, LakeHouseSite, MotoRentalSite, PerfumeSite,
 } from 'src/components/pages/landing/ExampleSites';
@@ -27,9 +30,10 @@ import { getPriceLabels } from 'src/services/pricing';
 // The landing page runs wider than the app's content column (MAIN_CONTENT_WIDTH_CLASS).
 const LANDING_WIDTH_CLASS = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
 
-// Every "start" button goes straight to the new-project form. Visitors who aren't signed in get
-// bounced through login by ProtectedRoute and land back there afterwards.
-const START_PATH = PATHS.newProject;
+// Every "start" button goes to the projects page. Visitors who aren't signed in get bounced through login
+// (or sign-up) by ProtectedRoute and land there afterwards: on their list, not straight in the new-project
+// form, so returning users see their work first and new ones get the empty state's "create" button.
+const START_PATH = PATHS.projects;
 
 // The brand gradient, for primary buttons and for emphasised headline words.
 const BRAND_BUTTON_CLASS = 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/85';
@@ -91,11 +95,8 @@ const SHOWCASE_SITES: { id: string; domainKey: string; typeKey: string; descKey:
   { id: 'cafe', domainKey: 'landing_example_domain_cafe', typeKey: 'landing_biz_cafe', descKey: 'landing_site_cafe_desc', Site: CafeSite },
 ];
 
-const STEPS = [
-  { id: 'talk', titleKey: 'landing_step1_title', descKey: 'landing_step1_body' },
-  { id: 'build', titleKey: 'landing_step2_title', descKey: 'landing_step2_body' },
-  { id: 'live', titleKey: 'landing_step3_title', descKey: 'landing_step3_body' },
-];
+// The hero's big browser cycles through these (the rest still show in the gallery further down).
+const HERO_SITE_IDS = ['moto', 'hotel', 'cafe', 'clothes'];
 
 const COMPARE_ROWS = [
   { id: 'time', usualKey: 'landing_compare_time_usual', vib3Key: 'landing_compare_time_vib3' },
@@ -133,7 +134,7 @@ function SoftGlowBackdrop() {
 function HeadlineAccent({ className }: { className?: string }) {
   return (
     <div aria-hidden='true' className={cn('flex items-center gap-1.5', className)}>
-      <span className='h-1.5 w-14 rounded-full bg-linear-to-r from-primary to-brand-deep' />
+      <span className='h-1.5 w-14 rounded-full bg-linear-to-r from-brand-light to-brand-deep' />
       <span className='size-1.5 rounded-full bg-primary/60' />
       <span className='size-1.5 rounded-full bg-primary/30' />
     </div>
@@ -168,7 +169,8 @@ function LandingHeader() {
           <BrandLogo />
         </Link>
         <div className='flex items-center gap-1 sm:gap-2'>
-          <Link to={PATHS.pricing} className='rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground'>
+          {/* Phones: no room next to the logo; Pricing is in the footer there. */}
+          <Link to={PATHS.pricing} className='hidden rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground sm:inline'>
             {t('pricing_nav')}
           </Link>
           <LanguageSelector />
@@ -179,6 +181,10 @@ function LandingHeader() {
   );
 }
 
+// Original purpose: the top of the landing page.
+// Intentions: the promise in three short lines ("You speak. We build. We launch."), centred, with the way in
+// right under it, and then the big picture: a real-looking website, tilted like a product shot, that
+// flattens as you scroll and lets you flip between example sites (HeroShowcase).
 function HeroSection() {
   const { t } = useTranslation();
 
@@ -188,11 +194,10 @@ function HeroSection() {
 
   return (
     <section data-section='hero' className='relative isolate overflow-hidden'>
-      <SoftGlowBackdrop />
-      <div className={cn(LANDING_WIDTH_CLASS, 'grid items-center gap-14 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pt-24 lg:pb-28')}>
+      <div className={cn(LANDING_WIDTH_CLASS, 'flex flex-col items-center pt-14 pb-16 text-center sm:pt-20 lg:pt-24')}>
         {/* min-w-0 lets this column shrink below its longest word, so long words wrap instead of overflowing */}
-        <Reveal className='min-w-0'>
-          <span className='inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
+        <Reveal className='flex min-w-0 flex-col items-center'>
+          <span className='inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
             <SparklesIcon className='size-3.5 text-brand-strong' />
             {t('landing_hero_eyebrow')}
           </span>
@@ -201,9 +206,8 @@ function HeroSection() {
             <span className={cn('block', BRAND_TEXT_CLASS)}>{t('landing_hero_title_build')}</span>
             <span className='block'>{t('landing_hero_title_rest')}</span>
           </h1>
-          <HeadlineAccent className='mt-6' />
-          <p className='mt-6 max-w-xl text-lg text-pretty text-muted-foreground'>{t('landing_hero_subtitle')}</p>
-          <div className='mt-8 flex flex-wrap gap-3'>
+          <p className='mt-6 max-w-2xl text-lg text-pretty text-muted-foreground'>{t('landing_hero_subtitle')}</p>
+          <div className='mt-8 flex flex-wrap justify-center gap-3'>
             <LinkButton href={START_PATH} size='lg' className={BRAND_BUTTON_CLASS}>
               {t('landing_cta_start')}
               <ArrowRightIcon data-icon='inline-end' />
@@ -212,7 +216,7 @@ function HeroSection() {
               {t('landing_cta_how')}
             </Button>
           </div>
-          <ul className='mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium'>
+          <ul className='mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm font-medium'>
             {HERO_PERK_KEYS.map(perkKey => (
               <li key={perkKey} className='flex items-center gap-1.5'>
                 <CheckBullet />
@@ -221,77 +225,54 @@ function HeroSection() {
             ))}
           </ul>
         </Reveal>
-        <Reveal delayMs={150}>
-          <HeroVisual />
+        <Reveal delayMs={150} className='mt-14 w-full max-w-5xl'>
+          <HeroShowcase sites={_.filter(SHOWCASE_SITES, site => _.includes(HERO_SITE_IDS, site.id))} />
         </Reveal>
       </div>
     </section>
   );
 }
 
-function BusinessesStrip() {
+// One sliding row of business chips. The chips are there twice (the copy hidden from screen readers), and the
+// row slides left by half its width on a loop, which is seamless. `isReversed` slides it the other way.
+function BusinessMarqueeRow({ businesses, isReversed = false }: { businesses: typeof BUSINESSES; isReversed?: boolean }) {
   const { t } = useTranslation();
-
   return (
-    <section data-section='businesses' className='border-y bg-card'>
-      <Reveal className={cn(LANDING_WIDTH_CLASS, 'py-10')}>
-        <p className='text-center text-sm font-semibold text-muted-foreground'>{t('landing_made_for_title')}</p>
-        <ul className='mt-5 flex flex-wrap justify-center gap-2.5'>
-          {BUSINESSES.map(business => (
-            <li key={business.id} data-businessid={business.id} className='flex items-center gap-2 rounded-full border bg-background px-3.5 py-2 text-sm font-medium'>
+    <div className='flex w-max animate-marquee gap-3 group-hover/marquee:[animation-play-state:paused] motion-reduce:animate-none' style={{ animationDirection: isReversed ? 'reverse' : 'normal' }}>
+      {[false, true].map(isCopy => (
+        <ul key={String(isCopy)} aria-hidden={isCopy || undefined} className='flex shrink-0 gap-3'>
+          {businesses.map(business => (
+            <li key={business.id} data-businessid={business.id} className='flex shrink-0 items-center gap-2 rounded-full border bg-background px-4 py-2.5 text-sm font-medium shadow-xs'>
               <business.Icon className='size-4 text-brand-strong' strokeWidth={1.75} />
               {t(business.labelKey)}
             </li>
           ))}
         </ul>
+      ))}
+    </div>
+  );
+}
+
+// Original purpose: "made for whatever you run": the kinds of businesses VibeIt builds for.
+// Intentions: two rows of chips sliding sideways in opposite directions, endlessly (after the Clear Street
+// reference's sliding row), fading out at both edges; hovering pauses them so a chip can be read.
+function BusinessesStrip() {
+  const { t } = useTranslation();
+
+  return (
+    <section data-section='businesses' className='border-y bg-card py-10'>
+      <Reveal>
+        <p className='text-center text-sm font-semibold text-muted-foreground'>{t('landing_made_for_title')}</p>
+        <div className='group/marquee mt-6 flex flex-col gap-3 overflow-hidden mask-x-from-85% mask-x-to-100%'>
+          {/* Each row carries every chip (the second in reverse order, so the two rows don't line up): half a
+              list would be narrower than a wide screen and leave a gap at the end of the loop. */}
+          <BusinessMarqueeRow businesses={BUSINESSES} />
+          <BusinessMarqueeRow businesses={_.reverse([...BUSINESSES])} isReversed />
+        </div>
       </Reveal>
     </section>
   );
 }
-
-// Small UI vignettes heading each "how it works" step.
-function StepTalkVisual() {
-  return <ChatPreviewCard className='w-[300px] shrink-0 scale-[0.72] shadow-lg' />;
-}
-
-function StepBuildVisual() {
-  return (
-    <div className='w-52 overflow-hidden rounded-xl border bg-card shadow-lg'>
-      <div className='border-b px-2.5 py-2'><BrowserDots /></div>
-      <div className='flex flex-col gap-2 p-3'>
-        <div className='h-10 rounded-lg bg-linear-to-r from-brand-light/50 to-primary/40' />
-        <div className='grid grid-cols-3 gap-2'>
-          {[0, 1, 2].map(index => <div key={index} className='h-8 rounded-md bg-muted' />)}
-        </div>
-        <div className='h-1.5 overflow-hidden rounded-full bg-muted'>
-          <div className='h-full w-3/4 rounded-full bg-linear-to-r from-primary to-brand-deep' />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StepLiveVisual() {
-  const { t } = useTranslation();
-  return (
-    <div className='flex flex-col items-center gap-3'>
-      <span className='flex items-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm font-semibold shadow-lg'>
-        <LockIcon className='size-4 text-success' />
-        {t('landing_example_domain_moto')}
-      </span>
-      <span className='flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success'>
-        <span className='size-1.5 rounded-full bg-success' />
-        {t('landing_scene_live')}
-      </span>
-    </div>
-  );
-}
-
-const STEP_VISUALS: Record<string, () => React.ReactNode> = {
-  talk: StepTalkVisual,
-  build: StepBuildVisual,
-  live: StepLiveVisual,
-};
 
 function HowItWorksSection() {
   const { t } = useTranslation();
@@ -300,21 +281,7 @@ function HowItWorksSection() {
     // scroll-mt keeps the heading clear of the sticky header when the hero button scrolls here.
     <section id='how-it-works' data-section='how-it-works' className={cn(LANDING_WIDTH_CLASS, 'scroll-mt-16 py-20 sm:py-28')}>
       <SectionHeading eyebrow={t('landing_how_eyebrow')} title={t('landing_how_title')} />
-      <ol className='mt-12 grid gap-5 md:grid-cols-3'>
-        {STEPS.map((step, index) => {
-          const StepVisual = STEP_VISUALS[step.id];
-          return (
-            <Reveal as='li' key={step.id} delayMs={index * STAGGER_MS} data-stepid={step.id} className='flex flex-col rounded-3xl border bg-card p-6 shadow-xs'>
-              <div className='grid h-52 place-items-center overflow-hidden rounded-2xl bg-linear-to-br from-accent to-highlight'>
-                <StepVisual />
-              </div>
-              <span className='mt-6 font-heading text-sm font-bold text-brand-strong'>{`0${index + 1}`}</span>
-              <h3 className='mt-1 font-heading text-xl font-bold tracking-[-0.02em]'>{t(step.titleKey)}</h3>
-              <p className='mt-2 text-muted-foreground'>{t(step.descKey)}</p>
-            </Reveal>
-          );
-        })}
-      </ol>
+      <HowItWorks className='mt-12' />
     </section>
   );
 }
@@ -404,7 +371,7 @@ function DealSection() {
             {t('landing_deal_yours_time')}
           </p>
         </Reveal>
-        <Reveal delayMs={STAGGER_MS} className='rounded-3xl bg-linear-to-br from-highlight to-primary p-6 text-primary-foreground shadow-xl shadow-primary/20 sm:p-8 lg:col-span-3'>
+        <Reveal delayMs={STAGGER_MS} className='rounded-3xl bg-linear-to-br from-highlight to-chart-2 p-6 text-primary-foreground shadow-xl shadow-primary/20 sm:p-8 lg:col-span-3'>
           <div className='flex items-center justify-between gap-3'>
             <h3 className='font-heading text-xl font-bold'>{t('landing_deal_ours')}</h3>
             <span className='rounded-full bg-primary-foreground px-3 py-1 text-xs font-semibold text-primary'>{t('landing_deal_ours_badge')}</span>
@@ -425,31 +392,11 @@ function DealSection() {
 
 function ShowcaseSection() {
   const { t } = useTranslation();
-
   return (
-    <section data-section='showcase' className='border-y bg-card'>
-      <div className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
-        <SectionHeading eyebrow={t('landing_showcase_eyebrow')} title={t('landing_showcase_title')} subtitle={t('landing_showcase_subtitle')} />
-        <ul className='mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>
-          {SHOWCASE_SITES.map((site, index) => (
-            // Staggered within each row of three; the next row starts its own wave as it scrolls in.
-            <Reveal as='li' key={site.id} delayMs={(index % 3) * STAGGER_MS} data-siteid={site.id} className='overflow-hidden rounded-2xl border bg-background shadow-xs transition-shadow hover:shadow-lg hover:shadow-primary/10'>
-              <div className='flex items-center gap-3 border-b bg-card px-3 py-2'>
-                <BrowserDots />
-                <span className='truncate rounded-md bg-muted px-2 py-0.5 text-[0.6875rem] text-muted-foreground'>{t(site.domainKey)}</span>
-              </div>
-              <ScaledFrame baseWidth={640} baseHeight={400}>
-                <site.Site />
-              </ScaledFrame>
-              <div className='p-5'>
-                <p className='text-xs font-bold tracking-[0.14em] text-muted-foreground uppercase'>{t(site.typeKey)}</p>
-                <p className='mt-1.5 font-medium'>{t(site.descKey)}</p>
-              </div>
-            </Reveal>
-          ))}
-        </ul>
-      </div>
-    </section>
+    <ShowcaseZoom
+      sites={SHOWCASE_SITES}
+      heading={<SectionHeading eyebrow={t('landing_showcase_eyebrow')} title={t('landing_showcase_title')} subtitle={t('landing_showcase_subtitle')} />}
+    />
   );
 }
 
@@ -506,7 +453,7 @@ function FinalCta() {
 
   return (
     <section data-section='final-cta' className={cn(LANDING_WIDTH_CLASS, 'pb-16')}>
-      <Reveal className='relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-highlight to-primary px-6 py-12 text-center text-primary-foreground shadow-xl shadow-primary/25 sm:px-12 sm:py-14'>
+      <Reveal className='relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-highlight to-chart-2 px-6 py-12 text-center text-primary-foreground shadow-xl shadow-primary/25 sm:px-12 sm:py-14'>
         <div aria-hidden='true' className='pointer-events-none absolute -top-40 -right-40 -z-10 grid size-[480px] place-items-center'>
           {['size-[260px]', 'size-[370px]', 'size-[480px]'].map(sizeClass => (
             <span key={sizeClass} className={cn('absolute rounded-full border border-primary-foreground/15', sizeClass)} />
@@ -549,7 +496,9 @@ function LandingFooter() {
 // Pinned to the light theme (`force-light`) whatever the app theme is.
 export default function Landing() {
   return (
-    <div data-page='landing' className='force-light min-h-svh bg-background text-foreground'>
+    <div data-page='landing' className='force-light relative isolate min-h-svh bg-background text-foreground'>
+      {/* Behind everything; it shows wherever a section leaves the background bare. */}
+      <DotGridBackdrop className='-z-10' />
       <LandingHeader />
       <main>
         <HeroSection />
