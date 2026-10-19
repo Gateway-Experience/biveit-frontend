@@ -14,7 +14,7 @@ import LanguageSelector from 'src/components/common/LanguageSelector';
 import LinkButton from 'src/components/common/LinkButton';
 import Reveal from 'src/components/common/Reveal';
 import { Button } from 'src/components/shadui/button';
-import { LaptopShowcase } from 'src/components/pages/landing/DeviceMockups';
+import BusinessOrbit from 'src/components/pages/landing/BusinessOrbit';
 import DotGridBackdrop from 'src/components/pages/landing/DotGridBackdrop';
 import HeroShowcase from 'src/components/pages/landing/HeroShowcase';
 import HowItWorks from 'src/components/pages/landing/HowItWorks';
@@ -29,9 +29,8 @@ import { getPriceLabels } from 'src/services/pricing';
 
 // The landing page runs wider than the app's content column (MAIN_CONTENT_WIDTH_CLASS).
 const LANDING_WIDTH_CLASS = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
-// One gap between sections, everywhere. Two plain sections back to back would double it, so the second of
-// such a pair only pads its bottom. References: ShowcaseZoom uses the same values.
-const SECTION_PAD_Y_CLASS = 'py-14 sm:py-20';
+// One gap between sections, everywhere. Each section pads only its bottom, so the gap above a section is the
+// one its neighbour leaves (two paddings back to back would double it). References: ShowcaseZoom.
 const SECTION_PAD_BOTTOM_CLASS = 'pb-14 sm:pb-20';
 
 // Every "start" button goes to the projects page. Visitors who aren't signed in get bounced through login
@@ -48,6 +47,13 @@ const BRAND_TEXT_CLASS = 'bg-linear-to-r from-brand-light via-brand-strong to-br
 const STAGGER_MS = 120;
 
 const HERO_PERK_KEYS = ['landing_perk_no_code', 'landing_perk_no_jargon', 'landing_perk_all_included', 'landing_adv_tick_changes'];
+// The hero's second row: what the finished site is like (rather than what using VibeIt is like).
+const HERO_QUALITIES: { id: string; labelKey: string; Icon: ArtIcon }[] = [
+  { id: 'design', labelKey: 'landing_adv_design_title', Icon: PenToolIcon },
+  { id: 'seo', labelKey: 'landing_adv_seo_title', Icon: SearchCheckIcon },
+  { id: 'speed', labelKey: 'landing_adv_speed_title', Icon: ZapIcon },
+  { id: 'responsive', labelKey: 'landing_adv_responsive_title', Icon: MonitorSmartphoneIcon },
+];
 
 const BUSINESSES: { id: string; labelKey: string; Icon: ArtIcon }[] = [
   { id: 'motorbike', labelKey: 'landing_biz_motorbike', Icon: MotorbikeIcon },
@@ -62,13 +68,6 @@ const BUSINESSES: { id: string; labelKey: string; Icon: ArtIcon }[] = [
   { id: 'flowers', labelKey: 'landing_biz_flowers', Icon: Flower2Icon },
   { id: 'gym', labelKey: 'landing_biz_gym', Icon: DumbbellIcon },
   { id: 'portfolio', labelKey: 'landing_biz_portfolio', Icon: PaletteIcon },
-];
-
-const ADVANTAGES: { id: string; titleKey: string; descKey: string; Icon: ArtIcon }[] = [
-  { id: 'design', titleKey: 'landing_adv_design_title', descKey: 'landing_adv_design_desc', Icon: PenToolIcon },
-  { id: 'seo', titleKey: 'landing_adv_seo_title', descKey: 'landing_adv_seo_desc', Icon: SearchCheckIcon },
-  { id: 'speed', titleKey: 'landing_adv_speed_title', descKey: 'landing_adv_speed_desc', Icon: ZapIcon },
-  { id: 'responsive', titleKey: 'landing_adv_responsive_title', descKey: 'landing_adv_responsive_desc', Icon: MonitorSmartphoneIcon },
 ];
 
 // Intentions: the "who does what" split is the core pitch — the user's list is deliberately short, ours
@@ -117,33 +116,6 @@ const FAQS = [
   { id: 'cost', questionKey: 'landing_faq_cost_q', answerKey: 'landing_faq_cost_a' },
 ];
 
-// Static decoration behind a section: soft brand-coloured glows and a few faint concentric rings in the
-// bottom-left corner. Needs a `relative isolate overflow-hidden` parent.
-function SoftGlowBackdrop() {
-  return (
-    <div aria-hidden='true' className='pointer-events-none absolute inset-0 -z-10'>
-      <div className='absolute -top-48 right-[-12%] size-[680px] rounded-full bg-primary/15 blur-[130px]' />
-      <div className='absolute top-1/3 -left-48 size-[460px] rounded-full bg-brand-light/20 blur-[110px]' />
-      <div className='absolute -bottom-[520px] -left-[520px] grid size-[1040px] place-items-center'>
-        {['size-[560px]', 'size-[760px]', 'size-[960px]'].map(sizeClass => (
-          <span key={sizeClass} className={cn('absolute rounded-full border border-primary/10', sizeClass)} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// The "— • •" accent under the big headlines.
-function HeadlineAccent({ className }: { className?: string }) {
-  return (
-    <div aria-hidden='true' className={cn('flex items-center gap-1.5', className)}>
-      <span className='h-1.5 w-14 rounded-full bg-linear-to-r from-brand-light to-brand-deep' />
-      <span className='size-1.5 rounded-full bg-primary/60' />
-      <span className='size-1.5 rounded-full bg-primary/30' />
-    </div>
-  );
-}
-
 function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
   return (
     <Reveal className='mx-auto max-w-2xl text-center'>
@@ -185,7 +157,7 @@ function LandingHeader() {
 }
 
 // Original purpose: the top of the landing page.
-// Intentions: the promise in three short lines ("You speak. We build. We launch."), centred, with the way in
+// Intentions: the promise in three short lines ("You dream. We build. You own."), centred, with the way in
 // right under it, and then the big picture: a real-looking website, tilted like a product shot, that
 // flattens as you scroll and lets you flip between example sites (HeroShowcase).
 function HeroSection() {
@@ -197,16 +169,18 @@ function HeroSection() {
 
   return (
     <section data-section='hero' className='relative isolate overflow-hidden'>
-      <div className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_Y_CLASS, 'flex flex-col items-center text-center')}>
+      {/* Half the usual section gap on top: the header is right above. */}
+      <div className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_BOTTOM_CLASS, 'flex flex-col items-center pt-7 text-center sm:pt-10')}>
         {/* min-w-0 lets this column shrink below its longest word, so long words wrap instead of overflowing */}
         <Reveal className='flex min-w-0 flex-col items-center'>
           <span className='inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
             <SparklesIcon className='size-3.5 text-brand-strong' />
             {t('landing_hero_eyebrow')}
           </span>
-          <h1 className='mt-6 font-heading text-[clamp(2.25rem,11vw,3rem)] leading-[1.06] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl xl:text-7xl'>
+          <h1 className='mt-6 font-display text-[clamp(2.5rem,12vw,3.25rem)] leading-[1.06] font-extrabold tracking-[-0.03em] break-words hyphens-auto sm:text-7xl xl:text-[5.25rem]'>
             <span className='block'>{t('landing_hero_title_lead')}</span>
-            <span className={cn('block', BRAND_TEXT_CLASS)}>{t('landing_hero_title_build')}</span>
+            {/* pb: descenders (Vietnamese marks too) poke out of the clipped gradient box otherwise. */}
+            <span className={cn('block pb-[0.06em]', BRAND_TEXT_CLASS)}>{t('landing_hero_title_build')}</span>
             <span className='block'>{t('landing_hero_title_rest')}</span>
           </h1>
           <p className='mt-6 max-w-2xl text-lg text-pretty text-muted-foreground'>{t('landing_hero_subtitle')}</p>
@@ -228,6 +202,14 @@ function HeroSection() {
               </li>
             ))}
           </ul>
+          <ul className='mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm font-medium text-muted-foreground'>
+            {HERO_QUALITIES.map(quality => (
+              <li key={quality.id} data-qualityid={quality.id} className='flex items-center gap-1.5'>
+                <quality.Icon className='size-4 text-brand-strong' strokeWidth={1.75} />
+                {t(quality.labelKey)}
+              </li>
+            ))}
+          </ul>
         </Reveal>
         <Reveal delayMs={150} className='mt-14 w-full max-w-5xl'>
           <HeroShowcase sites={_.filter(SHOWCASE_SITES, site => _.includes(HERO_SITE_IDS, site.id))} />
@@ -237,42 +219,14 @@ function HeroSection() {
   );
 }
 
-// One sliding row of business chips. The chips are there twice (the copy hidden from screen readers), and the
-// row slides left by half its width on a loop, which is seamless. `isReversed` slides it the other way.
-function BusinessMarqueeRow({ businesses, isReversed = false }: { businesses: typeof BUSINESSES; isReversed?: boolean }) {
-  const { t } = useTranslation();
-  return (
-    <div className='flex w-max animate-marquee gap-3 group-hover/marquee:[animation-play-state:paused] motion-reduce:animate-none' style={{ animationDirection: isReversed ? 'reverse' : 'normal' }}>
-      {[false, true].map(isCopy => (
-        <ul key={String(isCopy)} aria-hidden={isCopy || undefined} className='flex shrink-0 gap-3'>
-          {businesses.map(business => (
-            <li key={business.id} data-businessid={business.id} className='flex shrink-0 items-center gap-2 rounded-full border bg-background px-4 py-2.5 text-sm font-medium shadow-xs'>
-              <business.Icon className='size-4 text-brand-strong' strokeWidth={1.75} />
-              {t(business.labelKey)}
-            </li>
-          ))}
-        </ul>
-      ))}
-    </div>
-  );
-}
-
-// Original purpose: "made for whatever you run": the kinds of businesses VibeIt builds for.
-// Intentions: two rows of chips sliding sideways in opposite directions, endlessly (after the Clear Street
-// reference's sliding row), fading out at both edges; hovering pauses them so a chip can be read.
-function BusinessesStrip() {
+// Original purpose: "made for whatever you run": the kinds of businesses VibeIt builds for (see BusinessOrbit).
+function BusinessesSection() {
   const { t } = useTranslation();
 
   return (
-    <section data-section='businesses' className='border-y bg-card py-10'>
+    <section data-section='businesses' className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_BOTTOM_CLASS, 'overflow-x-clip')}>
       <Reveal>
-        <p className='text-center text-sm font-semibold text-muted-foreground'>{t('landing_made_for_title')}</p>
-        <div className='group/marquee mt-6 flex flex-col gap-3 overflow-hidden mask-x-from-85% mask-x-to-100%'>
-          {/* Each row carries every chip (the second in reverse order, so the two rows don't line up): half a
-              list would be narrower than a wide screen and leave a gap at the end of the loop. */}
-          <BusinessMarqueeRow businesses={BUSINESSES} />
-          <BusinessMarqueeRow businesses={_.reverse([...BUSINESSES])} isReversed />
-        </div>
+        <BusinessOrbit businesses={BUSINESSES} title={t('landing_made_for_title')} />
       </Reveal>
     </section>
   );
@@ -283,60 +237,9 @@ function HowItWorksSection() {
 
   return (
     // scroll-mt keeps the heading clear of the sticky header when the hero button scrolls here.
-    <section id='how-it-works' data-section='how-it-works' className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_Y_CLASS, 'scroll-mt-16')}>
+    <section id='how-it-works' data-section='how-it-works' className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_BOTTOM_CLASS, 'scroll-mt-16')}>
       <SectionHeading eyebrow={t('landing_how_eyebrow')} title={t('landing_how_title')} />
       <HowItWorks className='mt-12' />
-    </section>
-  );
-}
-
-// Original purpose: "why us" — the concrete perks of a site built here (custom UI/UX, SEO, speed,
-// responsive): a laptop with an example site next to a column of checked-off cards. It closes the page, so it ends on the start button.
-function AdvantagesSection() {
-  const { t } = useTranslation();
-
-  return (
-    <section data-section='advantages' className='relative isolate overflow-hidden border-y bg-card'>
-      <SoftGlowBackdrop />
-      <div className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_Y_CLASS)}>
-        <Reveal>
-          <span className='text-xs font-bold tracking-[0.18em] text-brand-strong uppercase'>{t('landing_adv_eyebrow', { appName: APP_NAME })}</span>
-          <h2 className='mt-3 max-w-3xl font-heading text-[clamp(2rem,9.5vw,2.25rem)] leading-[1.04] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl'>
-            {t('landing_adv_title_lead')}{' '}
-            <span className={BRAND_TEXT_CLASS}>{t('landing_adv_title_highlight')}</span>
-          </h2>
-          <HeadlineAccent className='mt-6' />
-        </Reveal>
-
-        <div className='mt-10 grid items-center gap-10 lg:grid-cols-[1fr_320px] lg:gap-12'>
-          <Reveal>
-            <LaptopShowcase />
-          </Reveal>
-          <ul className='grid gap-4 sm:grid-cols-2 lg:grid-cols-1'>
-            {ADVANTAGES.map((advantage, index) => (
-              <Reveal as='li' key={advantage.id} delayMs={index * STAGGER_MS} data-advantageid={advantage.id} className='relative flex items-start gap-4 rounded-2xl border bg-card p-4 shadow-lg shadow-primary/5'>
-                <span className='absolute -top-2 -left-2 grid size-6 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/30'>
-                  <CheckIcon className='size-3.5' strokeWidth={3} />
-                </span>
-                <span className='grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-brand-strong'>
-                  <advantage.Icon className='size-6' strokeWidth={1.75} />
-                </span>
-                <div>
-                  <h3 className='font-heading font-bold'>{t(advantage.titleKey)}</h3>
-                  <p className='mt-0.5 text-sm text-muted-foreground'>{t(advantage.descKey)}</p>
-                </div>
-              </Reveal>
-            ))}
-          </ul>
-        </div>
-
-        <Reveal className='mt-12 flex justify-center'>
-          <LinkButton href={START_PATH} size='lg' className={cn(BRAND_BUTTON_CLASS, 'w-[186px]')}>
-            {t('landing_cta_start')}
-            <ArrowRightIcon data-icon='inline-end' />
-          </LinkButton>
-        </Reveal>
-      </div>
     </section>
   );
 }
@@ -388,6 +291,14 @@ function ShowcaseSection() {
     <ShowcaseZoom
       sites={SHOWCASE_SITES}
       heading={<SectionHeading eyebrow={t('landing_showcase_eyebrow')} title={t('landing_showcase_title')} subtitle={t('landing_showcase_subtitle')} />}
+      footer={(
+        <Reveal className='mt-12 flex justify-center'>
+          <LinkButton href={START_PATH} size='lg' className={cn(BRAND_BUTTON_CLASS, 'w-[186px]')}>
+            {t('landing_cta_start')}
+            <ArrowRightIcon data-icon='inline-end' />
+          </LinkButton>
+        </Reveal>
+      )}
     />
   );
 }
@@ -462,7 +373,7 @@ function LandingFooter() {
 
 // Original purpose: the public front door at `/` for visitors who aren't signed in.
 // Intentions: sells one idea — you just talk, we do the building, hosting, domain and launch — in a clean,
-// product-style layout: hero, how it works, who does what, comparison, FAQ, examples, and why us (laptop + advantages) to close.
+// product-style layout: hero, how it works, who does what, comparison, FAQ, who it's for, and examples to close.
 // Pinned to the light theme (`force-light`) whatever the app theme is.
 export default function Landing() {
   return (
@@ -472,13 +383,12 @@ export default function Landing() {
       <LandingHeader />
       <main>
         <HeroSection />
-        <BusinessesStrip />
         <HowItWorksSection />
         <DealSection />
         <CompareSection />
         <FaqSection />
+        <BusinessesSection />
         <ShowcaseSection />
-        <AdvantagesSection />
       </main>
       <LandingFooter />
     </div>

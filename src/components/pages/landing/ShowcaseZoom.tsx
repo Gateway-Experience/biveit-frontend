@@ -49,8 +49,8 @@ function SiteCard({ site, isZoomed, onPointerEnter }: { site: ZoomSite; isZoomed
 // Intentions: the example sites as a plain grid that scrolls normally; once it's on screen, the cards take
 // turns zooming in on their own, one after another, round and round. Pointing at a card zooms that one and
 // holds it there; leaving the grid lets the turns carry on from it. With reduced motion on, nothing zooms
-// by itself. `heading` is the section's title block, rendered above.
-export default function ShowcaseZoom({ sites, heading }: { sites: ZoomSite[]; heading: React.ReactNode }) {
+// by itself. `heading` is the section's title block, rendered above; `footer` (optional) goes under the grid.
+export default function ShowcaseZoom({ sites, heading, footer }: { sites: ZoomSite[]; heading: React.ReactNode; footer?: React.ReactNode }) {
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [gridRef, hasBeenInView] = useHasBeenInView<HTMLDivElement>({ bottomOffset: '30%' });
   // null until the grid first comes into view, so the first card's zoom is actually seen.
@@ -61,8 +61,10 @@ export default function ShowcaseZoom({ sites, heading }: { sites: ZoomSite[]; he
 
   return (
     <section data-section='showcase' className='border-y bg-card'>
-      {/* Padding: the landing's section gap (SECTION_PAD_Y_CLASS in Landing). */}
-      <div className='mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20'>
+      {/* Padding: the landing's section gap (SECTION_PAD_BOTTOM_CLASS in Landing), on top too since the border
+          sits between it and the section above. With a footer (the start button), the bottom matches the gap
+          above the button (mt-12) instead. */}
+      <div className={cn('mx-auto w-full max-w-6xl px-4 pt-14 sm:px-6 sm:pt-20', footer ? 'pb-12' : 'pb-14 sm:pb-20')}>
         {heading}
         <div
           ref={gridRef}
@@ -85,6 +87,7 @@ export default function ShowcaseZoom({ sites, heading }: { sites: ZoomSite[]; he
             />
           ))}
         </div>
+        {footer}
       </div>
     </section>
   );

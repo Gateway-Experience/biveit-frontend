@@ -3,19 +3,19 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/commissioner";
 @import "@fontsource-variable/space-grotesk";
+@import "@fontsource/be-vietnam-pro/800.css";
 @plugin "@tailwindcss/typography";
 
 /* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. the landing
    page): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
 @custom-variant dark (&:is(.dark *):not(.force-light, .force-light *));
 
-/* The landing page's sliding rows (the business chips): the row holds its items twice, so sliding it left by
-   half its width lands exactly where it started, and the loop is seamless. */
+/* The landing page's business orbit: rings of icons turning slowly (BusinessOrbit). */
 @theme {
-  --animate-marquee: marquee 45s linear infinite;
-  @keyframes marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+  --animate-orbit: orbit 80s linear infinite;
+  @keyframes orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 }
 
@@ -53,6 +53,9 @@
      through to the system UI font, which looks native on each OS. */
   --font-heading: 'Space Grotesk Variable', system-ui, sans-serif;
   --font-sans: 'Commissioner Variable', system-ui, sans-serif;
+  /* The hero slogan (and the business orbit's name): Be Vietnam Pro by Be Fonts, extra bold (800) only, as
+     that's the one weight they use. Latin and Vietnamese; Cyrillic etc. fall through to the system font. */
+  --font-display: 'Be Vietnam Pro', system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
