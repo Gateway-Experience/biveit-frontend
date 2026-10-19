@@ -22,12 +22,11 @@ export type DevenvStatus = {
   preview_url: string | null;
   // [] while specing. `status` comes from pm2: only "online" means running.
   servers: { app: 'backend' | 'frontend'; status: string; port: number }[];
-  // Set while the agent is in the middle of a big change (the first build, a new feature, a redesign), so
-  // the preview may be half-done. It switches itself off at `until` unless the agent refreshes it, and that
-  // expiry sends no event — so past `until` it counts as off (see getActiveBuild).
-  building: DevenvBuild | null;
 };
 
+// The agent is in the middle of a big change (the first build, a new feature, a redesign), so the preview
+// may be half-done. Read off the chat's BUILDING signals (see getActiveBuild); past `until` it's over even
+// if nobody said so.
 export type DevenvBuild = {
   since: string;
   until: string;

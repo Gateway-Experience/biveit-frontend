@@ -31,18 +31,38 @@ export type AttachmentBlock = { type: 'attachment' } & Attachment;
 // `version` changes whenever the file does, so anything cached from it is keyed on path + version.
 export type Artifact = Attachment & { title: string; version: string };
 
-// `ask_user` is the agent asking the user multiple-choice questions; `show_artifact` is it pointing the user
-// at one of its files (input: { path, title }); other names are regular tool calls.
+// One thing the agent asks the user to do (a `request_actions` call's input is { actions: RequestedAction[] }).
+// The names keep growing: one we don't know yet still has to be dismissable (see InteractionPanel).
+export type ActionName = 'APPROVE_SPEC' | 'APPROVE_IMPLEMENTATION';
+export type RequestedAction = { name: ActionName | string; params: Record<string, unknown> };
+
+// The two buttons of an approval action (APPROVE_SPEC, APPROVE_IMPLEMENTATION).
+export type ApprovalDecision = 'approved' | 'iterate';
+
+// `ask_user` is the agent asking the user multiple-choice questions; `request_actions` is it asking them to
+// do something (approve the spec...). Both wait on the user — they're answered in one submission. Then
+// `show_artifact` is it pointing the user at one of its files (input: { path, title }); other names are
+// regular tool calls.
 export type ToolUseBlock = { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> };
 
-// For `ask_user`, `content` is the user's InteractionResult[] (real JSON, never stringified). Other tools'
+// For `ask_user` / `request_actions`, `content` is the user's InteractionResult[] (real JSON, never stringified). Other tools'
 // results can be anything, hence `unknown`.
 export type ToolResultBlock = { type: 'tool_result'; tool_use_id: string; content: unknown; is_error?: boolean };
+
+// A signal: a timestamped marker in the log (the message's `created_at` is when it happened), always the
+// only block of an assistant message. Not something said, so it's no chat bubble and never counts as "the
+// last message" (see isSignalMessage). Slugs keep growing: unknown ones are just ignored.
+//   BUILDING / BUILDING_DONE  a big build started (or was refreshed: description = what's being built) / ended
+//   IMPLEMENTATION_STARTED    the user approved the spec
+//   IMPLEMENTATION_DONE       the user signed off the built site
+//   DEVENV_FAILED             setting up the dev environment failed; description = why
+export type SignalSlug = 'BUILDING' | 'BUILDING_DONE' | 'IMPLEMENTATION_STARTED' | 'IMPLEMENTATION_DONE' | 'DEVENV_FAILED';
+export type SignalBlock = { type: 'signal'; slug: SignalSlug | string; description?: string; meta?: Record<string, unknown> };
 
 // The BE stores blocks verbatim and the set of types keeps growing, so anything unrecognized is skipped.
 export type UnknownBlock = { type: string; [key: string]: unknown };
 
-export type ContentBlock = TextBlock | AttachmentBlock | ToolUseBlock | ToolResultBlock | UnknownBlock;
+export type ContentBlock = TextBlock | AttachmentBlock | ToolUseBlock | ToolResultBlock | SignalBlock | UnknownBlock;
 
 export type AiMessage = {
   id: number;
@@ -56,21 +76,26 @@ export type AiMessage = {
   created_at: string;
 };
 
-// One question's outcome in a submission. Statuses go: all `submitted`, or `submitted`… then exactly
-// one `aborted` (the question the user dismissed at) then `untouched`… for the rest.
+export type QuestionAnswerValue = { selected: string[]; custom: string | null };
+export type ActionAnswerValue = { decision: ApprovalDecision };
+
+// One question's (or action's) outcome in a submission. Statuses go: all `submitted`, or `submitted`… then
+// exactly one `aborted` (the item the user dismissed at) then `untouched`… for the rest.
 export type InteractionResult =
-  | { status: 'submitted'; value: { selected: string[]; custom: string | null } }
+  | { status: 'submitted'; value: QuestionAnswerValue | ActionAnswerValue }
   | { status: 'aborted' }
   | { status: 'untouched' };
 
-// The answers to one `ask_user` tool call: `results` follow that call's questions, in order.
+// The answers to one `ask_user` / `request_actions` call: `results` follow that call's questions (or
+// actions), in order.
 export type InteractionAnswer = { interaction_id: string; results: InteractionResult[] };
 
 // POST /conversations/{id}/messages body.
 export type PostChatMessageBody =
   // Text may be empty when there are attachments (paths from the uploads endpoint), but not both.
   | { type: 'text'; text: string; attachments?: string[] }
-  // One submission answers the agent's whole message: one entry per pending `ask_user` call, each exactly once.
+  // One submission answers everything pending: one entry per pending `ask_user` / `request_actions` call,
+  // each exactly once.
   | { type: 'submission'; answers: InteractionAnswer[] };
 
 // Where POST /projects/{id}/open is at for this visit: it gets the agent up (and, the first time, hands it

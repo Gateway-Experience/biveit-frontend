@@ -8,7 +8,8 @@ import {
   subscribeToConversationEvents, uploadAttachments,
 } from 'src/services/chat';
 import {
-  findPendingInteractions, getChatIntroState, hasOlderMessages, isAgentPresumedWorking, mergeMessages,
+  findLastSpokenMessage, findPendingInteractions, getChatIntroState, hasOlderMessages, isAgentPresumedWorking,
+  isSignalMessage, mergeMessages,
 } from 'src/services/chatLog';
 import type { AgentSessionStatus, AiMessage, Attachment, InteractionAnswer, PostChatMessageBody } from 'src/types/chat';
 
@@ -84,7 +85,7 @@ export default function useAgentChat(projectId: number, options: {
 
   // Prepends the page before the oldest message we have. Overlaps and repeats are fine: the merge dedupes.
   // The Documents list refetches when it moves (the agent can revise a file without showing it again).
-  const latestAssistantSeq = _.findLast(messages, { role: 'assistant' })?.seq;
+  const latestAssistantSeq = findLastSpokenMessage(messages || [], { role: 'assistant' })?.seq;
 
   const loadOlderMessages = useCallback(async () => {
     if (!conversationId || isLoadingOlder || !hasOlderMessages(messages || [])) {
@@ -167,7 +168,7 @@ export default function useAgentChat(projectId: number, options: {
   }, [conversationId, notifyError]);
 
   const getFileUrl = useCallback((path: string) => getConversationFileUrl(conversationId as number, path), [conversationId]);
-  // One post answers the agent's whole message — every pending `ask_user` call in it (see buildSubmissionAnswers).
+  // One post answers everything pending — every pending question/action call (see buildSubmissionAnswers).
   const submitAnswers = useCallback(
     (answers: InteractionAnswer[]) => postMessage({ type: 'submission', answers }),
     [postMessage],
@@ -175,8 +176,9 @@ export default function useAgentChat(projectId: number, options: {
 
   const pendingInteractions = useMemo(() => findPendingInteractions(messages || []), [messages]);
   const introState = getChatIntroState(messages, sessionStatus);
+  // A signal after it isn't the agent replying (we can write those ourselves, e.g. on an approval).
   const hasUndeliveredMessage = !_.isNull(undeliveredAfterSeq)
-    && !_.some(messages, message => message.role === 'assistant' && message.seq > undeliveredAfterSeq);
+    && !_.some(messages, message => message.role === 'assistant' && !isSignalMessage(message) && message.seq > undeliveredAfterSeq);
   // Opening the project failed with the conversation already under way: the empty-chat retry isn't showing,
   // so the chat needs its own.
   const isSessionDown = sessionStatus === 'failed' && introState === 'started';

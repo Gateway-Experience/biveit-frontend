@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import { callBe } from 'src/utils/request';
-import type { DevenvBuild, DevenvStatus, PreviewState } from 'src/types/preview';
+import type { DevenvStatus, PreviewState } from 'src/types/preview';
 
 // Intentions: the project's dev environment as the browser sees it — which stage the project is in and
 // whether its dev site is up to be previewed.
@@ -26,15 +26,7 @@ function getPreviewState(devenv: DevenvStatus): PreviewState {
   return _.some(devenv.servers, { app: 'frontend', status: 'online' }) && devenv.preview_url ? 'live' : 'down';
 }
 
-// [Pure] The build in progress, if any. `nowMs` is the caller's clock: a build past its `until` has switched
-// itself off on the BE even though the status we have still shows it.
-function getActiveBuild(devenv: DevenvStatus | null, nowMs: number): DevenvBuild | null {
-  const build = devenv?.building;
-  return build && Date.parse(build.until) > nowMs ? build : null;
-}
-
 export {
-  getActiveBuild,
   getDevenvStatus,
   getPreviewState,
 };

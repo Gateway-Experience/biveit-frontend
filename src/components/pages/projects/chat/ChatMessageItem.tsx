@@ -1,6 +1,9 @@
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { CheckIcon, ChevronRightIcon, FileTextIcon, MessageCircleQuestionIcon, XIcon } from 'lucide-react';
+import type { TFunction } from 'i18next';
+import {
+  CheckIcon, ChevronRightIcon, FileTextIcon, MessageCircleQuestionIcon, ThumbsUpIcon, TriangleAlertIcon, XIcon,
+} from 'lucide-react';
 import { cn } from 'cn';
 
 import Markdown from 'src/components/common/Markdown';
@@ -14,9 +17,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'src/compone
 import { Marker, MarkerContent, MarkerIcon } from 'src/components/shadui/marker';
 import { Message, MessageContent } from 'src/components/shadui/message';
 import { Spinner } from 'src/components/common/Spinner';
-import { getInteractionResults, isAskUser, isShowArtifact } from 'src/services/chatLog';
+import { APPROVAL_ACTION_TEXT_KEYS, flattenInteractionItems, type InteractionItem } from 'src/services/chatInteractions';
+import { getInteractionResults, isAskUser, isShowArtifact, isUserFacingTool } from 'src/services/chatLog';
 import type {
-  AiMessage, AskUserQuestion, AttachmentBlock, ContentBlock, TextBlock, ToolResultBlock, ToolUseBlock,
+  AiMessage, AskUserQuestion, AttachmentBlock, ContentBlock, InteractionResult, SignalBlock, TextBlock, ToolResultBlock,
+  ToolUseBlock,
 } from 'src/types/chat';
 
 // What a message needs to know about the rest of the log to render itself.
@@ -36,26 +41,38 @@ const _USER_BUBBLE_CONTENT_CLASS = cn('rounded-2xl px-4 py-2.5', CHAT_TEXT_SIZE_
 // The agent writes markdown; Markdown's prose spacing is in em, so it scales along with the bigger size.
 const _AGENT_TEXT_CLASS = cn('w-full', CHAT_TEXT_SIZE_CLASS);
 
+// Signals are markers, not chat (see SignalBlock), so they stay hidden — except these, which the user should
+// know about, shown as a quiet notice line.
+const _NOTICE_SIGNAL_KEYS: Record<string, string> = {
+  DEVENV_FAILED: 'chat_signal_devenv_failed',
+};
+
 const _isTextBlock = (block: ContentBlock): block is TextBlock => block.type === 'text';
 const _isAttachmentBlock = (block: ContentBlock): block is AttachmentBlock => block.type === 'attachment';
 const _isToolUseBlock = (block: ContentBlock): block is ToolUseBlock => block.type === 'tool_use';
 const _isToolResultBlock = (block: ContentBlock): block is ToolResultBlock => block.type === 'tool_result';
+const _isNoticeSignalBlock = (block: ContentBlock): block is SignalBlock => block.type === 'signal'
+  && _.has(_NOTICE_SIGNAL_KEYS, (block as SignalBlock).slug);
 
 function _summarizeToolInput(input: Record<string, unknown>) {
   // Most tools have one obvious string arg (a path, a query...), which is all the collapsed row needs.
   return _.truncate(_.find(_.values(input), _.isString) as string | undefined, { length: 60 });
 }
 
-// The agent's `ask_user` call, as it sits in the log. The questions themselves are asked in the panel
-// that replaces the composer, and the answers show up as the user's reply — so this stays a one-liner.
-function AskUserMarker({ toolUse, isPending }: { toolUse: ToolUseBlock; isPending: boolean }) {
+// The agent's `ask_user` / `request_actions` call, as it sits in the log. The questions (or actions)
+// themselves are in the panel that replaces the composer, and the answers show up as the user's reply — so
+// this stays a one-liner.
+function InteractionMarker({ toolUse, isPending }: { toolUse: ToolUseBlock; isPending: boolean }) {
   const { t } = useTranslation();
-  const questionCount = _.size(toolUse.input.questions as AskUserQuestion[]);
 
   return (
     <Marker data-toolcallid={toolUse.id}>
-      <MarkerIcon><MessageCircleQuestionIcon /></MarkerIcon>
-      <MarkerContent>{t('chat_asked_questions', { count: questionCount })}</MarkerContent>
+      <MarkerIcon>{isAskUser(toolUse) ? <MessageCircleQuestionIcon /> : <ThumbsUpIcon />}</MarkerIcon>
+      <MarkerContent>
+        {isAskUser(toolUse)
+          ? t('chat_asked_questions', { count: _.size(toolUse.input.questions as AskUserQuestion[]) })
+          : t('chat_requested_actions')}
+      </MarkerContent>
       {isPending && <span className='rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground'>{t('chat_waiting_for_answer')}</span>}
     </Marker>
   );
@@ -79,17 +96,46 @@ function ShowArtifactCard({ toolUse, onOpenArtifact }: { toolUse: ToolUseBlock; 
   );
 }
 
-// The user's answers, shown as their side of the conversation: each answered question with what they
-// picked. One answer message can cover several `ask_user` calls (the agent's whole message is answered in
-// one go), so it's one card for all of them, in the order asked. A dismiss shows where the user bailed
-// out; questions they never reached are left out.
+// A notice the agent's side put in the log (e.g. the preview environment failing to set up): one quiet line,
+// the details (the BE's reason) on hover.
+function SignalNotice({ signal }: { signal: SignalBlock }) {
+  const { t } = useTranslation();
+  return (
+    <Marker variant='separator' data-signal={signal.slug} title={signal.description}>
+      <MarkerIcon><TriangleAlertIcon /></MarkerIcon>
+      <MarkerContent>{t(_NOTICE_SIGNAL_KEYS[signal.slug])}</MarkerContent>
+    </Marker>
+  );
+}
+
+// What an answered item is labelled with in the answer card: the question as asked, or the action's title.
+// No item = its call is in a page of history that isn't loaded.
+function _getItemLabel(item: InteractionItem | undefined, t: TFunction) {
+  if (item?.kind === 'action') {
+    return t(APPROVAL_ACTION_TEXT_KEYS[item.action.name]?.title || 'chat_action_unknown_title');
+  }
+  return item?.question.question;
+}
+
+// What a submitted answer reads as: the picked options (and custom text), or the approval button clicked.
+function _getSubmittedAnswerText(result: Extract<InteractionResult, { status: 'submitted' }>, t: TFunction) {
+  if ('decision' in result.value) {
+    return t(result.value.decision === 'approved' ? 'chat_answer_approved' : 'chat_action_iterate');
+  }
+  return _.join(_.compact([...result.value.selected, result.value.custom]), ', ') || t('chat_answer_none');
+}
+
+// The user's answers, shown as their side of the conversation: each answered question (or action) with what
+// they picked. One answer message can cover several calls (everything pending is answered in one go), so it's
+// one card for all of them, in the order asked. A dismiss shows where the user bailed out; items they never
+// reached are left out.
 function InteractionAnswerBubble({ answers }: { answers: { toolResult: ToolResultBlock; toolUse?: ToolUseBlock }[] }) {
   const { t } = useTranslation();
-  const answeredQuestions = _.flatMap(answers, ({ toolResult, toolUse }) => {
-    const questions = (toolUse?.input.questions || []) as AskUserQuestion[];
+  const answeredItems = _.flatMap(answers, ({ toolResult, toolUse }) => {
+    const items = toolUse ? flattenInteractionItems([toolUse]) : [];
     return _.map(getInteractionResults(toolResult), (result, index) => ({
       key: `${toolResult.tool_use_id}:${index}`,
-      question: questions[index]?.question,
+      label: _getItemLabel(items[index] as InteractionItem | undefined, t),
       result,
     }));
   });
@@ -97,13 +143,11 @@ function InteractionAnswerBubble({ answers }: { answers: { toolResult: ToolResul
   return (
     <Bubble variant='secondary' align='end' data-toolresultfor={_.map(answers, 'toolResult.tool_use_id').join(',')}>
       <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2.5 py-3')}>
-        {_.map(_.reject(answeredQuestions, { result: { status: 'untouched' } }), ({ key, question, result }) => (
+        {_.map(_.reject(answeredItems, { result: { status: 'untouched' } }), ({ key, label, result }) => (
           <div key={key} className='flex flex-col gap-0.5'>
-            <span className='text-xs text-muted-foreground'>{question}</span>
+            <span className='text-xs text-muted-foreground'>{label}</span>
             <span className={cn('font-medium', result.status === 'aborted' && 'font-normal text-muted-foreground italic')}>
-              {result.status === 'submitted'
-                ? _.join(_.compact([...result.value.selected, result.value.custom]), ', ') || t('chat_answer_none')
-                : t('chat_answer_dismissed')}
+              {result.status === 'submitted' ? _getSubmittedAnswerText(result, t) : t('chat_answer_dismissed')}
             </span>
           </div>
         ))}
@@ -123,9 +167,9 @@ function ToolCallStatusIcon({ toolResult, isAgentWorking }: { toolResult?: ToolR
   return isAgentWorking ? <Spinner className='size-3.5' /> : <span className='block size-1.5 rounded-full bg-muted-foreground' />;
 }
 
-// Intentions: a regular (non-`ask_user`) tool call is noise most of the time, so it's a marker line
+// Intentions: a regular (not user-facing) tool call is noise most of the time, so it's a marker line
 // (status + name + main argument) that expands to show the raw input and result for the curious.
-// The BE only sends `ask_user` today; this is for when the real agent's own tool calls come through.
+// This is for when the real agent's own tool calls come through.
 function ToolCallMarker({ toolUse, toolResult, isAgentWorking }: {
   toolUse: ToolUseBlock;
   toolResult?: ToolResultBlock;
@@ -173,10 +217,10 @@ function UserMessageBlocks({ message, renderContext }: { message: AiMessage; ren
     </div>
   );
 
-  // Answers to the agent's questions share one card; results of its other tools render under the call.
+  // Answers to the agent's questions/actions share one card; results of its other tools render under the call.
   const answers = _.filter(
     _.map(_.filter(message.content, _isToolResultBlock), toolResult => ({ toolResult, toolUse: renderContext.toolUsesById[toolResult.tool_use_id] })),
-    ({ toolUse }) => isAskUser(toolUse),
+    ({ toolUse }) => isUserFacingTool(toolUse),
   );
   const answerCard = !_.isEmpty(answers) && <InteractionAnswerBubble key='answers' answers={answers} />;
 
@@ -199,8 +243,11 @@ function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage
     if (_isToolUseBlock(block) && isShowArtifact(block)) {
       return <ShowArtifactCard key={block.id} toolUse={block} onOpenArtifact={renderContext.onOpenArtifact} />;
     }
-    if (_isToolUseBlock(block) && isAskUser(block)) {
-      return <AskUserMarker key={block.id} toolUse={block} isPending={_.includes(renderContext.pendingInteractionIds, block.id)} />;
+    if (_isToolUseBlock(block) && isUserFacingTool(block)) {
+      return <InteractionMarker key={block.id} toolUse={block} isPending={_.includes(renderContext.pendingInteractionIds, block.id)} />;
+    }
+    if (_isNoticeSignalBlock(block)) {
+      return <SignalNotice key={index} signal={block} />;
     }
     if (_isToolUseBlock(block)) {
       return (
@@ -212,18 +259,19 @@ function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage
         />
       );
     }
-    // Unknown block types are skipped (the BE's set keeps growing).
+    // Unknown block types (and the other signals) are skipped — the BE's set keeps growing.
     return null;
   });
 }
 
 // [Pure] Whether a message has anything to draw. Users' messages carrying only results of regular tool
-// calls don't (those show under the call), and neither do messages made of unknown blocks.
+// calls don't (those show under the call), and neither do signals (bar the notices) or messages made of
+// unknown blocks.
 function hasVisibleContent(message: AiMessage, toolUsesById: Record<string, ToolUseBlock>) {
   return _.some(message.content, block => _isTextBlock(block)
     || (message.role === 'user' && _isAttachmentBlock(block))
-    || (message.role === 'assistant' && _isToolUseBlock(block))
-    || (message.role === 'user' && _isToolResultBlock(block) && isAskUser(toolUsesById[block.tool_use_id])));
+    || (message.role === 'assistant' && (_isToolUseBlock(block) || _isNoticeSignalBlock(block)))
+    || (message.role === 'user' && _isToolResultBlock(block) && isUserFacingTool(toolUsesById[block.tool_use_id])));
 }
 
 // Intentions: renders one message. User messages sit on the right in bubbles (text, or their answers);

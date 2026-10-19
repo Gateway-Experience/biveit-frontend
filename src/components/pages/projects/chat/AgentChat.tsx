@@ -16,7 +16,7 @@ import ArtifactsPanel from 'src/components/pages/projects/chat/ArtifactsPanel';
 import { BuildGlyph } from 'src/components/pages/projects/preview/BuildIndicator';
 import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
 import ChatMessageItem, { hasVisibleContent, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
-import QuestionPanel from 'src/components/pages/projects/chat/QuestionPanel';
+import InteractionPanel from 'src/components/pages/projects/chat/InteractionPanel';
 import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import { getArtifacts } from 'src/services/chat';
 import { getAnsweredQuestions, indexToolResults, indexToolUses } from 'src/services/chatLog';
@@ -88,15 +88,15 @@ function useSendAndFollow(sendText: SendText): SendText {
   };
 }
 
-// Ways out of the agent's questions that also say something (see QuestionPanel): dismiss, then send `text`,
-// following the chat to the end like any send.
-function QuestionPanelWithSend({ sendText, submitAnswers, ...panelProps }: Omit<ComponentProps<typeof QuestionPanel>, 'onSubmit' | 'onDismissAndSay'> & {
+// Ways out of the agent's questions that also say something (see InteractionPanel): dismiss, then send
+// `text`, following the chat to the end like any send.
+function InteractionPanelWithSend({ sendText, submitAnswers, ...panelProps }: Omit<ComponentProps<typeof InteractionPanel>, 'onSubmit' | 'onDismissAndSay'> & {
   sendText: SendText;
-  submitAnswers: ComponentProps<typeof QuestionPanel>['onSubmit'];
+  submitAnswers: ComponentProps<typeof InteractionPanel>['onSubmit'];
 }) {
   const sendAndFollow = useSendAndFollow(sendText);
   return (
-    <QuestionPanel
+    <InteractionPanel
       onSubmit={submitAnswers}
       onDismissAndSay={async (answers, text) => (await submitAnswers(answers)) && sendAndFollow(text)}
       {...panelProps}
@@ -286,7 +286,7 @@ export default function AgentChat({ projectId, chat, onRetrySession, isRetryingS
           </MessageScroller>
 
           <div className={cn(_COLUMN_CLASS, 'pt-2 pb-4')}>
-            {/* While the agent waits on an answer, the question takes the input's place (the BE refuses text
+            {/* While the agent waits on an answer, the question (or action) takes the input's place (the BE refuses text
                 until then). The composer stays mounted underneath, just hidden, so a half-typed message and
                 its uploaded files are still there once the question is answered or dismissed. */}
             {hasUndeliveredMessage && (
@@ -296,7 +296,7 @@ export default function AgentChat({ projectId, chat, onRetrySession, isRetryingS
               <ChatRetryBanner messageKey='chat_session_down' isRetrying={isRetryingSession} onRetry={onRetrySession} />
             )}
             {!_.isEmpty(pendingInteractions) && (
-              <QuestionPanelWithSend
+              <InteractionPanelWithSend
                 key={_.map(pendingInteractions, 'id').join(',')}
                 interactions={pendingInteractions}
                 submitAnswers={submitAnswers}

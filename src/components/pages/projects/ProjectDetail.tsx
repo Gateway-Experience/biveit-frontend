@@ -11,6 +11,7 @@ import DeployPanel from 'src/components/pages/projects/deploy/DeployPanel';
 import SiteReadyModal from 'src/components/pages/projects/deploy/SiteReadyModal';
 import useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import SitePreview from 'src/components/pages/projects/preview/SitePreview';
+import useActiveBuild from 'src/components/pages/projects/preview/useActiveBuild';
 import useDevenvStatus from 'src/components/pages/projects/preview/useDevenvStatus';
 import useProjectSession from 'src/components/pages/projects/useProjectSession';
 import { Spinner } from 'src/components/common/Spinner';
@@ -46,7 +47,9 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   // Opening can also bring the dev servers back up, so re-read their status once it's done.
   const session = useProjectSession(projectId, { onReady: refreshDevenv });
   const chat = useAgentChat(projectId, { sessionStatus: session.status, onDevenvChange: refreshDevenv });
-  const { devenv, activeBuild } = useDevenvStatus(chat.conversationId, devenvRefreshKey);
+  const { devenv } = useDevenvStatus(chat.conversationId, devenvRefreshKey);
+  // The agent says when it's building in the chat itself (signals), so it's read off the messages.
+  const activeBuild = useActiveBuild(chat.messages);
   const isSideBySide = useMediaQuery(_SIDE_BY_SIDE_QUERY);
   // Until the status is known, assume specing: no preview, no wide layout.
   const previewState = devenv ? getPreviewState(devenv) : 'specing';
