@@ -218,12 +218,9 @@ function useElementSize<T extends HTMLElement>() {
 }
 
 // How far an element has scrolled through the screen, from 0 to 1, kept live while scrolling (once per
-// frame at most). Pass the returned callback as the element's `ref`. Two ways to count it:
-//   'enter' (default)  0 when the element's top reaches the bottom of the screen, 1 when it reaches the top
-//   'pinned'           for a tall section with a sticky inside: 0 when the section's top reaches the top of
-//                      the screen, 1 when its bottom reaches the bottom (i.e. while the sticky part is stuck)
-function useScrollProgress<T extends HTMLElement>(options: { mode?: 'enter' | 'pinned' } = {}) {
-  const { mode = 'enter' } = options;
+// frame at most): 0 when the element's top reaches the bottom of the screen, 1 when it reaches the top.
+// Pass the returned callback as the element's `ref`.
+function useScrollProgress<T extends HTMLElement>() {
   const [element, setElement] = useState<T | null>(null);
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -235,10 +232,7 @@ function useScrollProgress<T extends HTMLElement>(options: { mode?: 'enter' | 'p
       frame = 0;
       const rect = element.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      const raw = mode === 'pinned'
-        ? -rect.top / Math.max(1, rect.height - viewportHeight)
-        : (viewportHeight - rect.top) / viewportHeight;
-      setProgress(_.clamp(raw, 0, 1));
+      setProgress(_.clamp((viewportHeight - rect.top) / viewportHeight, 0, 1));
     };
     const scheduleMeasure = () => {
       if (!frame) {
@@ -253,7 +247,7 @@ function useScrollProgress<T extends HTMLElement>(options: { mode?: 'enter' | 'p
       window.removeEventListener('scroll', scheduleMeasure);
       window.removeEventListener('resize', scheduleMeasure);
     };
-  }, [element, mode]);
+  }, [element]);
   return [setElement, progress] as const;
 }
 

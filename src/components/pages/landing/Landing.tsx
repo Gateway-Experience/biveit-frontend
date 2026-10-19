@@ -29,6 +29,10 @@ import { getPriceLabels } from 'src/services/pricing';
 
 // The landing page runs wider than the app's content column (MAIN_CONTENT_WIDTH_CLASS).
 const LANDING_WIDTH_CLASS = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
+// One gap between sections, everywhere. Two plain sections back to back would double it, so the second of
+// such a pair only pads its bottom. References: ShowcaseZoom uses the same values.
+const SECTION_PAD_Y_CLASS = 'py-14 sm:py-20';
+const SECTION_PAD_BOTTOM_CLASS = 'pb-14 sm:pb-20';
 
 // Every "start" button goes to the projects page. Visitors who aren't signed in get bounced through login
 // (or sign-up) by ProtectedRoute and land there afterwards: on their list, not straight in the new-project
@@ -36,13 +40,14 @@ const LANDING_WIDTH_CLASS = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
 const START_PATH = PATHS.projects;
 
 // The brand gradient, for primary buttons and for emphasised headline words.
-const BRAND_BUTTON_CLASS = 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/85';
+// Hover darkens through a filter instead of fading the fill (bg-primary/85), so the dot grid never shows through.
+const BRAND_BUTTON_CLASS = 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary hover:brightness-95';
 const BRAND_TEXT_CLASS = 'bg-linear-to-r from-brand-light via-brand-strong to-brand-deep bg-clip-text text-transparent';
 
 // Gap between neighbouring cards fading in on scroll (see Reveal), so a row arrives one card at a time.
 const STAGGER_MS = 120;
 
-const HERO_PERK_KEYS = ['landing_perk_no_code', 'landing_perk_no_jargon', 'landing_perk_all_included'];
+const HERO_PERK_KEYS = ['landing_perk_no_code', 'landing_perk_no_jargon', 'landing_perk_all_included', 'landing_adv_tick_changes'];
 
 const BUSINESSES: { id: string; labelKey: string; Icon: ArtIcon }[] = [
   { id: 'motorbike', labelKey: 'landing_biz_motorbike', Icon: MotorbikeIcon },
@@ -65,8 +70,6 @@ const ADVANTAGES: { id: string; titleKey: string; descKey: string; Icon: ArtIcon
   { id: 'speed', titleKey: 'landing_adv_speed_title', descKey: 'landing_adv_speed_desc', Icon: ZapIcon },
   { id: 'responsive', titleKey: 'landing_adv_responsive_title', descKey: 'landing_adv_responsive_desc', Icon: MonitorSmartphoneIcon },
 ];
-
-const ADVANTAGE_TICK_KEYS = ['landing_adv_tick_time', 'landing_adv_tick_changes', 'landing_adv_tick_custom'];
 
 // Intentions: the "who does what" split is the core pitch — the user's list is deliberately short, ours
 // is deliberately long, and the size difference between the two cards is the point.
@@ -194,7 +197,7 @@ function HeroSection() {
 
   return (
     <section data-section='hero' className='relative isolate overflow-hidden'>
-      <div className={cn(LANDING_WIDTH_CLASS, 'flex flex-col items-center pt-14 pb-16 text-center sm:pt-20 lg:pt-24')}>
+      <div className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_Y_CLASS, 'flex flex-col items-center text-center')}>
         {/* min-w-0 lets this column shrink below its longest word, so long words wrap instead of overflowing */}
         <Reveal className='flex min-w-0 flex-col items-center'>
           <span className='inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
@@ -207,12 +210,13 @@ function HeroSection() {
             <span className='block'>{t('landing_hero_title_rest')}</span>
           </h1>
           <p className='mt-6 max-w-2xl text-lg text-pretty text-muted-foreground'>{t('landing_hero_subtitle')}</p>
-          <div className='mt-8 flex flex-wrap justify-center gap-3'>
-            <LinkButton href={START_PATH} size='lg' className={BRAND_BUTTON_CLASS}>
+          {/* Two equal columns so both buttons come out the same size. */}
+          <div className='mt-8 grid w-full max-w-sm grid-cols-1 gap-3 min-[380px]:grid-cols-2'>
+            <LinkButton href={START_PATH} size='lg' className={cn(BRAND_BUTTON_CLASS, 'w-full')}>
               {t('landing_cta_start')}
               <ArrowRightIcon data-icon='inline-end' />
             </LinkButton>
-            <Button size='lg' variant='outline' className='bg-card' onClick={scrollToHowItWorks}>
+            <Button size='lg' variant='outline' className='w-full bg-card hover:bg-accent' onClick={scrollToHowItWorks}>
               {t('landing_cta_how')}
             </Button>
           </div>
@@ -279,7 +283,7 @@ function HowItWorksSection() {
 
   return (
     // scroll-mt keeps the heading clear of the sticky header when the hero button scrolls here.
-    <section id='how-it-works' data-section='how-it-works' className={cn(LANDING_WIDTH_CLASS, 'scroll-mt-16 py-20 sm:py-28')}>
+    <section id='how-it-works' data-section='how-it-works' className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_Y_CLASS, 'scroll-mt-16')}>
       <SectionHeading eyebrow={t('landing_how_eyebrow')} title={t('landing_how_title')} />
       <HowItWorks className='mt-12' />
     </section>
@@ -287,14 +291,14 @@ function HowItWorksSection() {
 }
 
 // Original purpose: "why us" — the concrete perks of a site built here (custom UI/UX, SEO, speed,
-// responsive): a laptop with an example site next to a column of checked-off cards, then a closing nudge.
+// responsive): a laptop with an example site next to a column of checked-off cards. It closes the page, so it ends on the start button.
 function AdvantagesSection() {
   const { t } = useTranslation();
 
   return (
     <section data-section='advantages' className='relative isolate overflow-hidden border-y bg-card'>
       <SoftGlowBackdrop />
-      <div className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
+      <div className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_Y_CLASS)}>
         <Reveal>
           <span className='text-xs font-bold tracking-[0.18em] text-brand-strong uppercase'>{t('landing_adv_eyebrow', { appName: APP_NAME })}</span>
           <h2 className='mt-3 max-w-3xl font-heading text-[clamp(2rem,9.5vw,2.25rem)] leading-[1.04] font-bold tracking-[-0.035em] break-words hyphens-auto uppercase sm:text-6xl'>
@@ -326,23 +330,11 @@ function AdvantagesSection() {
           </ul>
         </div>
 
-        <Reveal className='mt-16 text-center'>
-          <p className='font-heading text-3xl font-bold tracking-[-0.03em] sm:text-4xl'>
-            {t('landing_adv_cta_lead')}{' '}
-            <span className={BRAND_TEXT_CLASS}>{t('landing_adv_cta_highlight')}</span>
-          </p>
-          <LinkButton href={START_PATH} size='lg' className={cn(BRAND_BUTTON_CLASS, 'mt-7 rounded-full px-7')}>
+        <Reveal className='mt-12 flex justify-center'>
+          <LinkButton href={START_PATH} size='lg' className={cn(BRAND_BUTTON_CLASS, 'w-[186px]')}>
             {t('landing_cta_start')}
             <ArrowRightIcon data-icon='inline-end' />
           </LinkButton>
-          <ul className='mt-7 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground sm:divide-x'>
-            {ADVANTAGE_TICK_KEYS.map(tickKey => (
-              <li key={tickKey} className='flex items-center gap-1.5 sm:pr-6 sm:last:pr-0'>
-                <CheckBullet />
-                {t(tickKey)}
-              </li>
-            ))}
-          </ul>
         </Reveal>
       </div>
     </section>
@@ -353,7 +345,7 @@ function DealSection() {
   const { t } = useTranslation();
 
   return (
-    <section data-section='deal' className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
+    <section data-section='deal' className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_BOTTOM_CLASS)}>
       <SectionHeading eyebrow={t('landing_deal_eyebrow')} title={t('landing_deal_title')} subtitle={t('landing_deal_subtitle')} />
       <div className='mt-12 grid gap-4 lg:grid-cols-5'>
         <Reveal className='flex flex-col rounded-3xl border bg-card p-6 sm:p-8 lg:col-span-2'>
@@ -404,7 +396,7 @@ function CompareSection() {
   const { t } = useTranslation();
 
   return (
-    <section data-section='compare' className={cn(LANDING_WIDTH_CLASS, 'py-20 sm:py-28')}>
+    <section data-section='compare' className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_BOTTOM_CLASS)}>
       <SectionHeading title={t('landing_compare_title')} />
       {/* One grid of [usual, vib3] cell pairs (not two columns), so each row's cells share a height */}
       <Reveal className='mx-auto mt-10 grid max-w-3xl grid-cols-2 overflow-hidden rounded-3xl border bg-card shadow-xs'>
@@ -430,7 +422,7 @@ function FaqSection() {
   const prices = getPriceLabels(i18n.language);
 
   return (
-    <section data-section='faq' className={cn(LANDING_WIDTH_CLASS, 'pb-20 sm:pb-28')}>
+    <section data-section='faq' className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_BOTTOM_CLASS)}>
       <SectionHeading title={t('landing_faq_title')} />
       <Reveal className='mx-auto mt-10 flex max-w-3xl flex-col gap-3'>
         {FAQS.map(faq => (
@@ -443,28 +435,6 @@ function FaqSection() {
             <p className='mt-3 text-muted-foreground'>{t(faq.answerKey, prices)}</p>
           </details>
         ))}
-      </Reveal>
-    </section>
-  );
-}
-
-function FinalCta() {
-  const { t } = useTranslation();
-
-  return (
-    <section data-section='final-cta' className={cn(LANDING_WIDTH_CLASS, 'pb-16')}>
-      <Reveal className='relative isolate overflow-hidden rounded-3xl bg-linear-to-br from-highlight to-chart-2 px-6 py-12 text-center text-primary-foreground shadow-xl shadow-primary/25 sm:px-12 sm:py-14'>
-        <div aria-hidden='true' className='pointer-events-none absolute -top-40 -right-40 -z-10 grid size-[480px] place-items-center'>
-          {['size-[260px]', 'size-[370px]', 'size-[480px]'].map(sizeClass => (
-            <span key={sizeClass} className={cn('absolute rounded-full border border-primary-foreground/15', sizeClass)} />
-          ))}
-        </div>
-        <h2 className='mx-auto max-w-2xl font-heading text-3xl font-bold tracking-[-0.03em] text-balance sm:text-4xl'>{t('landing_final_title')}</h2>
-        <p className='mx-auto mt-3 max-w-xl opacity-85 sm:text-lg'>{t('landing_final_subtitle')}</p>
-        <LinkButton href={START_PATH} size='lg' className='mt-7 rounded-full bg-primary-foreground px-7 text-primary hover:bg-primary-foreground/90'>
-          {t('landing_cta_start')}
-          <ArrowRightIcon data-icon='inline-end' />
-        </LinkButton>
       </Reveal>
     </section>
   );
@@ -492,7 +462,7 @@ function LandingFooter() {
 
 // Original purpose: the public front door at `/` for visitors who aren't signed in.
 // Intentions: sells one idea — you just talk, we do the building, hosting, domain and launch — in a clean,
-// product-style layout: hero, how it works, why us (laptop + advantages), who does what, examples, FAQ.
+// product-style layout: hero, how it works, who does what, comparison, FAQ, examples, and why us (laptop + advantages) to close.
 // Pinned to the light theme (`force-light`) whatever the app theme is.
 export default function Landing() {
   return (
@@ -504,12 +474,11 @@ export default function Landing() {
         <HeroSection />
         <BusinessesStrip />
         <HowItWorksSection />
-        <AdvantagesSection />
         <DealSection />
-        <ShowcaseSection />
         <CompareSection />
         <FaqSection />
-        <FinalCta />
+        <ShowcaseSection />
+        <AdvantagesSection />
       </main>
       <LandingFooter />
     </div>
