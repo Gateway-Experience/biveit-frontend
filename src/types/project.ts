@@ -13,8 +13,7 @@ export type Project = {
   meta: Record<string, unknown>;
   // When the user pinned it to the top of the sidebar; null = not pinned.
   pinned_at: string | null;
-  // The sidebar folder it's filed under. Can point at a deleted folder, which counts as none — so group by
-  // the live folder list, never by this alone.
+  // The sidebar folder it sits directly in; null = the root. The BE clears it when the folder is deleted.
   folder_id: number | null;
   created_at: string;
   // "Last edited" — the list comes sorted by it, newest first. Pinning and filing don't change it.
@@ -31,6 +30,8 @@ export type ProjectChanges = {
 // A folder the user groups projects into in the sidebar (vib3-backend dto/projects.py ProjectFolder).
 export type ProjectFolder = {
   id: number;
+  // The folder it sits in; null = the root. The BE supports nesting; the sidebar only shows one level so far.
+  parent_id: number | null;
   name: string;
   created_at: string;
 };

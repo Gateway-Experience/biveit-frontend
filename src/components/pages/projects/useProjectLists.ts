@@ -62,12 +62,27 @@ function useProjectListUpdaters() {
     ));
   }, [queryClient, userId]);
 
-  // Its projects keep their folder_id; with the folder gone from the list they simply show as unfiled.
+  // Mirrors what the BE's delete did: the folder goes with its whole subtree, and the projects that were
+  // in any of them go back to the root (folder_id null).
   const removeFolder = useCallback((folderId: number) => {
-    queryClient.setQueryData<ProjectFolder[]>(_foldersKey(userId), previous => _.reject(previous, { id: folderId }));
+    const removedIds = getFolderSubtreeIds(queryClient.getQueryData<ProjectFolder[]>(_foldersKey(userId)), folderId);
+    queryClient.setQueryData<ProjectFolder[]>(_foldersKey(userId), previous => _.reject(previous, folder => removedIds.has(folder.id)));
+    queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => _.map(previous, project => (
+      removedIds.has(project.folder_id as number) ? { ...project, folder_id: null } : project
+    )));
   }, [queryClient, userId]);
 
   return { setProject, removeProject, reloadProjects, setFolder, removeFolder };
+}
+
+// [Pure] `folderId` and the ids of every folder below it. UNION-style: an id already collected isn't walked
+// again, so a looped tree (which the BE never makes) can't recurse forever.
+function getFolderSubtreeIds(folders: ProjectFolder[] | undefined, folderId: number, collected = new Set<number>()): Set<number> {
+  if (collected.has(folderId)) {
+    return collected;
+  }
+  const childIds = _.map(_.filter(folders, { parent_id: folderId }), 'id');
+  return _.reduce(childIds, (ids, childId) => getFolderSubtreeIds(folders, childId, ids), new Set([...collected, folderId]));
 }
 
 // [Pure] Splits the projects into the sidebar's sections; each project lands in exactly one. Pinned
@@ -85,6 +100,7 @@ function groupProjectsForSidebar(projects: Project[] | undefined, folders: Proje
 }
 
 export {
+  getFolderSubtreeIds,
   groupProjectsForSidebar,
   useProjectFolders,
   useProjectListUpdaters,

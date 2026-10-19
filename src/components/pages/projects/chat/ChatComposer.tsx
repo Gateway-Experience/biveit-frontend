@@ -159,7 +159,11 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
           aria-label={t('chat_placeholder')}
           // flex-none: the input-group stacks vertically here, and its default flex-1 would size the textarea
           // from its row count, ignoring the height set by the auto-grow above.
-          className={cn('max-h-48 min-h-0 flex-none px-4 pt-2.5 pb-2', CHAT_TEXT_SIZE_CLASS)}
+          // leading-6: a whole-pixel line height. The inherited 1.5 × 15px = 22.5px left the box at 40.5px, which the
+          // auto-grow rounded to 41px via scrollHeight — so every keystroke flicked it 41 → 40.5 → 41 and nudged the
+          // transcript's scroll position (it was pinned to the bottom) by a pixel. Must come after the text size
+          // class, which `cn` treats as overriding any earlier leading.
+          className={cn('max-h-48 min-h-0 flex-none px-4 pt-2.5 pb-2', CHAT_TEXT_SIZE_CLASS, 'leading-6')}
         />
         {/* pt-0: the gap above the buttons lives in the textarea's pb-2 instead, so that strip is clickable text area. */}
         <InputGroupAddon align='block-end' className='justify-between pt-0'>

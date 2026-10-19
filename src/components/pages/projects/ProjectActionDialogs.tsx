@@ -144,7 +144,7 @@ export function FolderNameModal({ folder, onClose, onSaved }: {
   const { t } = useTranslation();
   const notify = useNotification();
   const isNew = folder === 'new';
-  const { control, handleSubmit, reset, formState: { isSubmitting } } = useForm<{ name: string }>({
+  const { control, handleSubmit, reset, setError, formState: { isSubmitting } } = useForm<{ name: string }>({
     mode: 'onSubmit',
     defaultValues: { name: '' },
   });
@@ -159,7 +159,11 @@ export function FolderNameModal({ folder, onClose, onSaved }: {
     try {
       onSaved(isNew ? await createProjectFolder(_.trim(name)) : await renameProjectFolder((folder as ProjectFolder).id, _.trim(name)));
       onClose();
-    } catch {
+    } catch (error) {
+      if (_.get(error, 'data.detail') === 'FOLDER_NAME_TAKEN') {
+        setError('name', { message: t('folder_name_taken') });
+        return;
+      }
       notify('error', t('folder_save_failed'));
     }
   };

@@ -3641,6 +3641,14 @@ export default {
     ru: 'Например: сайты клиентов',
     ko: '예: 고객 사이트',
   },
+  folder_name_taken: {
+    en: 'You already have a folder with this name here.',
+    vi: 'Ở đây đã có thư mục trùng tên này.',
+    zh: '这里已经有同名的文件夹了。',
+    ja: 'ここには同じ名前のフォルダがすでにあります。',
+    ru: 'Здесь уже есть папка с таким названием.',
+    ko: '여기에 같은 이름의 폴더가 이미 있어요.',
+  },
   folder_save_failed: {
     en: 'Couldn\'t save the folder. Please try again.',
     vi: 'Không lưu được thư mục. Vui lòng thử lại.',
