@@ -2,8 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/commissioner";
-@import "@fontsource-variable/space-grotesk";
-@import "@fontsource/be-vietnam-pro/800.css";
+@import "@fontsource-variable/google-sans-flex";
 @plugin "@tailwindcss/typography";
 
 /* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. the landing
@@ -48,14 +47,11 @@
   --color-site-cafe: var(--site-cafe);
   --color-site-cafe-soft: var(--site-cafe-soft);
   /* Body text (Commissioner, a Myriad-like humanist sans) covers Latin, Vietnamese and Cyrillic;
-     headings (Space Grotesk) cover Latin and Vietnamese. Pick fonts that ship a Vietnamese subset, otherwise accented letters get patched in from a
+     headings and the landing slogan (Google Sans Flex) cover Latin and Vietnamese. Pick fonts that ship a Vietnamese subset, otherwise accented letters get patched in from a
      fallback font and look mismatched. Other scripts (Cyrillic headings, Chinese, Japanese, Korean) fall
      through to the system UI font, which looks native on each OS. */
-  --font-heading: 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-heading: 'Google Sans Flex Variable', system-ui, sans-serif;
   --font-sans: 'Commissioner Variable', system-ui, sans-serif;
-  /* The hero slogan (and the business orbit's name): Be Vietnam Pro by Be Fonts, extra bold (800) only, as
-     that's the one weight they use. Latin and Vietnamese; Cyrillic etc. fall through to the system font. */
-  --font-display: 'Be Vietnam Pro', system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

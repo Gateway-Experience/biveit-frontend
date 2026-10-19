@@ -177,7 +177,7 @@ function HeroSection() {
             <SparklesIcon className='size-3.5 text-brand-strong' />
             {t('landing_hero_eyebrow')}
           </span>
-          <h1 className='mt-6 font-display text-[clamp(2.5rem,12vw,3.25rem)] leading-[1.06] font-extrabold tracking-[-0.03em] break-words hyphens-auto sm:text-7xl xl:text-[5.25rem]'>
+          <h1 className='mt-6 font-heading text-[clamp(2.5rem,12vw,3.25rem)] leading-[1.06] font-semibold tracking-[-0.025em] break-words hyphens-auto sm:text-7xl xl:text-[5.25rem]'>
             <span className='block'>{t('landing_hero_title_lead')}</span>
             {/* pb: descenders (Vietnamese marks too) poke out of the clipped gradient box otherwise. */}
             <span className={cn('block pb-[0.06em]', BRAND_TEXT_CLASS)}>{t('landing_hero_title_build')}</span>

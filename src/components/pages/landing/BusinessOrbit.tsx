@@ -25,7 +25,7 @@ function _getRingPosition(index: number, count: number, radius: number, offset: 
 // Original purpose: the landing page's "made for whatever you run".
 // Intentions: instead of a list of tags, the businesses circle the page's question like planets: two rings of
 // icons turning slowly in opposite directions (each icon counter-turns so it stays upright), and in the middle
-// the business in the spotlight, its name set large in the slogan's font. The spotlight hops from one to the
+// the business in the spotlight, its name set large. The spotlight hops from one to the
 // next on its own, lighting up its icon on the ring; clicking an icon puts that one in the spotlight and stops
 // the hopping. Hovering the stage pauses the rings. With reduced motion on, nothing turns or hops by itself.
 // `title` is the section's heading, shown above the name in the middle.
@@ -88,7 +88,7 @@ export default function BusinessOrbit({ businesses, title }: { businesses: Orbit
         <div className='flex flex-col items-center gap-2'>
           <h2 className='text-xs font-semibold text-muted-foreground sm:text-sm'>{title}</h2>
           <activeBusiness.Icon key={`${activeBusiness.id}-icon`} className='size-6 animate-in text-brand-strong duration-500 zoom-in-50 fade-in-0' strokeWidth={1.5} />
-          <p key={activeBusiness.id} aria-live='polite' className='animate-in font-display text-xl leading-tight font-extrabold tracking-[-0.02em] text-balance duration-500 fade-in-0 slide-in-from-bottom-3 sm:text-3xl'>
+          <p key={activeBusiness.id} aria-live='polite' className='animate-in font-heading text-xl leading-tight font-extrabold tracking-[-0.02em] text-balance duration-500 fade-in-0 slide-in-from-bottom-3 sm:text-3xl'>
             {t(activeBusiness.labelKey)}
           </p>
         </div>
