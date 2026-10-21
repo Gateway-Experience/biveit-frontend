@@ -1,14 +1,16 @@
+import { Fragment } from 'react';
 import { Link, Navigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpIcon, LockIcon } from 'lucide-react';
 import { cn } from 'cn';
+import _ from 'lodash';
 
-import BrandLogo from 'src/components/common/BrandLogo';
+import BrandLogo, { BrandWordmark } from 'src/components/common/BrandLogo';
 import GoogleSignInButton from 'src/components/common/GoogleSignInButton';
 import LanguageSelector from 'src/components/common/LanguageSelector';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
-import { EXAMPLE_IDEA_KEYS, PATHS } from 'src/utils/constants';
+import { APP_NAME, EXAMPLE_IDEA_KEYS, PATHS } from 'src/utils/constants';
 import { useTypewriter } from 'src/utils/hooks';
 
 type AuthPageLayoutProps = {
@@ -52,7 +54,7 @@ export default function AuthPageLayout({
       <div className='flex flex-1 flex-col px-6 lg:w-1/2 lg:flex-none'>
         {/* Top bar: the brand in the top-left corner, the language switcher in the top-right, on one line. */}
         <header className='flex items-center justify-between pt-4'>
-          {/* Back to the landing page ("/" shows it to anyone not signed in, i.e. everyone on these pages). */}
+          {/* Back to the landing site ("/" sends anyone not signed in there, i.e. everyone on these pages). */}
           <Link to='/' className='inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
             <BrandLogo markClassName='h-9' />
           </Link>
@@ -64,7 +66,7 @@ export default function AuthPageLayout({
             {eyebrow && (
               <span className='block text-[0.625rem] font-bold tracking-[0.18em] text-muted-foreground uppercase'>{eyebrow}</span>
             )}
-            <h1 className={cn('font-heading text-[1.75rem] font-bold tracking-[-0.03em]', eyebrow && 'mt-2')}>{title}</h1>
+            <h1 className={cn('font-heading text-[1.75rem] font-bold tracking-[-0.03em]', eyebrow && 'mt-2')}>{_renderWithWordmark(title)}</h1>
             {subtitle && <p className='mt-2 text-muted-foreground'>{subtitle}</p>}
 
             {hasGoogleSignIn
@@ -102,6 +104,17 @@ export default function AuthPageLayout({
       <AuthShowcasePanel />
     </div>
   );
+}
+
+// [Pure] `text` with the name ("Log in to biveit") drawn as the wordmark, wherever the language puts it.
+function _renderWithWordmark(text: string) {
+  const textParts = _.split(text, APP_NAME);
+  return textParts.map((textPart, index) => (
+    <Fragment key={index}>
+      {textPart}
+      {index < textParts.length - 1 && <BrandWordmark />}
+    </Fragment>
+  ));
 }
 
 // The right-hand panel: a dark-to-brand gradient (built from theme tokens, so no image to load) with a

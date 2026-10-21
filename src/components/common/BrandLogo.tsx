@@ -7,7 +7,7 @@ import wordmarkUrl from 'src/assets/brand/biveit-wordmark.png';
 import { APP_NAME } from 'src/utils/constants';
 
 // [Pure] Both colour versions of one image; CSS shows the right one for the theme (`dark:` skips force-light
-// pages like the landing page, so those always get the light version).
+// pages like the public pricing and policy pages, so those always get the light version).
 function _renderThemedImage(lightUrl: string, darkUrl: string, className: string, options: { dataComponent?: string } = {}) {
   return (
     <>
@@ -42,4 +42,15 @@ export default function BrandLogo({ className, markClassName, hasWordmark = true
   );
 }
 
-export { BrandMark };
+// The wordmark on its own, sized by its line of text (in em), for putting the name inside a sentence or heading
+// ("Log in to biveit"). It sits on the text's baseline; "biveit" has no descenders, so the image's bottom edge
+// is the letters' baseline. Read out as the name.
+function BrandWordmark({ className }: { className?: string }) {
+  return (
+    <span role='img' aria-label={APP_NAME} className={cn('inline-flex h-[0.74em] align-baseline', className)}>
+      {_renderThemedImage(wordmarkUrl, wordmarkDarkUrl, 'h-full w-auto')}
+    </span>
+  );
+}
+
+export { BrandMark, BrandWordmark };

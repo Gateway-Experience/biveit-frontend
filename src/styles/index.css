@@ -4,18 +4,9 @@
 @import "@fontsource-variable/commissioner";
 @plugin "@tailwindcss/typography";
 
-/* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. the landing
-   page): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
+/* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. PublicLayout,
+   which matches the always-light landing site): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
 @custom-variant dark (&:is(.dark *):not(.force-light, .force-light *));
-
-/* The landing page's business orbit: rings of icons turning slowly (BusinessOrbit). */
-@theme {
-  --animate-orbit: orbit 80s linear infinite;
-  @keyframes orbit {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-}
 
 @theme inline {
   --color-success: var(--success);
@@ -33,18 +24,6 @@
   --color-brand-ink: var(--brand-ink);
   --color-brand-ink-foreground: var(--brand-ink-foreground);
   --color-brand-strong: var(--brand-strong);
-  --color-site-moto: var(--site-moto);
-  --color-site-moto-soft: var(--site-moto-soft);
-  --color-site-home: var(--site-home);
-  --color-site-home-soft: var(--site-home-soft);
-  --color-site-hotel: var(--site-hotel);
-  --color-site-hotel-gold: var(--site-hotel-gold);
-  --color-site-boutique: var(--site-boutique);
-  --color-site-boutique-soft: var(--site-boutique-soft);
-  --color-site-perfume: var(--site-perfume);
-  --color-site-perfume-soft: var(--site-perfume-soft);
-  --color-site-cafe: var(--site-cafe);
-  --color-site-cafe-soft: var(--site-cafe-soft);
   /* One font for everything: Commissioner, a Myriad-like humanist sans, for headings and body alike (the
      heading token stays so headings can move to their own font again with a one-line change). It covers
      Latin, Vietnamese and Cyrillic. Pick fonts that ship a Vietnamese subset, otherwise accented letters get
@@ -150,20 +129,6 @@
      itself is too pale to read on white, so here it's a deep lime-green from the same hue (5.6:1 on the
      page). Dark theme: the lime itself, which reads fine on navy. */
   --brand-strong: #4A7012;
-  /* Brand colors of the made-up example sites in the landing page's showcase. Each one is a different
-     "customer", so each gets its own look rather than ours. Light-only, like the landing page. */
-  --site-moto: oklch(0.68 0.19 45);
-  --site-moto-soft: oklch(0.95 0.04 60);
-  --site-home: oklch(0.55 0.1 195);
-  --site-home-soft: oklch(0.94 0.03 190);
-  --site-hotel: oklch(0.28 0.06 260);
-  --site-hotel-gold: oklch(0.8 0.12 85);
-  --site-boutique: oklch(0.62 0.15 15);
-  --site-boutique-soft: oklch(0.95 0.025 20);
-  --site-perfume: oklch(0.32 0.08 330);
-  --site-perfume-soft: oklch(0.95 0.025 340);
-  --site-cafe: oklch(0.42 0.07 55);
-  --site-cafe-soft: oklch(0.95 0.025 75);
   /* The sidebar is a plain surface with a hairline border, so the lime logo and buttons carry
      the brand. These only reference other tokens, so they follow .dark without being redeclared. */
   --sidebar: var(--card);
