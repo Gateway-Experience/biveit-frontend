@@ -2529,14 +2529,6 @@ export default {
     ru: 'Пусто',
     ko: '비어 있음',
   },
-  sidebar_resize: {
-    en: 'Drag to resize',
-    vi: 'Kéo để đổi kích thước',
-    zh: '拖动以调整宽度',
-    ja: 'ドラッグして幅を変更',
-    ru: 'Потяните, чтобы изменить ширину',
-    ko: '드래그해서 너비 조절',
-  },
   folder_menu: {
     en: 'Folder options',
     vi: 'Tuỳ chọn thư mục',

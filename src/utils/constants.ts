@@ -22,10 +22,8 @@ const SUPPORTED_LANGUAGES = [
 
 const MAIN_CONTENT_WIDTH_CLASS = 'max-w-4xl';
 
-// The desktop sidebar's width, in px, when the user drags its edge: where it starts, and how far it goes.
-// The width they settle on is remembered in localStorage under SIDEBAR_WIDTH_STORAGE_KEY.
-const SIDEBAR_WIDTH_PX = { default: 256, min: 208, max: 480 };
-const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar_width';
+// The desktop sidebar's width, in px, when it's open. Fixed: it can't be dragged wider or narrower.
+const SIDEBAR_WIDTH_PX = 240;
 
 // What biveit costs, in USD — the one place prices live in the app (formatted for display by services/pricing).
 // Every screen that mentions a price reads it from here: the Pricing page, the Deploy tab, Help. The landing site
@@ -83,6 +81,5 @@ export {
   EXAMPLE_IDEA_KEYS,
   MAIN_CONTENT_WIDTH_CLASS,
   SIDEBAR_WIDTH_PX,
-  SIDEBAR_WIDTH_STORAGE_KEY,
   SUPPORTED_LANGUAGES,
 };
