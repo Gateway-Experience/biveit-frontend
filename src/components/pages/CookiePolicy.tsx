@@ -29,7 +29,8 @@ const CookiePolicy = () => {
         </h1>
 
         <p className='mb-6 text-muted-foreground'>
-          {t('privacy_policy_last_update', { date: LAST_UPDATED.toLocaleDateString(i18n.resolvedLanguage) })}
+          {/* No escaping: React already escapes text, and i18next's would show a date's slashes as &#x2F;. */}
+          {t('privacy_policy_last_update', { date: LAST_UPDATED.toLocaleDateString(i18n.resolvedLanguage), interpolation: { escapeValue: false } })}
         </p>
 
         <p className='mb-6'>{t('cookie_policy_intro')}</p>

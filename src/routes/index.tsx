@@ -2,6 +2,7 @@ import { Navigate, Routes, Route } from 'react-router';
 
 import ProtectedRoute from 'src/components/common/ProtectedRoute';
 import DefaultLayout from 'src/components/layouts/DefaultLayout';
+import PublicLayout from 'src/components/layouts/PublicLayout';
 import ProjectList from 'src/components/pages/projects/ProjectList';
 import ProjectDetail from 'src/components/pages/projects/ProjectDetail';
 import UserProfile from 'src/components/pages/UserProfile';
@@ -29,6 +30,13 @@ function HomeRoute() {
   return isSignedInUser(user) ? <Navigate to={PATHS.projects} replace /> : <Landing />;
 }
 
+// Pages anyone can open (pricing, policies): inside the app with its sidebar when signed in, and with the
+// landing page's top bar and footer otherwise, since that's where visitors come to them from.
+function OpenPageLayout() {
+  const user = useStore(state => state.user);
+  return isSignedInUser(user) ? <DefaultLayout /> : <PublicLayout />;
+}
+
 // Page views are tracked here rather than in a layout, so routes that don't use
 // DefaultLayout (/, /login) are counted too.
 function AppRoutes() {
@@ -42,10 +50,12 @@ function AppRoutes() {
         {/* The same list, with the new-project form open over it. */}
         <Route path={PATHS.newProject} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path='/showcase' element={<ShowCase />} />
+      </Route>
+      <Route element={<OpenPageLayout />}>
         <Route path={PATHS.privacyPolicy} element={<PrivacyPolicy />} />
         <Route path={PATHS.cookiePolicy} element={<CookiePolicy />} />
         <Route path={PATHS.pricing} element={<Pricing />} />
-        <Route path='/showcase' element={<ShowCase />} />
       </Route>
       <Route element={<DefaultLayout isWorkspace />}>
         <Route path={`${PATHS.projects}/:projectId`} element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />

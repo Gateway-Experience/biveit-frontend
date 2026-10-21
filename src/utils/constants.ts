@@ -5,7 +5,7 @@ const USER_TYPES = {
   GUEST: 'GUEST',
 };
 
-const APP_NAME = 'VibeIt';
+const APP_NAME = 'biveit';
 
 // The UI languages, in the order the language menu lists them. This is the one list: AppProvider loads
 // a translation bundle for each code (from i18nMappings), and LanguageSelector shows these entries.
@@ -27,7 +27,7 @@ const MAIN_CONTENT_WIDTH_CLASS = 'max-w-4xl';
 const SIDEBAR_WIDTH_PX = { default: 256, min: 208, max: 480 };
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar_width';
 
-// What VibeIt costs, in USD — the one place prices live (formatted for display by services/pricing). Every
+// What biveit costs, in USD — the one place prices live (formatted for display by services/pricing). Every
 // screen that mentions a price reads it from here: the Pricing page, the Deploy tab, Help, the landing FAQ.
 //   publishPrice     the regular one-time price to publish a site
 //   salePublishPrice what it's sold for while there's a sale; null = no sale, publishPrice applies
@@ -39,6 +39,24 @@ const PRICING = {
   monthlyPrice: 9,
   freeDomainBelow: 10,
 };
+
+// The site kinds the new-project form offers up front (bootstrap_data.site_kinds). Values are what the agent
+// reads, so they stay in English; the labels are translated. The chat shows them back in the user's language.
+const SITE_KIND_OPTIONS = [
+  { value: 'landing page', labelKey: 'new_project_kind_landing' },
+  { value: 'blog', labelKey: 'new_project_kind_blog' },
+  { value: 'portfolio', labelKey: 'new_project_kind_portfolio' },
+  { value: 'web app', labelKey: 'new_project_kind_web_app' },
+];
+
+// The query param that carries a site idea into the new-project form (/projects/new?idea=...), so someone who
+// types their idea on the landing page finds it waiting in the form after logging in. NewProjectModal reads it
+// (and drops it from the URL); the landing hero's prompt box sets it.
+const NEW_PROJECT_IDEA_PARAM = 'idea';
+
+// Example site ideas, as i18n keys: typed out as a hint wherever we ask what someone wants built (the landing
+// hero's prompt box, the auth pages' showcase panel).
+const EXAMPLE_IDEA_KEYS = ['auth_showcase_prompt_1', 'auth_showcase_prompt_2', 'auth_showcase_prompt_3', 'auth_showcase_prompt_4'];
 
 const PATHS = {
   login: '/login',
@@ -58,6 +76,9 @@ export {
   USER_TYPES,
   PATHS,
   PRICING,
+  SITE_KIND_OPTIONS,
+  NEW_PROJECT_IDEA_PARAM,
+  EXAMPLE_IDEA_KEYS,
   MAIN_CONTENT_WIDTH_CLASS,
   SIDEBAR_WIDTH_PX,
   SIDEBAR_WIDTH_STORAGE_KEY,

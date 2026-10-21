@@ -45,7 +45,7 @@ export default function DefaultLayout({ isWorkspace = false }: { isWorkspace?: b
       <SidebarInset className={cn(isWorkspace ? 'h-svh overflow-hidden' : 'min-h-svh')}>
         <header className='flex h-14 shrink-0 items-center gap-2 border-b px-3 md:hidden'>
           <SidebarTrigger />
-          <Link to='/' className='rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
+          <Link to='/' className='flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
             <BrandLogo markClassName='h-7' />
           </Link>
         </header>

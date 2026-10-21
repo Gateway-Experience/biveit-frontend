@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/
 import ArtifactsPanel from 'src/components/pages/projects/chat/ArtifactsPanel';
 import { BuildGlyph } from 'src/components/pages/projects/preview/BuildIndicator';
 import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
-import ChatMessageItem, { hasVisibleContent, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
+import ChatMessageItem, { hasVisibleContent, StartingBriefMessage, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
 import QuestionPanel from 'src/components/pages/projects/chat/QuestionPanel';
 import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import { getArtifacts } from 'src/services/chat';
@@ -155,8 +155,10 @@ type AgentChatTab = 'chat' | 'documents' | 'preview' | 'deploy';
 // given, as a tab of its own — for screens too narrow to show it beside the chat. Deploy = likewise
 // `deploy`, once there's a finished site to publish.
 // The chat's state comes from the parent (`useAgentChat`), which also needs it to lay the page out.
-export default function AgentChat({ projectId, chat, onRetrySession, isRetryingSession = false, preview, isPreviewBuilding = false, deploy, className }: {
+export default function AgentChat({ projectId, bootstrapData, chat, onRetrySession, isRetryingSession = false, preview, isPreviewBuilding = false, deploy, className }: {
   projectId: number;
+  // The new-project form's answers (project.bootstrap_data): shown as the user's first message.
+  bootstrapData: Record<string, unknown>;
   chat: ReturnType<typeof useAgentChat>;
   // Opens the project again after it failed to (see useProjectSession), and whether that's under way.
   onRetrySession: () => void;
@@ -265,6 +267,13 @@ export default function AgentChat({ projectId, chat, onRetrySession, isRetryingS
                   <div className='flex flex-1 items-center justify-center'>
                     <Spinner className='size-5 text-muted-foreground' />
                   </div>
+                )}
+                {/* Only once the history reaches back to its start: above a partial page it'd be out of order. It
+                    shows right away on a new project too, so the user sees what the agent is working from. */}
+                {!_.isNull(messages) && !hasOlder && (
+                  <MessageScrollerItem className={_SCROLLER_ITEM_CLASS}>
+                    <StartingBriefMessage bootstrapData={bootstrapData} />
+                  </MessageScrollerItem>
                 )}
                 <ChatSetupState introState={introState} onRetry={onRetrySession} />
                 {_.map(visibleMessages, message => (

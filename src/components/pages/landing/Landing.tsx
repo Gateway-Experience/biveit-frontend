@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 import {
   ArrowRightIcon, CalendarCheckIcon, CameraIcon, CheckIcon, ChevronDownIcon, CoffeeIcon, DatabaseIcon, DumbbellIcon,
   Flower2Icon, GlobeIcon, HotelIcon, HouseIcon, KeyRoundIcon, LayoutTemplateIcon, LockIcon, MonitorSmartphoneIcon,
@@ -9,45 +8,39 @@ import {
 } from 'lucide-react';
 import { cn } from 'cn';
 
-import BrandLogo from 'src/components/common/BrandLogo';
-import LanguageSelector from 'src/components/common/LanguageSelector';
 import LinkButton from 'src/components/common/LinkButton';
 import Reveal from 'src/components/common/Reveal';
-import { Button } from 'src/components/shadui/button';
 import BusinessOrbit from 'src/components/pages/landing/BusinessOrbit';
 import DotGridBackdrop from 'src/components/pages/landing/DotGridBackdrop';
+import HeroPrompt from 'src/components/pages/landing/HeroPrompt';
 import HeroShowcase from 'src/components/pages/landing/HeroShowcase';
 import HowItWorks from 'src/components/pages/landing/HowItWorks';
+import {
+  BRAND_BUTTON_CLASS, LANDING_WIDTH_CLASS, LandingFooter, LandingHeader, START_PATH,
+} from 'src/components/pages/landing/LandingChrome';
 import ShowcaseZoom from 'src/components/pages/landing/ShowcaseZoom';
 import {
   BoutiqueSite, CafeSite, HotelSite, LakeHouseSite, MotoRentalSite, PerfumeSite,
 } from 'src/components/pages/landing/ExampleSites';
 import PerfumeBottleIcon from 'src/components/pages/landing/PerfumeBottleIcon';
-import { APP_NAME, PATHS } from 'src/utils/constants';
+import { APP_NAME } from 'src/utils/constants';
 import type { ArtIcon } from 'src/types/landing';
 import { getPriceLabels } from 'src/services/pricing';
 
-// The landing page runs wider than the app's content column (MAIN_CONTENT_WIDTH_CLASS).
-const LANDING_WIDTH_CLASS = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
 // One gap between sections, everywhere. Each section pads only its bottom, so the gap above a section is the
 // one its neighbour leaves (two paddings back to back would double it). References: ShowcaseZoom.
 const SECTION_PAD_BOTTOM_CLASS = 'pb-14 sm:pb-20';
 
-// Every "start" button goes to the projects page. Visitors who aren't signed in get bounced through login
-// (or sign-up) by ProtectedRoute and land there afterwards: on their list, not straight in the new-project
-// form, so returning users see their work first and new ones get the empty state's "create" button.
-const START_PATH = PATHS.projects;
-
-// The brand gradient, for primary buttons and for emphasised headline words.
-// Hover darkens through a filter instead of fading the fill (bg-primary/85), so the dot grid never shows through.
-const BRAND_BUTTON_CLASS = 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary hover:brightness-95';
-const BRAND_TEXT_CLASS = 'bg-linear-to-r from-brand-light via-brand-strong to-brand-deep bg-clip-text text-transparent';
+// The brand lime is too pale to be text on the light page, so emphasised words keep the text colour and get
+// a lime highlighter stroke across their lower half instead. Goes on an inline element, so the stroke follows
+// the words (wrapping included) rather than the full width.
+const BRAND_TEXT_CLASS = 'bg-[linear-gradient(transparent_52%,var(--brand-light)_52%,var(--brand-light)_88%,transparent_88%)] box-decoration-clone px-[0.08em]';
 
 // Gap between neighbouring cards fading in on scroll (see Reveal), so a row arrives one card at a time.
 const STAGGER_MS = 120;
 
 const HERO_PERK_KEYS = ['landing_perk_no_code', 'landing_perk_no_jargon', 'landing_perk_all_included', 'landing_adv_tick_changes'];
-// The hero's second row: what the finished site is like (rather than what using VibeIt is like).
+// The hero's second row: what the finished site is like (rather than what using biveit is like).
 const HERO_QUALITIES: { id: string; labelKey: string; Icon: ArtIcon }[] = [
   { id: 'design', labelKey: 'landing_adv_design_title', Icon: PenToolIcon },
   { id: 'seo', labelKey: 'landing_adv_seo_title', Icon: SearchCheckIcon },
@@ -134,38 +127,13 @@ function CheckBullet() {
   );
 }
 
-function LandingHeader() {
-  const { t } = useTranslation();
-
-  return (
-    <header className='sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md'>
-      <div className={cn(LANDING_WIDTH_CLASS, 'flex h-16 items-center justify-between gap-3')}>
-        <Link to='/' className='rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
-          <BrandLogo />
-        </Link>
-        <div className='flex items-center gap-1 sm:gap-2'>
-          {/* Phones: no room next to the logo; Pricing is in the footer there. */}
-          <Link to={PATHS.pricing} className='hidden rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground sm:inline'>
-            {t('pricing_nav')}
-          </Link>
-          <LanguageSelector />
-          <LinkButton href={START_PATH} size='sm' className={BRAND_BUTTON_CLASS}>{t('landing_nav_start')}</LinkButton>
-        </div>
-      </div>
-    </header>
-  );
-}
-
 // Original purpose: the top of the landing page.
-// Intentions: the promise in three short lines ("You dream. We build. You own."), centred, with the way in
-// right under it, and then the big picture: a real-looking website, tilted like a product shot, that
-// flattens as you scroll and lets you flip between example sites (HeroShowcase).
+// Intentions: the promise in three short lines ("You picture. We build. You own."), centred, with a prompt box
+// right under it (HeroPrompt: say what you want, then log in), and then the big picture: a real-looking
+// website, tilted like a product shot, that flattens as you scroll and lets you flip between example sites
+// (HeroShowcase).
 function HeroSection() {
   const { t } = useTranslation();
-
-  const scrollToHowItWorks = () => {
-    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <section data-section='hero' className='relative isolate overflow-hidden'>
@@ -173,27 +141,18 @@ function HeroSection() {
       <div className={cn(LANDING_WIDTH_CLASS, SECTION_PAD_BOTTOM_CLASS, 'flex flex-col items-center pt-7 text-center sm:pt-10')}>
         {/* min-w-0 lets this column shrink below its longest word, so long words wrap instead of overflowing */}
         <Reveal className='flex min-w-0 flex-col items-center'>
-          <span className='inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-xs'>
-            <SparklesIcon className='size-3.5 text-brand-strong' />
+          <span className='inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card px-4 py-2 text-sm font-semibold text-accent-foreground shadow-xs sm:text-[0.9375rem]'>
+            <SparklesIcon className='size-4 text-brand-strong' />
             {t('landing_hero_eyebrow')}
           </span>
           <h1 className='mt-6 font-heading text-[clamp(2.5rem,12vw,3.25rem)] leading-[1.06] font-semibold tracking-[-0.025em] break-words hyphens-auto sm:text-7xl xl:text-[5.25rem]'>
             <span className='block'>{t('landing_hero_title_lead')}</span>
-            {/* pb: descenders (Vietnamese marks too) poke out of the clipped gradient box otherwise. */}
-            <span className={cn('block pb-[0.06em]', BRAND_TEXT_CLASS)}>{t('landing_hero_title_build')}</span>
+            <span className='block'><span className={BRAND_TEXT_CLASS}>{t('landing_hero_title_build')}</span></span>
             <span className='block'>{t('landing_hero_title_rest')}</span>
           </h1>
           <p className='mt-6 max-w-2xl text-lg text-pretty text-muted-foreground'>{t('landing_hero_subtitle')}</p>
           {/* Two equal columns so both buttons come out the same size. */}
-          <div className='mt-8 grid w-full max-w-sm grid-cols-1 gap-3 min-[380px]:grid-cols-2'>
-            <LinkButton href={START_PATH} size='lg' className={cn(BRAND_BUTTON_CLASS, 'w-full')}>
-              {t('landing_cta_start')}
-              <ArrowRightIcon data-icon='inline-end' />
-            </LinkButton>
-            <Button size='lg' variant='outline' className='w-full bg-card hover:bg-accent' onClick={scrollToHowItWorks}>
-              {t('landing_cta_how')}
-            </Button>
-          </div>
+          <HeroPrompt className='mt-8' />
           <ul className='mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm font-medium'>
             {HERO_PERK_KEYS.map(perkKey => (
               <li key={perkKey} className='flex items-center gap-1.5'>
@@ -219,7 +178,7 @@ function HeroSection() {
   );
 }
 
-// Original purpose: "made for whatever you run": the kinds of businesses VibeIt builds for (see BusinessOrbit).
+// Original purpose: "made for whatever you run": the kinds of businesses biveit builds for (see BusinessOrbit).
 function BusinessesSection() {
   const { t } = useTranslation();
 
@@ -269,7 +228,7 @@ function DealSection() {
         <Reveal delayMs={STAGGER_MS} className='rounded-3xl bg-linear-to-br from-highlight to-chart-2 p-6 text-primary-foreground shadow-xl shadow-primary/20 sm:p-8 lg:col-span-3'>
           <div className='flex items-center justify-between gap-3'>
             <h3 className='font-heading text-xl font-bold'>{t('landing_deal_ours')}</h3>
-            <span className='rounded-full bg-primary-foreground px-3 py-1 text-xs font-semibold text-primary'>{t('landing_deal_ours_badge')}</span>
+            <span className='rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground'>{t('landing_deal_ours_badge')}</span>
           </div>
           <ul className='mt-6 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3'>
             {OUR_TASKS.map(task => (
@@ -348,26 +307,6 @@ function FaqSection() {
         ))}
       </Reveal>
     </section>
-  );
-}
-
-function LandingFooter() {
-  const { t } = useTranslation();
-
-  return (
-    <footer className='border-t bg-card text-muted-foreground'>
-      <div className={cn(LANDING_WIDTH_CLASS, 'flex flex-col items-center justify-between gap-3 py-8 text-sm sm:flex-row')}>
-        <div className='flex items-center gap-2'>
-          <BrandLogo hasWordmark={false} markClassName='h-6' />
-          {t('landing_footer_rights', { year: new Date().getFullYear(), appName: APP_NAME })}
-        </div>
-        <div className='flex items-center gap-4'>
-          <Link to={PATHS.pricing} className='hover:text-foreground'>{t('pricing_nav')}</Link>
-          <Link to={PATHS.privacyPolicy} className='hover:text-foreground'>{t('landing_footer_privacy')}</Link>
-          <Link to={PATHS.cookiePolicy} className='hover:text-foreground'>{t('cookie_policy_title')}</Link>
-        </div>
-      </div>
-    </footer>
   );
 }
 

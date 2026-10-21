@@ -8,9 +8,9 @@ const _SPACING = 32; // px between dots
 const _BASE_RADIUS = 2.2;
 const _BASE_ALPHA = 0.14;
 const _REACH = 212; // px from the cursor to the foot of the bump (150 × √2: twice the area)
-const _GROWTH = 0.45; // how much bigger a dot on the very top gets (0.45 = 45% bigger)
-const _PUSH = 10; // px a dot on the bump's slope is pushed outward, the way a raised surface stretches
-const _DARKEN = 0.2; // extra opacity for a dot on the very top
+const _GROWTH = 0.225; // how much bigger a dot on the very top gets (0.225 = 22.5% bigger)
+const _PUSH = 5; // px a dot on the bump's slope is pushed outward, the way a raised surface stretches
+const _DARKEN = 0.1; // extra opacity for a dot on the very top
 const _EASE = 0.16; // per frame: how quickly the bump catches up with the cursor and rises/settles
 
 type Bump = { x: number; y: number; height: number };
@@ -36,7 +36,7 @@ function _getRaisedDot(x: number, y: number, bump: Bump) {
 // cursor hovers, the surface rises into a soft dome under it: the dots there grow, darken and spread
 // outward, and the dome glides after the cursor and sinks back when it leaves the page. Drawn on one canvas
 // fixed behind the page, so it only shows where sections leave the background bare. Colour: the brand
-// blue (--brand-strong). It only redraws while the dome is moving; with reduced motion on, it's the still grid.
+// green (--brand-strong). It only redraws while the dome is moving; with reduced motion on, it's the still grid.
 // References: the Arcturis landing page (the reference the user picked).
 export default function DotGridBackdrop({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
