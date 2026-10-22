@@ -17,7 +17,7 @@ export default function AppFooter() {
 
   return (
     <footer className='border-t'>
-      <div className={cn('mx-auto flex flex-col items-center justify-between gap-2 px-4 py-6 text-sm text-muted-foreground sm:flex-row', MAIN_CONTENT_WIDTH_CLASS)}>
+      <div className={cn('mx-auto flex flex-col items-center justify-between gap-2 p-6 text-sm text-muted-foreground sm:flex-row', MAIN_CONTENT_WIDTH_CLASS)}>
         <span>© {new Date().getFullYear()} {APP_NAME}</span>
         <nav className='flex gap-5'>
           {FOOTER_LINKS.map(link => (

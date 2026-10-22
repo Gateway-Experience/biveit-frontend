@@ -19,6 +19,7 @@ import { Message, MessageContent } from 'src/components/shadui/message';
 import { Spinner } from 'src/components/common/Spinner';
 import { APPROVAL_ACTION_TEXT_KEYS, flattenInteractionItems, type InteractionItem } from 'src/services/chatInteractions';
 import { getInteractionResults, isAskUser, isShowArtifact, isUserFacingTool } from 'src/services/chatLog';
+import { SITE_KIND_OPTIONS } from 'src/utils/constants';
 import type {
   AiMessage, AskUserQuestion, AttachmentBlock, ContentBlock, InteractionResult, SignalBlock, TextBlock, ToolResultBlock,
   ToolUseBlock,
@@ -274,6 +275,44 @@ function hasVisibleContent(message: AiMessage, toolUsesById: Record<string, Tool
     || (message.role === 'user' && _isToolResultBlock(block) && isUserFacingTool(toolUsesById[block.tool_use_id])));
 }
 
+// Intentions: what the user told us when creating the project (the new-project form, kept on the project as
+// bootstrap_data), shown as their first message. The agent was handed it behind the scenes and opens the chat
+// replying to it ("Thanks for the description..."), but it's not a chat message of its own, so without this
+// the conversation starts with an answer to nothing. Laid out like the answers card: each form question
+// with what they put. Kinds we offered are shown in the user's language; ones they typed, as typed.
+function StartingBriefMessage({ bootstrapData }: { bootstrapData: Record<string, unknown> }) {
+  const { t } = useTranslation();
+  const description = _.trim(_.toString(_.get(bootstrapData, 'description', '')));
+  const siteKindLabels = _.map(_.castArray(_.get(bootstrapData, 'site_kinds', [])), kind => {
+    const option = SITE_KIND_OPTIONS.find(item => item.value === kind);
+    return option ? t(option.labelKey) : _.toString(kind);
+  });
+  const fields = _.filter([
+    { key: 'description', question: t('new_project_description_label'), answer: description },
+    { key: 'kinds', question: t('new_project_kind_label'), answer: _.join(_.compact(siteKindLabels), ', ') },
+  ], 'answer');
+
+  if (_.isEmpty(fields)) {
+    return null;
+  }
+  return (
+    <Message align='end' data-component='starting-brief'>
+      <MessageContent>
+        <Bubble variant='secondary' align='end'>
+          <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2.5 py-3')}>
+            {_.map(fields, ({ key, question, answer }) => (
+              <div key={key} className='flex flex-col gap-0.5'>
+                <span className='text-xs text-muted-foreground'>{question}</span>
+                <span className='whitespace-pre-wrap'>{answer}</span>
+              </div>
+            ))}
+          </BubbleContent>
+        </Bubble>
+      </MessageContent>
+    </Message>
+  );
+}
+
 // Intentions: renders one message. User messages sit on the right in bubbles (text, or their answers);
 // the agent's are open text with its tool calls inline as marker lines, in the order it produced them.
 // No avatars: alignment alone already says who's talking.
@@ -291,4 +330,4 @@ export default function ChatMessageItem({ message, renderContext }: { message: A
   );
 }
 
-export { hasVisibleContent };
+export { hasVisibleContent, StartingBriefMessage };

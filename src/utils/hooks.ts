@@ -217,62 +217,6 @@ function useElementSize<T extends HTMLElement>() {
   return [setElement, size] as const;
 }
 
-// How far an element has scrolled through the screen, from 0 to 1, kept live while scrolling (once per
-// frame at most): 0 when the element's top reaches the bottom of the screen, 1 when it reaches the top.
-// Pass the returned callback as the element's `ref`.
-function useScrollProgress<T extends HTMLElement>() {
-  const [element, setElement] = useState<T | null>(null);
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    if (!element) {
-      return;
-    }
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      const rect = element.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      setProgress(_.clamp((viewportHeight - rect.top) / viewportHeight, 0, 1));
-    };
-    const scheduleMeasure = () => {
-      if (!frame) {
-        frame = requestAnimationFrame(measure);
-      }
-    };
-    measure();
-    window.addEventListener('scroll', scheduleMeasure, { passive: true });
-    window.addEventListener('resize', scheduleMeasure);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', scheduleMeasure);
-      window.removeEventListener('resize', scheduleMeasure);
-    };
-  }, [element]);
-  return [setElement, progress] as const;
-}
-
-// Flips to true the first time the element scrolls into view, and stays true (it stops watching after that).
-// Pass the returned callback as the element's `ref`. `bottomOffset` makes it wait until the element is
-// that far above the bottom edge of the screen (e.g. '10%'), so it isn't triggered by a barely-visible sliver.
-function useHasBeenInView<T extends HTMLElement>(options: { bottomOffset?: string } = {}) {
-  const { bottomOffset = '0px' } = options;
-  const [hasBeenInView, setHasBeenInView] = useState(false);
-  const [element, setElement] = useState<T | null>(null);
-  useEffect(() => {
-    if (!element || hasBeenInView) {
-      return;
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting) {
-        setHasBeenInView(true);
-      }
-    }, { rootMargin: `0px 0px -${bottomOffset} 0px` });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [element, hasBeenInView, bottomOffset]);
-  return [setElement, hasBeenInView] as const;
-}
-
 type TypewriterState = { phraseIndex: number; typedLength: number; mode: 'typing' | 'pausing' | 'deleting' };
 
 const TYPEWRITER_TIMING = { typeMs: 55, deleteMs: 28, pauseMs: 1800, beforeNextMs: 300 };
@@ -462,8 +406,6 @@ export {
   useIsMobile,
   useMediaQuery,
   useElementSize,
-  useHasBeenInView,
-  useScrollProgress,
   useTypewriter,
   usePrevious,
   useInterval,

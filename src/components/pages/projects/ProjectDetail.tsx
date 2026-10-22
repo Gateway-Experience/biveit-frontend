@@ -119,6 +119,7 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
           <div className={cn(_PANEL_CLASS, 'min-w-0', preview && isSideBySide ? 'w-[26rem] flex-none xl:w-[45rem]' : 'flex-1')}>
             <AgentChat
               projectId={project.id}
+              bootstrapData={project.bootstrap_data}
               chat={chat}
               onRetrySession={session.retry}
               isRetryingSession={session.isRetrying}

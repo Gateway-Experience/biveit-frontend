@@ -2,21 +2,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/commissioner";
-@import "@fontsource-variable/google-sans-flex";
 @plugin "@tailwindcss/typography";
 
-/* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. the landing
-   page): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
+/* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. PublicLayout,
+   which matches the always-light landing site): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
 @custom-variant dark (&:is(.dark *):not(.force-light, .force-light *));
-
-/* The landing page's business orbit: rings of icons turning slowly (BusinessOrbit). */
-@theme {
-  --animate-orbit: orbit 80s linear infinite;
-  @keyframes orbit {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-}
 
 @theme inline {
   --color-success: var(--success);
@@ -34,23 +24,12 @@
   --color-brand-ink: var(--brand-ink);
   --color-brand-ink-foreground: var(--brand-ink-foreground);
   --color-brand-strong: var(--brand-strong);
-  --color-site-moto: var(--site-moto);
-  --color-site-moto-soft: var(--site-moto-soft);
-  --color-site-home: var(--site-home);
-  --color-site-home-soft: var(--site-home-soft);
-  --color-site-hotel: var(--site-hotel);
-  --color-site-hotel-gold: var(--site-hotel-gold);
-  --color-site-boutique: var(--site-boutique);
-  --color-site-boutique-soft: var(--site-boutique-soft);
-  --color-site-perfume: var(--site-perfume);
-  --color-site-perfume-soft: var(--site-perfume-soft);
-  --color-site-cafe: var(--site-cafe);
-  --color-site-cafe-soft: var(--site-cafe-soft);
-  /* Body text (Commissioner, a Myriad-like humanist sans) covers Latin, Vietnamese and Cyrillic;
-     headings and the landing slogan (Google Sans Flex) cover Latin and Vietnamese. Pick fonts that ship a Vietnamese subset, otherwise accented letters get patched in from a
-     fallback font and look mismatched. Other scripts (Cyrillic headings, Chinese, Japanese, Korean) fall
-     through to the system UI font, which looks native on each OS. */
-  --font-heading: 'Google Sans Flex Variable', system-ui, sans-serif;
+  /* One font for everything: Commissioner, a Myriad-like humanist sans, for headings and body alike (the
+     heading token stays so headings can move to their own font again with a one-line change). It covers
+     Latin, Vietnamese and Cyrillic. Pick fonts that ship a Vietnamese subset, otherwise accented letters get
+     patched in from a fallback font and look mismatched. Chinese, Japanese and Korean fall through to the
+     system UI font, which looks native on each OS. */
+  --font-heading: 'Commissioner Variable', system-ui, sans-serif;
   --font-sans: 'Commissioner Variable', system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -93,29 +72,34 @@
 }
 
 :root, .force-light {
-  --background: oklch(0.985 0.008 238);
-  --foreground: oklch(0.24 0.035 248);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.035 248);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.035 248);
-  --primary: oklch(0.92 0.09 92);
-  --primary-foreground: oklch(0.24 0.035 248);
-  --secondary: oklch(0.898 0.042 225.6);
-  --secondary-foreground: oklch(0.24 0.035 248);
-  --muted: oklch(0.965 0.012 238);
-  --muted-foreground: oklch(0.5 0.035 245);
-  --accent: oklch(0.951 0.02 238.7);
-  --accent-foreground: oklch(0.42 0.1 245);
+  /* Palette: lime #C9F56A (the brand), lavender #B8A4E8 (buttons) and navy #172B3A (text). The neutrals
+     (page, cards, borders, greys) are a touch lime-tinted off-whites and navy-tinted greys, so they sit
+     with the three instead of fighting them. */
+  --background: #F9FBF5;
+  --foreground: #172B3A;
+  --card: #FFFFFF;
+  --card-foreground: #172B3A;
+  --popover: #FFFFFF;
+  --popover-foreground: #172B3A;
+  /* Buttons: lavender with navy labels (6.5:1). */
+  --primary: #B8A4E8;
+  --primary-foreground: #172B3A;
+  /* Secondary surfaces like the user's chat bubbles: pale lime with navy text. */
+  --secondary: #E7F8BF;
+  --secondary-foreground: #172B3A;
+  --muted: #F0F3EA;
+  --muted-foreground: #56636E;
+  --accent: #EEF8D9;
+  --accent-foreground: #3B5A0C;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.915 0.02 238);
-  --input: oklch(0.915 0.02 238);
-  --ring: oklch(0.62 0.1 242);
-  --chart-1: oklch(0.52 0.11 242);
-  --chart-2: oklch(0.798 0.065 242.3);
-  --chart-3: oklch(0.839 0.061 241.7);
-  --chart-4: oklch(0.42 0.1 250);
-  --chart-5: oklch(0.898 0.042 225.6);
+  --border: #E0E6D8;
+  --input: #E0E6D8;
+  --ring: #8C73D6;
+  --chart-1: #93CC2E;
+  --chart-2: #D6F290;
+  --chart-3: #DDD3F6;
+  --chart-4: #8C73D6;
+  --chart-5: #E7F8BF;
   --radius: 0.625rem;
   /* Status colours for notifications and inline feedback. `--destructive` already
      covers errors, so error maps to it rather than duplicating a red. */
@@ -131,41 +115,21 @@
   --scrim: oklch(0 0 0 / 40%);
   --scrim-strong: oklch(0 0 0 / 80%);
   --scrim-foreground: oklch(1 0 0);
-  /* Soft tint behind emphasised words and other light brand washes. */
-  --highlight: oklch(0.898 0.042 225.6);
-  /* Brand palette (sky blue + cream): #E3F1FB (--accent), #C1E4F3 (--highlight, --chart-5), #A8D0EF and
-     #99C3E4 (--chart-3/2, and the dark theme's --brand-light), #FFF9E6 (the hue of --primary). They're all pale, so the
-     colours that carry text (--brand-strong, --brand-deep, --brand-light here, the foregrounds) are deeper
-     shades of the same blue, picked for contrast. Buttons (--primary) are the yellow side of the palette: a
-     butter yellow from #FFF9E6's hue (#FAE39F; the exact cream is invisible against the page), navy labels
-     at 13:1. Secondary surfaces like the user's chat bubbles (--secondary) are #C1E4F3 with navy text (12:1).
-     The two ends of the brand gradient (logo, primary buttons, emphasised headline words), with
-     --primary in the middle. */
-  --brand-light: oklch(0.66 0.1 238);
-  --brand-deep: oklch(0.42 0.1 250);
+  /* Soft tint behind emphasised words and other light brand washes: pale lime. */
+  --highlight: #E7F8BF;
+  /* The brand lime and a deeper lime: the two ends of the brand gradient (logo tile, progress bars, glows,
+     the highlighter behind "We build."). Both are surfaces, never text: lime on white is unreadable. */
+  --brand-light: #C9F56A;
+  --brand-deep: #93CC2E;
   /* A near-black navy for big dark brand surfaces (the auth pages' showcase panel), same in both themes. */
-  --brand-ink: oklch(0.21 0.035 248);
+  --brand-ink: #0F1E2A;
   /* Light text on --brand-ink (e.g. the build console). */
-  --brand-ink-foreground: oklch(0.96 0.01 240);
-  /* The brand blue for things read on the page: links, icons, labels, the wordmark's "It", the logo, the
-     middle of gradient text. --primary is the (pale) button fill, too light to read as text on white, so
-     anything coloured "brand" as text or line art uses this instead. Dark theme: the light blue. */
-  --brand-strong: oklch(0.52 0.11 242);
-  /* Brand colors of the made-up example sites in the landing page's showcase. Each one is a different
-     "customer", so each gets its own look rather than ours. Light-only, like the landing page. */
-  --site-moto: oklch(0.68 0.19 45);
-  --site-moto-soft: oklch(0.95 0.04 60);
-  --site-home: oklch(0.55 0.1 195);
-  --site-home-soft: oklch(0.94 0.03 190);
-  --site-hotel: oklch(0.28 0.06 260);
-  --site-hotel-gold: oklch(0.8 0.12 85);
-  --site-boutique: oklch(0.62 0.15 15);
-  --site-boutique-soft: oklch(0.95 0.025 20);
-  --site-perfume: oklch(0.32 0.08 330);
-  --site-perfume-soft: oklch(0.95 0.025 340);
-  --site-cafe: oklch(0.42 0.07 55);
-  --site-cafe-soft: oklch(0.95 0.025 75);
-  /* The sidebar is a plain surface with a hairline border, so the blue logo and buttons carry
+  --brand-ink-foreground: #EEF2F5;
+  /* The brand colour for things read on the page: links, icons, labels, the wordmark's capitals. The lime
+     itself is too pale to read on white, so here it's a deep lime-green from the same hue (5.6:1 on the
+     page). Dark theme: the lime itself, which reads fine on navy. */
+  --brand-strong: #4A7012;
+  /* The sidebar is a plain surface with a hairline border, so the lime logo and buttons carry
      the brand. These only reference other tokens, so they follow .dark without being redeclared. */
   --sidebar: var(--card);
   --sidebar-foreground: var(--foreground);
@@ -178,41 +142,41 @@
 }
 
 .dark {
-  --background: oklch(0.17 0.025 245);
-  --foreground: oklch(0.96 0.01 240);
-  --card: oklch(0.215 0.03 245);
-  --card-foreground: oklch(0.96 0.01 240);
-  --popover: oklch(0.215 0.03 245);
-  --popover-foreground: oklch(0.96 0.01 240);
-  --primary: oklch(0.88 0.1 92);
-  --primary-foreground: oklch(0.2 0.04 248);
-  --secondary: oklch(0.34 0.06 242);
-  --secondary-foreground: oklch(0.96 0.01 240);
-  --muted: oklch(0.26 0.03 245);
-  --muted-foreground: oklch(0.72 0.03 240);
-  --accent: oklch(0.29 0.05 242);
-  --accent-foreground: oklch(0.898 0.042 225.6);
+  --background: #0E1A23;
+  --foreground: #EEF2F5;
+  --card: #15232E;
+  --card-foreground: #EEF2F5;
+  --popover: #15232E;
+  --popover-foreground: #EEF2F5;
+  --primary: #B8A4E8;
+  --primary-foreground: #172B3A;
+  --secondary: #2C3F17;
+  --secondary-foreground: #EEF2F5;
+  --muted: #1C2B37;
+  --muted-foreground: #9AA8B3;
+  --accent: #22321A;
+  --accent-foreground: #D6F290;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.68 0.1 240);
-  --chart-1: oklch(0.74 0.1 240);
-  --chart-2: oklch(0.839 0.061 241.7);
-  --chart-3: oklch(0.898 0.042 225.6);
-  --chart-4: oklch(0.55 0.11 245);
-  --chart-5: oklch(0.42 0.08 245);
+  --ring: #B8A4E8;
+  --chart-1: #C9F56A;
+  --chart-2: #6E9A26;
+  --chart-3: #B8A4E8;
+  --chart-4: #7C64C4;
+  --chart-5: #3A5218;
   --success: oklch(0.70 0.14 150);
   --success-foreground: oklch(0.205 0 0);
   --warning: oklch(0.80 0.15 75);
   --warning-foreground: oklch(0.205 0 0);
   --info: oklch(0.70 0.14 250);
   --info-foreground: oklch(0.205 0 0);
-  --highlight: oklch(0.74 0.1 240 / 25%);
-  --brand-light: oklch(0.839 0.061 241.7);
-  --brand-deep: oklch(0.55 0.11 245);
-  --brand-ink: oklch(0.21 0.035 248);
-  --brand-ink-foreground: oklch(0.96 0.01 240);
-  --brand-strong: oklch(0.74 0.1 240);
+  --highlight: rgb(201 245 106 / 18%);
+  --brand-light: #C9F56A;
+  --brand-deep: #93CC2E;
+  --brand-ink: #0F1E2A;
+  --brand-ink-foreground: #EEF2F5;
+  --brand-strong: #C9F56A;
 }
 
 /* Rendered markdown (`prose`, from @tailwindcss/typography) takes its colours from the theme instead of
@@ -247,8 +211,12 @@
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  /* scrollbar-gutter: always keep room for the scrollbar, even on pages too short to scroll. Otherwise, with
+     scrollbars that take up space (Windows, or macOS set to always show them), going from a long page to a
+     short one widens the page and everything centred (header, footer, content) jumps sideways. */
   html {
     @apply font-sans;
+    scrollbar-gutter: stable;
   }
   /* Line breaking for languages without spaces between words (or with different rules): Japanese
      breaks at natural phrase boundaries instead of mid-word (where supported), and Korean keeps its

@@ -16,16 +16,8 @@ import { Label } from 'src/components/shadui/label';
 import { Spinner } from 'src/components/common/Spinner';
 import { createProject } from 'src/services/project';
 import { useProjectListUpdaters } from 'src/components/pages/projects/useProjectLists';
-import { PATHS } from 'src/utils/constants';
-
-// The site kinds offered up front. Values are what the agent reads, so they stay in English; the labels
-// are translated.
-const _SITE_KIND_OPTIONS = [
-  { value: 'landing page', labelKey: 'new_project_kind_landing' },
-  { value: 'blog', labelKey: 'new_project_kind_blog' },
-  { value: 'portfolio', labelKey: 'new_project_kind_portfolio' },
-  { value: 'web app', labelKey: 'new_project_kind_web_app' },
-];
+import { NEW_PROJECT_IDEA_PARAM, PATHS, SITE_KIND_OPTIONS } from 'src/utils/constants';
+import { useOneTimeQueryParams } from 'src/utils/hooks';
 
 const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-3.5 py-3 text-base transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15';
 
@@ -77,9 +69,17 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
   const notify = useNotification();
   const navigate = useNavigate();
   const { reloadProjects } = useProjectListUpdaters();
-  const { control, handleSubmit, reset, formState: { isSubmitting } } = useForm<NewProjectFormValues>({
+  const { control, handleSubmit, reset, setValue, formState: { isSubmitting } } = useForm<NewProjectFormValues>({
     mode: 'onSubmit',
     defaultValues: { name: '', description: '', siteKinds: [], otherSiteKind: '' },
+  });
+  // An idea typed on the landing site arrives as ?idea=... (vib3-landing's HeroPrompt): start the description with it.
+  // The param is dropped from the URL once read, so a refresh doesn't put it back over their edits.
+  useOneTimeQueryParams([NEW_PROJECT_IDEA_PARAM], params => {
+    const idea = params[NEW_PROJECT_IDEA_PARAM];
+    if (idea) {
+      setValue('description', idea.slice(0, _DESCRIPTION_MAX_LENGTH));
+    }
   });
 
   const onSubmit = async (values: NewProjectFormValues) => {
@@ -184,7 +184,7 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
                   control={control}
                   render={({ field }) => (
                     <div className='grid gap-2 sm:grid-cols-2'>
-                      {_.map(_SITE_KIND_OPTIONS, option => (
+                      {_.map(SITE_KIND_OPTIONS, option => (
                         <label key={option.value} data-sitekind={option.value} className={_OPTION_ROW_CLASS}>
                           <Checkbox
                             checked={_.includes(field.value, option.value)}

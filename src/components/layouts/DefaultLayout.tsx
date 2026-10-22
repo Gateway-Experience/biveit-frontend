@@ -7,7 +7,7 @@ import BrandLogo from 'src/components/common/BrandLogo';
 import NewProjectModal from 'src/components/pages/projects/NewProjectModal';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from 'src/components/shadui/sidebar';
 import { useStore } from 'src/state-store';
-import { MAIN_CONTENT_WIDTH_CLASS } from 'src/utils/constants';
+import { MAIN_CONTENT_WIDTH_CLASS, SIDEBAR_WIDTH_PX } from 'src/utils/constants';
 
 // The app's frame: the sidebar on the left (AppSidebar), the page on the right. On phones the sidebar is a
 // drawer, opened from a slim top bar that also carries the logo.
@@ -21,13 +21,13 @@ export default function DefaultLayout({ isWorkspace = false }: { isWorkspace?: b
   const set = useStore(state => state.set);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider style={{ '--sidebar-width': `${SIDEBAR_WIDTH_PX}px` } as React.CSSProperties}>
       <AppSidebar />
       <NewProjectModal open={isNewProjectOpen} onClose={() => set({ isNewProjectOpen: false })} />
       <SidebarInset className={cn(isWorkspace ? 'h-svh overflow-hidden' : 'min-h-svh')}>
         <header className='flex h-14 shrink-0 items-center gap-2 border-b px-3 md:hidden'>
           <SidebarTrigger />
-          <Link to='/' className='rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
+          <Link to='/' className='flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
             <BrandLogo markClassName='h-7' />
           </Link>
         </header>

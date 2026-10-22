@@ -26,7 +26,7 @@ const HELP_TOPICS: { id: string; keywords: string[] }[] = [
 // type in; others just match a little looser).
 const _STOPWORDS = new Set([
   'how', 'what', 'why', 'can', 'does', 'the', 'and', 'you', 'your', 'are', 'for', 'with', 'this', 'that', 'there',
-  'vibeit', 'site', 'website', 'web', 'do', 'is', 'it', 'my', 'me', 'to', 'of', 'in', 'on', 'an',
+  'biveit', 'site', 'website', 'web', 'do', 'is', 'it', 'my', 'me', 'to', 'of', 'in', 'on', 'an',
   'làm', 'sao', 'để', 'của', 'mình', 'tôi', 'bạn', 'có', 'không', 'được', 'là', 'thế', 'nào', 'gì', 'cho', 'và',
   'với', 'này', 'một', 'các', 'những',
 ]);
@@ -48,7 +48,7 @@ function _tokenize(text: string) {
 // [Pure] The topic that best fits `query`, or null when nothing really does. `topics` carry their texts in
 // the user's language (question and answer). A word from the question, or one of the topic's keywords, is a
 // strong hint (2 points); one that merely appears somewhere in the answer is weak (1). It takes 2 points to
-// answer, so a lone answer word ("tell me a joke" vs. "just tell VibeIt...") doesn't count as a match.
+// answer, so a lone answer word ("tell me a joke" vs. "just tell biveit...") doesn't count as a match.
 function findHelpTopic(query: string, topics: { id: string; question: string; answer: string; keywords: string[] }[]) {
   const queryTokens = _tokenize(query);
   const scored = topics.map(topic => {

@@ -16,7 +16,7 @@ type HelpEntry = { kind: 'question'; text: string } | { kind: 'answer'; topicId:
 
 const _BUBBLE_CLASS = 'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed';
 
-// Intentions: a small help desk about using VibeIt itself (not the site being built: that's the project
+// Intentions: a small help desk about using biveit itself (not the site being built: that's the project
 // chat's job). Ask in your own words or tap a topic; answers come from the curated topics in helpTopics,
 // so they're always right about the product, and anything unknown gets an honest "not sure" plus the
 // list of what it can help with. Lives in a side sheet so it can be opened from anywhere.
@@ -61,7 +61,7 @@ export default function HelpChat({ open, onOpenChange }: { open: boolean; onOpen
           type='button'
           data-topicid={topic.id}
           onClick={() => ask(topic.question, topic.id)}
-          className='cursor-pointer rounded-full border bg-card px-3 py-1.5 text-left text-xs font-medium transition-colors hover:border-primary hover:bg-primary/10'
+          className='cursor-pointer rounded-full border bg-card px-3.5 py-1.5 text-left text-sm font-medium transition-colors hover:border-primary hover:bg-primary/10'
         >
           {topic.question}
         </button>
