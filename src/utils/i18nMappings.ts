@@ -759,6 +759,22 @@ export default {
     ru: 'Не удалось подготовить проект.',
     ko: '프로젝트를 준비하지 못했어요.',
   },
+  chat_agent_overdue: {
+    en: 'This is taking longer than usual',
+    vi: 'Việc này đang lâu hơn bình thường',
+    zh: '这次比平时慢了一些',
+    ja: 'いつもより時間がかかっています',
+    ru: 'Это занимает больше времени, чем обычно',
+    ko: '평소보다 오래 걸리고 있어요',
+  },
+  chat_agent_overdue_hint: {
+    en: 'Your assistant hasn\'t started the chat yet. Try again and it\'ll get another go.',
+    vi: 'Trợ lý của bạn vẫn chưa bắt đầu trò chuyện. Hãy thử lại để trợ lý bắt đầu lại nhé.',
+    zh: '你的助手还没开始对话。再试一次，让它重新开始。',
+    ja: 'アシスタントがまだ会話を始めていません。もう一度お試しください。',
+    ru: 'Ассистент ещё не начал разговор. Попробуйте ещё раз — он начнёт заново.',
+    ko: '어시스턴트가 아직 대화를 시작하지 않았어요. 다시 시도하면 새로 시작해요.',
+  },
   chat_setup_retry: {
     en: 'Try again',
     vi: 'Thử lại',
@@ -3616,14 +3632,6 @@ export default {
     ja: '空です',
     ru: 'Пусто',
     ko: '비어 있음',
-  },
-  sidebar_resize: {
-    en: 'Drag to resize',
-    vi: 'Kéo để đổi kích thước',
-    zh: '拖动以调整宽度',
-    ja: 'ドラッグして幅を変更',
-    ru: 'Потяните, чтобы изменить ширину',
-    ko: '드래그해서 너비 조절',
   },
   folder_menu: {
     en: 'Folder options',

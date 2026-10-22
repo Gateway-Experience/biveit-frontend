@@ -8,7 +8,8 @@ import {
   subscribeToConversationEvents, uploadAttachments,
 } from 'src/services/chat';
 import {
-  findLastSpokenMessage, findPendingInteractions, getChatIntroState, hasOlderMessages, isAgentPresumedWorking,
+  findLastSpokenMessage, findPendingInteractions, getChatIntroState, getIntroductionOverdueAtMs, hasOlderMessages,
+  isAgentPresumedWorking,
   isSignalMessage, mergeMessages,
 } from 'src/services/chatLog';
 import type { AgentSessionStatus, AiMessage, Attachment, InteractionAnswer, PostChatMessageBody } from 'src/types/chat';
@@ -54,6 +55,33 @@ export default function useAgentChat(projectId: number, options: {
   const receiveMessages = useCallback((incomingMessages: AiMessage[]) => {
     setMessages(previousMessages => mergeMessages(previousMessages || [], incomingMessages));
   }, []);
+
+  // When the agent was handed the project, re-read after every (re)open: a retry may have introduced it
+  // again. It's what tells "its first message is on the way" from "its first turn died" (getChatIntroState).
+  const [introducedAt, setIntroducedAt] = useState<string | null>(null);
+  useEffect(() => {
+    if (sessionStatus !== 'ready') {
+      return;
+    }
+    let isCancelled = false;
+    getConversation(projectId)
+      .then(conversation => !isCancelled && setIntroducedAt(conversation.meta?.introduced_at ?? null))
+      .catch(_.noop);  // a failed read only means no overdue check this time
+    return () => {
+      isCancelled = true;
+    };
+  }, [projectId, sessionStatus]);
+
+  // The clock the introduction is judged by: moved on when it turns overdue, nothing else having changed.
+  const [introCheckedAtMs, setIntroCheckedAtMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!introducedAt) {
+      return;
+    }
+    // A little past it, so the check lands on the far side.
+    const timer = setTimeout(() => setIntroCheckedAtMs(Date.now()), Math.max(0, getIntroductionOverdueAtMs(introducedAt) - Date.now()) + 100);
+    return () => clearTimeout(timer);
+  }, [introducedAt]);
 
   useEffect(() => {
     // Both only exist to tear down an async setup that may still be in flight when the effect is cleaned up.
@@ -175,7 +203,7 @@ export default function useAgentChat(projectId: number, options: {
   );
 
   const pendingInteractions = useMemo(() => findPendingInteractions(messages || []), [messages]);
-  const introState = getChatIntroState(messages, sessionStatus);
+  const introState = getChatIntroState(messages, sessionStatus, introducedAt, introCheckedAtMs);
   // A signal after it isn't the agent replying (we can write those ourselves, e.g. on an approval).
   const hasUndeliveredMessage = !_.isNull(undeliveredAfterSeq)
     && !_.some(messages, message => message.role === 'assistant' && !isSignalMessage(message) && message.seq > undeliveredAfterSeq);

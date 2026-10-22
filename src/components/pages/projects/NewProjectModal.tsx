@@ -66,17 +66,18 @@ type NewProjectFormValues = {
 // Original purpose: the bootstrap form — what we ask before the agent is even involved, so its first
 // message can already build on something. Only the name and description are required; anything left out
 // gets picked up in the chat.
-// Shown as a full-screen modal over the project list. Built from the dialog's parts rather than the shared
+// Shown as a full-screen modal over whatever page you're on (mounted in DefaultLayout), so closing it just
+// leaves you where you were. Built from the dialog's parts rather than the shared
 // Modal: that one always brings an 80%-black backdrop, which flashed the page dark grey on the way to white.
-// The sheet is opaque and covers everything, so it needs no backdrop at all. Whether it's open is the parent's call (it follows the
-// URL). A draft survives closing and reopening it, since the form lives as long as the list does.
+// The sheet is opaque and covers everything, so it needs no backdrop at all. Whether it's open is the parent's call. A draft
+// survives closing and reopening it, as long as you stay within the same layout (it's cleared once sent).
 // Flow: submit -> POST /projects -> straight into the new project's page, which opens on the chat.
 export default function NewProjectModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const notify = useNotification();
   const navigate = useNavigate();
   const { reloadProjects } = useProjectListUpdaters();
-  const { control, handleSubmit, formState: { isSubmitting } } = useForm<NewProjectFormValues>({
+  const { control, handleSubmit, reset, formState: { isSubmitting } } = useForm<NewProjectFormValues>({
     mode: 'onSubmit',
     defaultValues: { name: '', description: '', siteKinds: [], otherSiteKind: '' },
   });
@@ -92,8 +93,11 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
       });
       // The sidebar's recents should have it. Not awaited: the project page doesn't need the list.
       reloadProjects();
-      // Replace: going back from the new project shouldn't land on a form that's already been sent.
-      navigate(`${PATHS.projects}/${project.id}`, { replace: true });
+      navigate(`${PATHS.projects}/${project.id}`);
+      // Closed and emptied by hand: going from one project to another keeps the same layout (and this form)
+      // mounted, and the open flag lives in the store, so either would still be there otherwise.
+      reset();
+      onClose();
     } catch {
       notify('error', t('new_project_failed'));
     }

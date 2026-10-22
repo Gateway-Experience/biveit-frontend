@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import _ from 'lodash';
-import { useMatch, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { PlusIcon } from 'lucide-react';
 
-import LinkButton from 'src/components/common/LinkButton';
-import NewProjectModal from 'src/components/pages/projects/NewProjectModal';
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
 import { DeleteProjectModal, RenameProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
 import { BuildFlowArt, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import { useProjectListUpdaters, useProjects } from 'src/components/pages/projects/useProjectLists';
-import { PATHS } from 'src/utils/constants';
+import { Button } from 'src/components/shadui/button';
+import { useStore } from 'src/state-store';
 import type { Project } from 'src/types/project';
 
 const _GRID_CLASS = 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3';
@@ -35,6 +33,7 @@ function ProjectGridSkeleton() {
 // Intentions: first-run screen. The whole page is basically one invitation to start building.
 function ProjectsEmptyState() {
   const { t } = useTranslation();
+  const set = useStore(state => state.set);
 
   return (
     <div
@@ -45,10 +44,10 @@ function ProjectsEmptyState() {
       <BuildFlowArt className='mb-8 w-full max-w-[340px]' />
       <h2 className='font-heading text-xl font-bold tracking-[-0.02em]'>{t('projects_empty_title')}</h2>
       <p className='mt-2 max-w-sm text-muted-foreground'>{t('projects_empty_body')}</p>
-      <LinkButton href={PATHS.newProject} size='lg' className='mt-7'>
+      <Button size='lg' className='mt-7' onClick={() => set({ isNewProjectOpen: true })}>
         <PlusIcon data-icon='inline-start' />
         {t('projects_empty_cta')}
-      </LinkButton>
+      </Button>
     </div>
   );
 }
@@ -64,17 +63,12 @@ export default function ProjectList() {
   // The project whose rename / delete dialog is open, if any.
   const [renamingProject, setRenamingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
-  // The new-project form is open exactly while we're on its URL: the "New project" buttons are plain links
-  // (middle-click works), and the browser's back button closes it.
-  const isCreatingProject = !!useMatch(PATHS.newProject);
-  const navigate = useNavigate();
+  const set = useStore(state => state.set);
 
   const hasProjects = !_.isEmpty(projects);
 
   return (
     <div data-page='project-list'>
-      {/* Replace: closing shouldn't leave an entry that reopens the form on "back". */}
-      <NewProjectModal open={isCreatingProject} onClose={() => navigate(PATHS.projects, { replace: true })} />
       {/* A rename counts as an edit (fresh updated_at), so the sort moves the project to the top. */}
       <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
       <DeleteProjectModal project={deletingProject} onClose={() => setDeletingProject(null)} onDeleted={removeProject} />
@@ -96,10 +90,10 @@ export default function ProjectList() {
         </div>
         {/* The empty state carries its own, bigger CTA, so don't show two. */}
         {hasProjects && (
-          <LinkButton href={PATHS.newProject} className='relative'>
+          <Button className='relative' onClick={() => set({ isNewProjectOpen: true })}>
             <PlusIcon data-icon='inline-start' />
             {t('projects_new')}
-          </LinkButton>
+          </Button>
         )}
       </div>
 

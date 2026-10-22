@@ -39,8 +39,6 @@ function AppRoutes() {
       <Route path='/' element={<HomeRoute />} />
       <Route element={<DefaultLayout />}>
         <Route path={PATHS.projects} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
-        {/* The same list, with the new-project form open over it. */}
-        <Route path={PATHS.newProject} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path={PATHS.privacyPolicy} element={<PrivacyPolicy />} />
         <Route path={PATHS.cookiePolicy} element={<CookiePolicy />} />

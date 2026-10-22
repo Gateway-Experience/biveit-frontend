@@ -6,7 +6,7 @@ import { cn } from 'cn';
 import {
   CheckIcon, ChevronRightIcon, ChevronsUpDownIcon, EllipsisIcon, FolderIcon, FolderInputIcon, FolderMinusIcon,
   FolderPlusIcon, HouseIcon, LifeBuoyIcon, LogInIcon, LogOutIcon, PencilIcon, PinIcon, PinOffIcon, PlusIcon,
-  SearchIcon, TagIcon, Trash2Icon, UserIcon, UserPlusIcon,
+  SearchIcon, Trash2Icon, UserIcon, UserPlusIcon,
 } from 'lucide-react';
 
 import BrandLogo from 'src/components/common/BrandLogo';
@@ -33,7 +33,7 @@ import {
 import { useStore } from 'src/state-store';
 import { updateProject } from 'src/services/project';
 import { getAvatarUrl, getDisplayName, isSignedInUser } from 'src/services/user';
-import { PATHS, SIDEBAR_WIDTH_PX } from 'src/utils/constants';
+import { PATHS } from 'src/utils/constants';
 import { useLogout } from 'src/utils/hooks';
 import { buildLoginPath } from 'src/utils/authRedirect';
 import type { Project, ProjectChanges, ProjectFolder } from 'src/types/project';
@@ -53,56 +53,6 @@ function UserAvatar({ user, className }: { user?: User | null; className?: strin
       <AvatarImage src={getAvatarUrl(user)} />
       <AvatarFallback>{(getDisplayName(user) || '?').slice(0, 1).toUpperCase()}</AvatarFallback>
     </Avatar>
-  );
-}
-
-// Intentions: the drag handle on the sidebar's right edge. While dragging, the width goes straight onto the
-// wrapper's --sidebar-width (no React render per pointer move — the page next to it can be a heavy chat +
-// preview), and the wrapper is flagged data-resizing so the width's easing is switched off (index.css).
-// The final width is handed up on release, to be kept. Pointer capture keeps the drag going over the preview
-// iframe, which would otherwise swallow the moves. Double-click puts the default width back.
-function SidebarResizeHandle({ onResized }: { onResized: (width: number) => void }) {
-  const { t } = useTranslation();
-
-  const startResizing = (event: React.PointerEvent<HTMLDivElement>) => {
-    const handle = event.currentTarget;
-    const wrapper = handle.closest<HTMLElement>('[data-slot="sidebar-wrapper"]');
-    if (!wrapper) {
-      return;
-    }
-    event.preventDefault();
-    handle.setPointerCapture(event.pointerId);
-    wrapper.dataset.resizing = 'true';
-    // The sidebar starts at the window's left edge, so the pointer's x is the width.
-    const toWidth = (clientX: number) => _.clamp(Math.round(clientX), SIDEBAR_WIDTH_PX.min, SIDEBAR_WIDTH_PX.max);
-    const followPointer = (moveEvent: PointerEvent) => {
-      wrapper.style.setProperty('--sidebar-width', `${toWidth(moveEvent.clientX)}px`);
-    };
-    const stopResizing = (upEvent: PointerEvent) => {
-      handle.removeEventListener('pointermove', followPointer);
-      delete wrapper.dataset.resizing;
-      onResized(toWidth(upEvent.clientX));
-    };
-    handle.addEventListener('pointermove', followPointer);
-    handle.addEventListener('pointerup', stopResizing, { once: true });
-    handle.addEventListener('pointercancel', stopResizing, { once: true });
-  };
-
-  return (
-    <div
-      role='separator'
-      aria-orientation='vertical'
-      aria-label={t('sidebar_resize')}
-      title={t('sidebar_resize')}
-      onPointerDown={startResizing}
-      onDoubleClick={() => onResized(SIDEBAR_WIDTH_PX.default)}
-      className={cn(
-        'absolute inset-y-0 -right-1.5 z-20 w-3 cursor-col-resize touch-none',
-        // A thin line shows where to grab, on hover and while dragging.
-        'after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:transition-colors',
-        'hover:after:bg-sidebar-border in-data-resizing:after:bg-primary/40',
-      )}
-    />
   );
 }
 
@@ -369,12 +319,13 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
 // middle, the user's projects (Pinned / Folders / Recents, see SidebarProjects). At the bottom, the "about
 // me" things: language, Help, then the profile button (the account menu).
 // It collapses to an icon rail (remembered between visits, see SidebarProvider) so the project workspace gets
-// more room; clicking any empty space on the rail opens it again. Open, its right edge can be dragged to
-// make it wider or narrower (`onResized` gets the new width to keep). On phones it's a drawer behind the
-// top bar's menu button. Signed out: Home, plus Log in and Sign up in the profile button's place.
-export default function AppSidebar({ onResized }: { onResized: (width: number) => void }) {
+// more room; clicking any empty space on the rail opens it again. Its width is fixed: no dragging the edge.
+// On phones it's a drawer behind the top bar's menu button. Signed out: Home, plus Log in and Sign up in the
+// profile button's place. It's for the user's own work, so things like Pricing live in the footer instead.
+export default function AppSidebar() {
   const { t } = useTranslation();
   const user = useStore(state => state.user);
+  const set = useStore(state => state.set);
   const location = useLocation();
   const logout = useLogout();
   const { state, isMobile, setOpen, setOpenMobile } = useSidebar();
@@ -434,7 +385,14 @@ export default function AppSidebar({ onResized }: { onResized: (width: number) =
               ? (
                 <>
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip={t('projects_new')} render={<Link to={PATHS.newProject} onClick={closeIfMobile} />} className={_ITEM_TEXT_CLASS}>
+                    <SidebarMenuButton
+                      tooltip={t('projects_new')}
+                      onClick={() => {
+                        closeIfMobile();
+                        set({ isNewProjectOpen: true });
+                      }}
+                      className={_ITEM_TEXT_CLASS}
+                    >
                       <PlusIcon />
                       <span>{t('projects_new')}</span>
                     </SidebarMenuButton>
@@ -443,18 +401,6 @@ export default function AppSidebar({ onResized }: { onResized: (width: number) =
                     <SidebarMenuButton tooltip={t('search_open')} onClick={() => setIsSearchOpen(true)} className={_ITEM_TEXT_CLASS}>
                       <SearchIcon />
                       <span>{t('search_open')}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  {/* Signed-in users are the ones about to publish (and pay), so pricing stays a click away for them too. */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={location.pathname === PATHS.pricing}
-                      tooltip={t('pricing_nav')}
-                      render={<Link to={PATHS.pricing} onClick={closeIfMobile} />}
-                      className={_ITEM_TEXT_CLASS}
-                    >
-                      <TagIcon />
-                      <span>{t('pricing_nav')}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>
@@ -470,17 +416,6 @@ export default function AppSidebar({ onResized }: { onResized: (width: number) =
                     >
                       <HouseIcon />
                       <span>{t('nav_home')}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={location.pathname === PATHS.pricing}
-                      tooltip={t('pricing_nav')}
-                      render={<Link to={PATHS.pricing} onClick={closeIfMobile} />}
-                      className={_ITEM_TEXT_CLASS}
-                    >
-                      <TagIcon />
-                      <span>{t('pricing_nav')}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>
@@ -557,7 +492,6 @@ export default function AppSidebar({ onResized }: { onResized: (width: number) =
             )}
         </SidebarMenu>
       </SidebarFooter>
-      {!isMobile && !isCollapsed && <SidebarResizeHandle onResized={onResized} />}
 
       <HelpChat open={isHelpOpen} onOpenChange={setIsHelpOpen} />
       {isSignedIn && <ProjectSearchDialog open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />}

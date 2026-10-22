@@ -6,13 +6,18 @@ export type AiConversation = {
   project_id: number;
   user_id: number;
   title: string | null;
+  // introduced_at: when the agent was (last) handed the project to start the chat with.
+  meta: { introduced_at?: string };
   created_at: string;
   updated_at: string;
 };
 
+// An option is its label, or the label with a subtitle (`description`) shown under it. Answers pick labels.
+export type QuestionOption = string | { label: string; description?: string };
+
 export type AskUserQuestion = {
   question: string;
-  options: string[];
+  options: QuestionOption[];
   multi_select: boolean;
   allow_custom: boolean;
 };
@@ -103,4 +108,4 @@ export type PostChatMessageBody =
 export type AgentSessionStatus = 'opening' | 'ready' | 'failed';
 
 // A conversation before the agent has said anything (see getChatIntroState).
-export type ChatIntroState = 'loading' | 'setting-up' | 'setup-failed' | 'awaiting-agent' | 'started';
+export type ChatIntroState = 'loading' | 'setting-up' | 'setup-failed' | 'awaiting-agent' | 'agent-overdue' | 'started';

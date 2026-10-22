@@ -24,7 +24,7 @@ const CookiePolicy = () => {
   return (
     <div className='mx-auto max-w-3xl'>
       <div className='py-4'>
-        <h1 className='mb-4 text-3xl font-semibold'>
+        <h1 className='mb-4 font-heading text-3xl font-bold tracking-[-0.03em]'>
           {t('cookie_policy_title')}
         </h1>
 
@@ -36,7 +36,7 @@ const CookiePolicy = () => {
 
         {SECTIONS.map(section => (
           <section key={section.titleKey} className='mb-6'>
-            <h2 className='mb-2 text-xl font-semibold'>{t(section.titleKey)}</h2>
+            <h2 className='mb-2 font-heading text-xl font-bold'>{t(section.titleKey)}</h2>
             <p className='whitespace-pre-line'>{t(section.bodyKey)}</p>
           </section>
         ))}

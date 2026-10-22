@@ -7,7 +7,7 @@ const PrivacyPolicy = () => {
   return (
     <div className='mx-auto max-w-3xl'>
       <div className='py-4'>
-        <h1 className='mb-4 text-3xl font-semibold'>
+        <h1 className='mb-4 font-heading text-3xl font-bold tracking-[-0.03em]'>
           {t('privacy_policy_title')}
         </h1>
 

@@ -10,7 +10,8 @@ import { Checkbox } from 'src/components/shadui/checkbox';
 import { Input } from 'src/components/shadui/input';
 import { RadioGroup, RadioGroupItem } from 'src/components/shadui/radio-group';
 import {
-  APPROVAL_ACTION_TEXT_KEYS, buildSubmissionAnswers, flattenInteractionItems, getEmptyDraft, isQuestionDraftComplete,
+  APPROVAL_ACTION_TEXT_KEYS, buildSubmissionAnswers, flattenInteractionItems, getEmptyDraft, getQuestionOptions,
+  isQuestionDraftComplete,
   type ActionDraft, type InteractionDraft, type QuestionDraft,
 } from 'src/services/chatInteractions';
 import { CHAT_TEXT_SIZE_CLASS } from 'src/components/pages/projects/chat/chatStyles';
@@ -18,6 +19,19 @@ import type { ApprovalDecision, InteractionAnswer, RequestedAction, ToolUseBlock
 
 // One option as a full-width clickable row; the radio/checkbox inside carries the checked state.
 const _OPTION_ROW_CLASS = `flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 ${CHAT_TEXT_SIZE_CLASS} transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15 has-disabled:pointer-events-none has-disabled:opacity-60`;
+
+// An option's label, with its subtitle underneath when it has one (agent2's questions carry them).
+function OptionText({ label, description }: { label: string; description?: string }) {
+  if (!description) {
+    return <>{label}</>;
+  }
+  return (
+    <span className='flex flex-col gap-0.5'>
+      <span>{label}</span>
+      <span className='text-xs text-muted-foreground'>{description}</span>
+    </span>
+  );
+}
 
 const _STEP_LABEL_CLASS = 'text-[0.625rem] font-bold tracking-[0.14em] text-muted-foreground uppercase';
 
@@ -233,14 +247,14 @@ export default function InteractionPanel({ interactions, onSubmit, onDismissAndS
             {question.multi_select
               ? (
                 <div role='group' aria-label={question.question} className='flex flex-col gap-1.5'>
-                  {_.map(question.options, option => (
-                    <label key={option} data-option={option} className={_OPTION_ROW_CLASS}>
+                  {_.map(getQuestionOptions(question), option => (
+                    <label key={option.label} data-option={option.label} className={_OPTION_ROW_CLASS}>
                       <Checkbox
-                        checked={_.includes(draft.selected, option)}
+                        checked={_.includes(draft.selected, option.label)}
                         disabled={isSubmitting}
-                        onCheckedChange={() => setDrafts(replaceCurrentDraft({ ...draft, selected: _.xor(draft.selected, [option]) }))}
+                        onCheckedChange={() => setDrafts(replaceCurrentDraft({ ...draft, selected: _.xor(draft.selected, [option.label]) }))}
                       />
-                      {option}
+                      <OptionText label={option.label} description={option.description} />
                     </label>
                   ))}
                 </div>
@@ -254,10 +268,10 @@ export default function InteractionPanel({ interactions, onSubmit, onDismissAndS
                   onValueChange={value => setDrafts(replaceCurrentDraft({ selected: [value as string], custom: '' }))}
                   className='gap-1.5'
                 >
-                  {_.map(question.options, option => (
-                    <label key={option} data-option={option} className={_OPTION_ROW_CLASS}>
-                      <RadioGroupItem value={option} disabled={isSubmitting} />
-                      {option}
+                  {_.map(getQuestionOptions(question), option => (
+                    <label key={option.label} data-option={option.label} className={_OPTION_ROW_CLASS}>
+                      <RadioGroupItem value={option.label} disabled={isSubmitting} />
+                      <OptionText label={option.label} description={option.description} />
                     </label>
                   ))}
                 </RadioGroup>

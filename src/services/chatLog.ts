@@ -16,6 +16,9 @@ const _SHOW_ARTIFACT_TOOL_NAME = 'show_artifact';
 // A BUILDING signal holds for this long. The agent re-sends it to keep a long build going, so it counts
 // from the latest one (see getActiveBuild). Same TTL as the BE's.
 const _BUILDING_TTL_MS = 60 * 60 * 1000;
+// How long after its introduction the agent may stay silent before its first turn counts as failed -- the
+// same figure the BE reintroduces it by on the next open (vib3-backend INTRODUCTION_OVERDUE_SECONDS).
+const INTRODUCTION_OVERDUE_MS = 5 * 60 * 1000;
 
 // seq starts at 1 with no gaps, so there's older history exactly when the oldest loaded message isn't #1.
 function hasOlderMessages(messages: AiMessage[]) {
@@ -144,15 +147,27 @@ function isAgentPresumedWorking(messages: AiMessage[], sentSeqs: number[]) {
 // [Pure] The agent always speaks first (its welcome and first question, from the bootstrap form's
 // answers), so an empty log means it hasn't yet — and why is down to where opening the session is at:
 // still opening (it's being set up), failed (offer a retry), or done (its first message is on its way).
+// On its way for too long (`introducedAt` over INTRODUCTION_OVERDUE_MS before `nowMs`) means its first turn
+// died: offer a retry, which re-opens the project and gets the BE to introduce it again.
 // Anything said in the log (a signal isn't) = the conversation has started. null messages = not loaded yet.
-function getChatIntroState(messages: AiMessage[] | null, sessionStatus: AgentSessionStatus): ChatIntroState {
+function getChatIntroState(
+  messages: AiMessage[] | null, sessionStatus: AgentSessionStatus, introducedAt: string | null, nowMs: number,
+): ChatIntroState {
   if (_.isNull(messages)) {
     return 'loading';
   }
   if (findLastSpokenMessage(messages)) {
     return 'started';
   }
+  if (sessionStatus === 'ready' && introducedAt && nowMs - Date.parse(introducedAt) > INTRODUCTION_OVERDUE_MS) {
+    return 'agent-overdue';
+  }
   return ({ opening: 'setting-up', failed: 'setup-failed', ready: 'awaiting-agent' } as const)[sessionStatus];
+}
+
+// [Pure] When an introduction made at `introducedAt` turns overdue (see getChatIntroState), in ms.
+function getIntroductionOverdueAtMs(introducedAt: string) {
+  return Date.parse(introducedAt) + INTRODUCTION_OVERDUE_MS;
 }
 
 export {
@@ -162,6 +177,7 @@ export {
   getAnsweredQuestions,
   getChatIntroState,
   getInteractionResults,
+  getIntroductionOverdueAtMs,
   hasOlderMessages,
   indexToolResults,
   indexToolUses,

@@ -11,12 +11,16 @@ type AppState = {
   cookieConsent: CookieConsent | null;
   // The preferences dialog can be opened from the banner or from the cookie policy page.
   isCookiePreferencesOpen: boolean;
+  // The new-project form is a modal over whatever page you're on (mounted once, in DefaultLayout), so any
+  // "New project" button can open it without leaving the page.
+  isNewProjectOpen: boolean;
   set: (partial: Partial<AppState>) => void;
 };
 
 const useStore = create<AppState>((set) => ({
   cookieConsent: readCookieConsent(),
   isCookiePreferencesOpen: false,
+  isNewProjectOpen: false,
   set,
 }));
 

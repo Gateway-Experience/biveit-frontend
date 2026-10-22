@@ -98,11 +98,18 @@ function buildSubmissionAnswers(
   });
 }
 
+// [Pure] A question's options as {label, description}, whichever way each came (a plain label, or one with
+// a subtitle) -- so the panel renders one shape.
+function getQuestionOptions(question: AskUserQuestion): { label: string; description?: string }[] {
+  return _.map(question.options, option => (_.isString(option) ? { label: option } : option));
+}
+
 export {
   APPROVAL_ACTION_TEXT_KEYS,
   buildInteractionResults,
   buildSubmissionAnswers,
   flattenInteractionItems,
   getEmptyDraft,
+  getQuestionOptions,
   isQuestionDraftComplete,
 };

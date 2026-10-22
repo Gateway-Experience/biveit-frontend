@@ -47,6 +47,15 @@ function ChatSetupState({ introState, onRetry }: { introState: ChatIntroState; o
       </div>
     );
   }
+  if (introState === 'agent-overdue') {
+    return (
+      <div className='flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center'>
+        <p className='font-medium'>{t('chat_agent_overdue')}</p>
+        <p className='max-w-xs text-sm text-muted-foreground'>{t('chat_agent_overdue_hint')}</p>
+        <Button variant='outline' onClick={onRetry}>{t('chat_setup_retry')}</Button>
+      </div>
+    );
+  }
   if (introState === 'setup-failed') {
     return (
       <div className='flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center'>
