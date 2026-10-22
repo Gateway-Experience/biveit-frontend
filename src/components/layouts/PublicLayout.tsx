@@ -58,7 +58,7 @@ function PublicFooter() {
 }
 
 // Original purpose: pricing and the policy pages for visitors who aren't signed in (the people who reach them
-// from the landing site). They get a top bar and footer like the landing site's (vib3-landing's Header and
+// from the landing site). They get a top bar and footer like the landing site's (biveit-landing's Header and
 // Footer) instead of the app's sidebar, which is only about their account and projects. Light theme only, like
 // the landing site. Signed-in users see the same pages inside DefaultLayout (see routes).
 export default function PublicLayout() {

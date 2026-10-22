@@ -8,7 +8,7 @@ import { useStore } from 'src/state-store';
 const LAST_UPDATED = new Date(2026, 9, 17);
 
 // Keep these in step with what the app actually stores: the BE's access_token + oauth_session cookies
-// (vib3-backend: utils/auth.set_access_cookie, app.py SessionMiddleware), and the FE's localStorage use
+// (biveit-backend: utils/auth.set_access_cookie, app.py SessionMiddleware), and the FE's localStorage use
 // (language in AppProvider, the query cache in main.tsx, mixpanel in services/analytics).
 const SECTIONS = [
   { titleKey: 'cookie_policy_essential_title', bodyKey: 'cookie_policy_essential_body' },

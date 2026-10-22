@@ -10,7 +10,7 @@ const LAST_UPDATED = new Date(2026, 9, 21);
 // Where people write to about their data. Shown in the text, so changing it here changes it everywhere.
 const PRIVACY_CONTACT_EMAIL = 'privacy@biveit.com';
 
-// Keep these in step with what the product actually does with data (vib3-backend):
+// Keep these in step with what the product actually does with data (biveit-backend):
 // - accounts: migrations/0001_users.sql (email, name, bcrypt hash, Google `sub` but no Google tokens, picture,
 //   language; guests; soft-delete only, nothing is hard-deleted), services/users/
 // - projects and chats: migrations/0005-0008, files on the server under STORAGE_DIR

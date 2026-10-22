@@ -8,7 +8,7 @@ import type { DevenvBuild } from 'src/types/preview';
 
 // Intentions: everything the UI needs to know is derived from the message log on the fly — the log is the
 // only state. All [Pure].
-// References: the rules mirror vib3-backend's services/agent/interactions.py.
+// References: the rules mirror biveit-backend's services/agent/interactions.py.
 
 const _ASK_USER_TOOL_NAME = 'ask_user';
 const _REQUEST_ACTIONS_TOOL_NAME = 'request_actions';
@@ -17,7 +17,7 @@ const _SHOW_ARTIFACT_TOOL_NAME = 'show_artifact';
 // from the latest one (see getActiveBuild). Same TTL as the BE's.
 const _BUILDING_TTL_MS = 60 * 60 * 1000;
 // How long after its introduction the agent may stay silent before its first turn counts as failed -- the
-// same figure the BE reintroduces it by on the next open (vib3-backend INTRODUCTION_OVERDUE_SECONDS).
+// same figure the BE reintroduces it by on the next open (biveit-backend INTRODUCTION_OVERDUE_SECONDS).
 const INTRODUCTION_OVERDUE_MS = 5 * 60 * 1000;
 
 // seq starts at 1 with no gaps, so there's older history exactly when the oldest loaded message isn't #1.

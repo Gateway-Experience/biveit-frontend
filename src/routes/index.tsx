@@ -23,7 +23,7 @@ import { useTrackPageViews } from 'src/utils/hooks';
 // Use ProtectedRoute for routes that are for logged in users only.
 // Unauthorized users going there will be redirected to the login page.
 
-// The public landing page lives in its own static site (the vib3-landing repo), set by VITE_LANDING_URL.
+// The public landing page lives in its own static site (the biveit-landing repo), set by VITE_LANDING_URL.
 const _LANDING_URL = import.meta.env.VITE_LANDING_URL;
 
 // Leaving the app for the landing site. `replace`, so Back from the landing page doesn't bounce off `/`

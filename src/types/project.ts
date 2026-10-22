@@ -1,4 +1,4 @@
-// Shape of a project as the BE returns it (vib3-backend dto/projects.py). snake_case to match the API,
+// Shape of a project as the BE returns it (biveit-backend dto/projects.py). snake_case to match the API,
 // same as `User`.
 export type Project = {
   id: number;
@@ -27,7 +27,7 @@ export type ProjectChanges = {
   folder_id?: number | null;
 };
 
-// A folder the user groups projects into in the sidebar (vib3-backend dto/projects.py ProjectFolder).
+// A folder the user groups projects into in the sidebar (biveit-backend dto/projects.py ProjectFolder).
 export type ProjectFolder = {
   id: number;
   // The folder it sits in; null = the root. The BE supports nesting; the sidebar only shows one level so far.

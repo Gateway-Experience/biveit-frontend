@@ -9,7 +9,7 @@ export type PreviewNavigation = {
 
 export type PreviewDevice = 'desktop' | 'mobile';
 
-// GET /conversations/{id}/devenv (vib3-backend). The agent decides when a project moves from specing to
+// GET /conversations/{id}/devenv (biveit-backend). The agent decides when a project moves from specing to
 // implementing.
 export type DevenvStatus = {
   stage: 'specing' | 'implementing';

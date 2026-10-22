@@ -25,7 +25,8 @@ const _DEVICE_MIN_WIDTHS: Record<PreviewDevice, number> = { desktop: 1024, mobil
 // What the previewed site posts to us (`window.parent.postMessage({ type, path }, '*')`) whenever its
 // location changes, so the location bar can follow links clicked inside it. The frame is another origin,
 // so we can't read its location ourselves. A site that doesn't post just leaves the bar where we put it.
-const _LOCATION_MESSAGE_TYPE = 'vib3:preview-location';
+// The old name stays accepted: sites set up before the rebrand still post it (their index.html is theirs).
+const _LOCATION_MESSAGE_TYPES = ['biveit:preview-location', 'vib3:preview-location'];
 
 // Back/forward/reload come down a size on phones, leaving the location bar more room.
 const _NAV_BUTTON_CLASS = 'max-sm:size-7';
@@ -66,7 +67,8 @@ export default function SitePreview({ state, siteUrl, build, buildSketch, classN
   useEffect(() => {
     const receiveLocation = (event: MessageEvent) => {
       // Only our frame gets to move the location bar.
-      if (event.source !== frameRef.current?.contentWindow || _.get(event.data, 'type') !== _LOCATION_MESSAGE_TYPE) {
+      const isOurLocation = _.includes(_LOCATION_MESSAGE_TYPES, _.get(event.data, 'type'));
+      if (event.source !== frameRef.current?.contentWindow || !isOurLocation) {
         return;
       }
       const reportedPath = _.get(event.data, 'path');

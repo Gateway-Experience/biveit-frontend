@@ -5,7 +5,7 @@ import type { AiConversation, AiMessage, Artifact, Attachment, PostChatMessageBo
 
 // Intentions: talking to the BE about a project's agent chat — conversation, messages (paged + the live
 // stream), uploads, files and artifacts. Transport only; what the message log *means* lives in chatLog.ts.
-// References: vib3-backend/docs/fe-handoff-agent-chat.md for the whole contract.
+// References: biveit-backend/docs/fe-handoff-agent-chat.md for the whole contract.
 
 // Messages per page (opening the chat, and each scroll-up). The BE allows up to 200.
 const _MESSAGES_PAGE_SIZE = 20;

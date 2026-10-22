@@ -27,7 +27,7 @@ const SIDEBAR_WIDTH_PX = 240;
 
 // What biveit costs, in USD — the one place prices live in the app (formatted for display by services/pricing).
 // Every screen that mentions a price reads it from here: the Pricing page, the Deploy tab, Help. The landing site
-// (vib3-landing, src/utils/constants.ts) has its own copy for its FAQ: change both together.
+// (biveit-landing, src/utils/constants.ts) has its own copy for its FAQ: change both together.
 //   publishPrice     the regular one-time price to publish a site
 //   salePublishPrice what it's sold for while there's a sale; null = no sale, publishPrice applies
 //   monthlyPrice     charged every month after that
@@ -50,7 +50,7 @@ const SITE_KIND_OPTIONS = [
 
 // The query param that carries a site idea into the new-project form (/projects/new?idea=...), so someone who
 // types their idea on the landing site finds it waiting in the form after logging in. NewProjectModal reads it
-// (and drops it from the URL); the landing site's prompt box (vib3-landing, HeroPrompt) sets it, with its own
+// (and drops it from the URL); the landing site's prompt box (biveit-landing, HeroPrompt) sets it, with its own
 // copy of this name.
 const NEW_PROJECT_IDEA_PARAM = 'idea';
 

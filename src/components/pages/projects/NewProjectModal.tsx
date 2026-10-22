@@ -73,7 +73,7 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
     mode: 'onSubmit',
     defaultValues: { name: '', description: '', siteKinds: [], otherSiteKind: '' },
   });
-  // An idea typed on the landing site arrives as ?idea=... (vib3-landing's HeroPrompt): start the description with it.
+  // An idea typed on the landing site arrives as ?idea=... (biveit-landing's HeroPrompt): start the description with it.
   // The param is dropped from the URL once read, so a refresh doesn't put it back over their edits.
   useOneTimeQueryParams([NEW_PROJECT_IDEA_PARAM], params => {
     const idea = params[NEW_PROJECT_IDEA_PARAM];

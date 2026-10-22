@@ -9,7 +9,7 @@ import type {
 // Intentions: the rules for answering what the agent is waiting on — its `ask_user` questions and its
 // `request_actions` actions: what counts as a complete answer, and turning the form's drafts into the
 // submission's `results`. All [Pure].
-// References: validated server-side by vib3-backend's services/agent/interactions.py.
+// References: validated server-side by biveit-backend's services/agent/interactions.py.
 
 // One step of the answering form: a question, or an action the user decides on.
 export type InteractionItem = { kind: 'question'; question: AskUserQuestion } | { kind: 'action'; action: RequestedAction };

@@ -1,5 +1,5 @@
-// Chat with a project's agent. Shapes mirror the BE (vib3-backend dto/ai_conversations.py), snake_case.
-// References: vib3-backend/docs/fe-handoff-agent-chat.md
+// Chat with a project's agent. Shapes mirror the BE (biveit-backend dto/ai_conversations.py), snake_case.
+// References: biveit-backend/docs/fe-handoff-agent-chat.md
 
 export type AiConversation = {
   id: number;
