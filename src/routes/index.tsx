@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Routes, Route } from 'react-router';
 
+import AdminRoute from 'src/components/common/AdminRoute';
 import ProtectedRoute from 'src/components/common/ProtectedRoute';
 import DefaultLayout from 'src/components/layouts/DefaultLayout';
 import PublicLayout from 'src/components/layouts/PublicLayout';
@@ -16,6 +17,8 @@ import CookiePolicy from 'src/components/pages/CookiePolicy';
 import Pricing from 'src/components/pages/Pricing';
 import { PATHS } from 'src/utils/constants';
 import ShowCase from 'src/components/pages/ShowCase';
+import AdminDashboard from 'src/components/pages/admin/AdminDashboard';
+import AdminProjectDetail from 'src/components/pages/admin/AdminProjectDetail';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
 import { useTrackPageViews } from 'src/utils/hooks';
@@ -65,6 +68,8 @@ function AppRoutes() {
         <Route path={PATHS.projects} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path='/showcase' element={<ShowCase />} />
+        <Route path={PATHS.admin} element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path={`${PATHS.admin}/projects/:projectId`} element={<AdminRoute><AdminProjectDetail /></AdminRoute>} />
       </Route>
       <Route element={<OpenPageLayout />}>
         <Route path={PATHS.privacyPolicy} element={<PrivacyPolicy />} />

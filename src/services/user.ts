@@ -29,9 +29,15 @@ function isSignedInUser(user?: User | null) {
   return Boolean(user) && user?.user_type !== USER_TYPES.GUEST;
 }
 
+// Only decides what the FE shows: the admin endpoints check the role themselves.
+function isAdminUser(user?: User | null) {
+  return isSignedInUser(user) && user?.role === 'ADMIN';
+}
+
 export {
   getAvatarUrl,
   getUsername,
   getDisplayName,
   isSignedInUser,
+  isAdminUser,
 };

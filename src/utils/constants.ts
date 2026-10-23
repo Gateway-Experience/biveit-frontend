@@ -68,6 +68,7 @@ const PATHS = {
   cookiePolicy: '/cookie-policy',
   projects: '/projects',
   pricing: '/pricing',
+  admin: '/admin',
 };
 
 export {

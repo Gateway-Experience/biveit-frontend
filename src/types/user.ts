@@ -11,6 +11,7 @@ export type User = {
   first_name?: string | null; // asked for at signup; null on guests and accounts from before that
   last_name?: string | null; // can be '' — not everyone has one
   has_password?: boolean; // false for Google-only accounts: the profile page then sets a first password
+  role?: 'ADMIN' | null; // null for a normal user; ADMIN opens the admin dashboard (the BE checks it too)
   profile_picture?: string;
   language?: string; // the language picker's choice ('en' | 'vi'), saved by LanguageSelector
   google_id?: string;
