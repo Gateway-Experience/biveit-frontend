@@ -3,8 +3,18 @@
 // as they're stored rather than renaming at the edge.
 export type UserType = 'USER' | 'GUEST';
 
-// The guided tours (see SpotlightTour), as the BE names them (its UserTour).
-export type UserTour = 'projects';
+// The flows the FE walks a user through step by step, as the BE names them (its UserJourney).
+export type UserJourney = 'projects_intro';
+
+// One step a user took through a journey (the BE's user_journey_steps row). Which steps there are is up to
+// the journey; a journey's latest step is where the user is in it now.
+export type UserJourneyStep = {
+  id: number;
+  journey: UserJourney;
+  step: string; // e.g. 'finished'
+  data: Record<string, unknown>; // whatever the step keeps
+  created_at: string;
+};
 
 export type User = {
   _id: string;
@@ -18,7 +28,7 @@ export type User = {
   profile_picture?: string;
   language?: string; // the language picker's choice ('en' | 'vi'), saved by LanguageSelector
   google_id?: string;
-  // App-level data with no column of its own, e.g. `projects_tour_finished_at` (see services/user.hasFinishedTour).
+  // App-level data with no column of its own.
   meta?: Record<string, unknown>;
   social_data?: {
     email?: string;

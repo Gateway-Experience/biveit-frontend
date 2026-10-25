@@ -10,7 +10,7 @@ import { RenameProjectModal, TrashProjectModal } from 'src/components/pages/proj
 import ProjectSearchBox from 'src/components/pages/projects/ProjectSearchBox';
 import { BuildFlowArt, DashboardBackdrop, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import { useProjectListUpdaters, useProjects, useTrashedProjects } from 'src/components/pages/projects/useProjectLists';
-import ProjectsTour from 'src/components/pages/projects/ProjectsTour';
+import ProjectsIntro from 'src/components/pages/projects/ProjectsIntro';
 import useProjectSearch from 'src/components/pages/projects/useProjectSearch';
 import { Button } from 'src/components/shadui/button';
 import { useStore } from 'src/state-store';
@@ -115,7 +115,7 @@ export default function ProjectList() {
       {/* The page header: a slim panel. Title and count on the left, search and "New project" on the right,
           and the line art in between on wide screens (and not when the empty state below already shows it).
           Search and "New project" are always there, even with nothing to search yet: the first-time tour
-          (ProjectsTour) starts by pointing at them. */}
+          (ProjectsIntro) starts by pointing at them. */}
       <header className='relative isolate mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-2xl border bg-card px-5 py-4 sm:px-6'>
         <DotGridBackdrop />
         <span aria-hidden='true' className='pointer-events-none absolute -top-20 right-1/3 -z-10 size-48 rounded-full bg-primary/10 blur-3xl' />
@@ -173,7 +173,7 @@ export default function ProjectList() {
       )}
 
       {/* Once the page's content is in place, so it can find what it points at. */}
-      {!_.isNil(projects) && <ProjectsTour />}
+      {!_.isNil(projects) && <ProjectsIntro />}
     </div>
   );
 }

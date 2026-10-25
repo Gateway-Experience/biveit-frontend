@@ -100,7 +100,7 @@ function useSpotlightBox(target: string | undefined) {
 // all (no clicks, and the app is `inert`, so no keyboard either): only the card's buttons work. Next / Back walk
 // the steps; Skip, Esc or the last step's button end it with `onFinish`, and the page is all theirs again.
 // Steps whose element isn't on the page when the tour starts are left out (e.g. the sidebar's, on phones).
-// Original purpose: the projects page's first-time tour (ProjectsTour).
+// Original purpose: the projects page's first-time intro (ProjectsIntro).
 export default function SpotlightTour({ steps, onFinish }: { steps: SpotlightStep[]; onFinish: () => void }) {
   const { t } = useTranslation();
   // The steps that can be shown, picked once the page is on screen. null = not picked yet.

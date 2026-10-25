@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import type { User, UserTour } from 'src/types/user';
+import type { User, UserJourney, UserJourneyStep } from 'src/types/user';
 import { USER_TYPES } from 'src/utils/constants';
 import { callBe } from 'src/utils/request';
 
@@ -35,24 +35,23 @@ function isAdminUser(user?: User | null) {
   return isSignedInUser(user) && user?.role === 'ADMIN';
 }
 
-// [Pure] Whether the user is done with one of the guided tours (finished or skipped it): the BE stamps
-// `<tour>_tour_finished_at` into their meta. References: biveit-backend services/users.finish_tour
-function hasFinishedTour(user: User | null | undefined, tour: UserTour) {
-  return !!user?.meta?.[`${tour}_tour_finished_at`];
+// Where the user is in each journey they've started: {journey: its latest step}. A journey that isn't there
+// hasn't been started.
+function getMyJourneys(): Promise<Partial<Record<UserJourney, UserJourneyStep>>> {
+  return callBe('/me/journeys');
 }
 
-// Records on the account that the user is done with a tour, so it isn't shown again on any device. Resolves
-// to the updated user.
-function finishUserTour(tour: UserTour): Promise<User> {
-  return callBe({ method: 'POST', url: `/me/tours/${tour}/finish` });
+// Logs a step the user took in a journey, on the account (so it holds on every device). Resolves to the step.
+function addJourneyStep(journey: UserJourney, step: string, options: { data?: Record<string, unknown> } = {}): Promise<UserJourneyStep> {
+  return callBe({ method: 'POST', url: `/me/journeys/${journey}/steps`, data: { step, data: options.data || {} } });
 }
 
 export {
-  finishUserTour,
+  addJourneyStep,
   getAvatarUrl,
   getUsername,
   getDisplayName,
-  hasFinishedTour,
+  getMyJourneys,
   isSignedInUser,
   isAdminUser,
 };
