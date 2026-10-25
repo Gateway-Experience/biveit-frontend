@@ -14,15 +14,18 @@ function formatUsd(amount: number, language?: string) {
 //   price         what publishing costs right now (the sale price while there's a sale)
 //   regularPrice  the price without the sale (shown struck through)
 //   monthlyPrice  the monthly charge
+//   savedAmount   how much the sale takes off (regularPrice - price)
 //   domainLimit   domains costing less than this are free
 // plus isOnSale, to decide whether to show the sale at all.
 function getPriceLabels(language?: string) {
   const isOnSale = PRICING.salePublishPrice !== null && PRICING.salePublishPrice < PRICING.publishPrice;
+  const publishPrice = isOnSale ? PRICING.salePublishPrice as number : PRICING.publishPrice;
   return {
     isOnSale,
-    price: formatUsd(isOnSale ? PRICING.salePublishPrice as number : PRICING.publishPrice, language),
+    price: formatUsd(publishPrice, language),
     regularPrice: formatUsd(PRICING.publishPrice, language),
     monthlyPrice: formatUsd(PRICING.monthlyPrice, language),
+    savedAmount: formatUsd(PRICING.publishPrice - publishPrice, language),
     domainLimit: formatUsd(PRICING.freeDomainBelow, language),
   };
 }

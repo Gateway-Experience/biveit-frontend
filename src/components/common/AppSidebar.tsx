@@ -13,14 +13,14 @@ import BrandLogo from 'src/components/common/BrandLogo';
 import HelpChat from 'src/components/common/HelpChat';
 import LanguageSelector from 'src/components/common/LanguageSelector';
 import { useNotification } from 'src/components/common/NotificationProvider';
+import UserAvatar from 'src/components/common/UserAvatar';
 import {
-  DeleteFolderModal, DeleteProjectModal, FolderNameModal, RenameProjectModal,
+  DeleteFolderModal, FolderNameModal, RenameProjectModal, TrashProjectModal,
 } from 'src/components/pages/projects/ProjectActionDialogs';
 import ProjectSearchDialog from 'src/components/pages/projects/ProjectSearchDialog';
 import {
   groupProjectsForSidebar, useProjectFolders, useProjectListUpdaters, useProjects,
 } from 'src/components/pages/projects/useProjectLists';
-import { Avatar, AvatarFallback, AvatarImage } from 'src/components/shadui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'src/components/shadui/collapsible';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent,
@@ -32,12 +32,11 @@ import {
 } from 'src/components/shadui/sidebar';
 import { useStore } from 'src/state-store';
 import { updateProject } from 'src/services/project';
-import { getAvatarUrl, getDisplayName, isSignedInUser } from 'src/services/user';
+import { getDisplayName, isSignedInUser } from 'src/services/user';
 import { PATHS } from 'src/utils/constants';
 import { useLogout } from 'src/utils/hooks';
 import { buildLoginPath } from 'src/utils/authRedirect';
 import type { Project, ProjectChanges, ProjectFolder } from 'src/types/project';
-import type { User } from 'src/types/user';
 
 // The sidebar's items read at the app's usual text-sm (the registry's default is text-xs, small next to the
 // pages); the language switcher and the profile button match.
@@ -47,25 +46,16 @@ const _ITEM_TEXT_CLASS = 'text-sm';
 // empty space around them expands the sidebar.
 const _INTERACTIVE_SELECTOR = 'a, button, input, [role="menuitem"], [role="button"]';
 
-function UserAvatar({ user, className }: { user?: User | null; className?: string }) {
-  return (
-    <Avatar className={className}>
-      <AvatarImage src={getAvatarUrl(user)} />
-      <AvatarFallback>{(getDisplayName(user) || '?').slice(0, 1).toUpperCase()}</AvatarFallback>
-    </Avatar>
-  );
-}
-
-// The "⋯" menu on a project in the sidebar: pin, file into a folder, rename, delete. Each choice is
+// The "⋯" menu on a project in the sidebar: pin, file into a folder, rename, move to Trash. Each choice is
 // handed up as an action; the sidebar does the work (and owns the dialogs). Like every sidebar menu it's
 // as wide as its longest item (w-auto min-w-0), so there's no empty strip on the right.
-function ProjectItemMenu({ project, folders, onChange, onNewFolder, onRename, onDelete }: {
+function ProjectItemMenu({ project, folders, onChange, onNewFolder, onRename, onTrash }: {
   project: Project;
   folders: ProjectFolder[];
   onChange: (project: Project, changes: ProjectChanges) => void;
   onNewFolder: (project: Project) => void;
   onRename: (project: Project) => void;
-  onDelete: (project: Project) => void;
+  onTrash: (project: Project) => void;
 }) {
   const { t } = useTranslation();
   const isPinned = !_.isNil(project.pinned_at);
@@ -112,9 +102,9 @@ function ProjectItemMenu({ project, folders, onChange, onNewFolder, onRename, on
           {t('project_menu_rename')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant='destructive' onClick={() => onDelete(project)}>
+        <DropdownMenuItem variant='destructive' data-action='trash-project' onClick={() => onTrash(project)}>
           <Trash2Icon />
-          {t('project_menu_delete')}
+          {t('project_menu_trash')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -123,12 +113,52 @@ function ProjectItemMenu({ project, folders, onChange, onNewFolder, onRename, on
 
 type ProjectItemActions = Omit<React.ComponentProps<typeof ProjectItemMenu>, 'project' | 'folders'>;
 
+// What a dragged project carries: its id, under our own type, so a drop target only reacts to our projects
+// (not to text or files dragged in from elsewhere).
+const _PROJECT_DRAG_TYPE = 'application/x-biveit-project-id';
+
+// Intentions: makes an element a place to drop a dragged project (a folder, or Recents to take it out of
+// its folder). `isOver` lights it up while a project hovers over it. dragleave also fires when the pointer
+// moves onto one of the element's own children, so that one doesn't count as leaving.
+function useProjectDropTarget(onDropProject: (projectId: number) => void) {
+  const [isOver, setIsOver] = useState(false);
+  const isProjectDrag = (event: React.DragEvent) => _.includes(event.dataTransfer.types, _PROJECT_DRAG_TYPE);
+
+  const dropProps = {
+    onDragOver: (event: React.DragEvent) => {
+      if (!isProjectDrag(event)) {
+        return;
+      }
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      setIsOver(true);
+    },
+    onDragLeave: (event: React.DragEvent) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+        setIsOver(false);
+      }
+    },
+    onDrop: (event: React.DragEvent) => {
+      setIsOver(false);
+      const projectId = Number(event.dataTransfer.getData(_PROJECT_DRAG_TYPE));
+      if (projectId) {
+        event.preventDefault();
+        onDropProject(projectId);
+      }
+    },
+  };
+  return { isOver, dropProps };
+}
+
 // One section's worth of projects (Pinned, a folder's contents, Recents), each a link with its "⋯" menu.
-function SidebarProjectList({ projects, folders, actions, onNavigate }: {
+// `isDraggable`: the projects can be dragged into a folder (not the pinned ones: pinned wins over a
+// folder in the sidebar, so filing one wouldn't visibly do anything).
+function SidebarProjectList({ projects, folders, actions, onNavigate, isDraggable = false }: {
   projects: Project[];
   folders: ProjectFolder[];
   actions: ProjectItemActions;
   onNavigate: () => void;
+  isDraggable?: boolean;
 }) {
   const location = useLocation();
 
@@ -138,7 +168,18 @@ function SidebarProjectList({ projects, folders, actions, onNavigate }: {
         <SidebarMenuItem key={project.id}>
           <SidebarMenuButton
             isActive={location.pathname === `${PATHS.projects}/${project.id}`}
-            render={<Link to={`${PATHS.projects}/${project.id}`} onClick={onNavigate} data-projectid={project.id} />}
+            render={(
+              <Link
+                to={`${PATHS.projects}/${project.id}`}
+                onClick={onNavigate}
+                data-projectid={project.id}
+                draggable={isDraggable}
+                onDragStart={(event) => {
+                  event.dataTransfer.setData(_PROJECT_DRAG_TYPE, String(project.id));
+                  event.dataTransfer.effectAllowed = 'move';
+                }}
+              />
+            )}
             className={_ITEM_TEXT_CLASS}
           >
             <span className='truncate'>{project.name}</span>
@@ -150,22 +191,33 @@ function SidebarProjectList({ projects, folders, actions, onNavigate }: {
   );
 }
 
-// A folder in the sidebar: click to fold / unfold its projects, "⋯" to rename or delete it.
-function SidebarFolder({ folder, projects, folders, actions, onRenameFolder, onDeleteFolder, onNavigate }: {
+// A folder in the sidebar: click to fold / unfold its projects, "⋯" to rename or delete it, or drop a
+// project on it to file it there.
+function SidebarFolder({ folder, projects, folders, actions, onRenameFolder, onDeleteFolder, onDropProject, onNavigate }: {
   folder: ProjectFolder;
   projects: Project[];
   folders: ProjectFolder[];
   actions: ProjectItemActions;
   onRenameFolder: (folder: ProjectFolder) => void;
   onDeleteFolder: (folder: ProjectFolder) => void;
+  onDropProject: (projectId: number, folderId: number | null) => void;
   onNavigate: () => void;
 }) {
   const { t } = useTranslation();
+  const { isOver, dropProps } = useProjectDropTarget(projectId => onDropProject(projectId, folder.id));
 
   return (
-    <Collapsible defaultOpen render={<SidebarMenuItem />} className='group/folder'>
+    <Collapsible
+      defaultOpen
+      render={<SidebarMenuItem />}
+      data-folderid={folder.id}
+      data-droptarget={isOver || undefined}
+      className='group/folder rounded-md transition-colors data-droptarget:bg-sidebar-accent data-droptarget:ring-2 data-droptarget:ring-primary/60'
+      {...dropProps}
+    >
       <CollapsibleTrigger render={<SidebarMenuButton className={_ITEM_TEXT_CLASS} />}>
         <ChevronRightIcon className='transition-transform group-data-open/folder:rotate-90' />
+        <FolderIcon />
         <span className='truncate'>{folder.name}</span>
       </CollapsibleTrigger>
       <DropdownMenu>
@@ -186,7 +238,7 @@ function SidebarFolder({ folder, projects, folders, actions, onRenameFolder, onD
       <CollapsibleContent className='ml-3.5 border-l border-sidebar-border pl-1.5'>
         {_.isEmpty(projects)
           ? <p className='px-2 py-1.5 text-xs text-muted-foreground'>{t('sidebar_folder_empty')}</p>
-          : <SidebarProjectList projects={projects} folders={folders} actions={actions} onNavigate={onNavigate} />}
+          : <SidebarProjectList projects={projects} folders={folders} actions={actions} onNavigate={onNavigate} isDraggable />}
       </CollapsibleContent>
     </Collapsible>
   );
@@ -202,9 +254,9 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
   const location = useLocation();
   const { data: projects } = useProjects();
   const { data: folders = [] } = useProjectFolders();
-  const { setProject, removeProject, setFolder, removeFolder } = useProjectListUpdaters();
+  const { setProject, moveProjectToTrash, setFolder, removeFolder } = useProjectListUpdaters();
   const [renamingProject, setRenamingProject] = useState<Project | null>(null);
-  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const [trashingProject, setTrashingProject] = useState<Project | null>(null);
   // 'new' = the "new folder" dialog. `projectToFile` is set when it was opened from a project's "Move to",
   // so the project goes straight into the folder it makes.
   const [editingFolder, setEditingFolder] = useState<ProjectFolder | 'new' | null>(null);
@@ -227,7 +279,7 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
       setEditingFolder('new');
     },
     onRename: setRenamingProject,
-    onDelete: setDeletingProject,
+    onTrash: setTrashingProject,
   };
 
   const saveFolder = (folder: ProjectFolder) => {
@@ -237,10 +289,19 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
     }
   };
 
-  // Deleting the project that's open leaves nothing to look at: back to the list.
-  const afterProjectDeleted = (projectId: number) => {
-    removeProject(projectId);
-    if (location.pathname === `${PATHS.projects}/${projectId}`) {
+  // A project dropped on a folder (or on Recents: folderId null) moves there, unless it's there already.
+  const fileDroppedProject = (projectId: number, folderId: number | null) => {
+    const project = _.find(projects, { id: projectId });
+    if (project && project.folder_id !== folderId) {
+      changeProject(project, { folder_id: folderId });
+    }
+  };
+  const { isOver: isOverRecents, dropProps: recentsDropProps } = useProjectDropTarget(projectId => fileDroppedProject(projectId, null));
+
+  // Trashing the project that's open leaves nothing to look at: back to the list.
+  const afterProjectTrashed = (project: Project) => {
+    moveProjectToTrash(project);
+    if (location.pathname === `${PATHS.projects}/${project.id}`) {
       navigate(PATHS.projects, { replace: true });
     }
   };
@@ -254,7 +315,7 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
         </SidebarGroup>
       )}
 
-      <SidebarGroup>
+      <SidebarGroup data-tour='folders'>
         <SidebarGroupLabel>{t('sidebar_folders')}</SidebarGroupLabel>
         <SidebarGroupAction title={t('sidebar_new_folder')} aria-label={t('sidebar_new_folder')} onClick={() => setEditingFolder('new')}>
           <PlusIcon />
@@ -281,6 +342,7 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
                   actions={actions}
                   onRenameFolder={setEditingFolder}
                   onDeleteFolder={setDeletingFolder}
+                  onDropProject={fileDroppedProject}
                   onNavigate={onNavigate}
                 />
               ))}
@@ -290,17 +352,23 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
 
       {/* Empty because everything's pinned or filed: nothing to say. Empty because there are no projects at
           all: say so. */}
+      {/* Also where a project dragged out of a folder is dropped to take it out of there. */}
       {(!_.isEmpty(recents) || _.isEmpty(projects)) && (
-        <SidebarGroup>
+        <SidebarGroup
+          data-section='recents'
+          data-droptarget={isOverRecents || undefined}
+          className='rounded-md transition-colors data-droptarget:bg-sidebar-accent/60 data-droptarget:ring-2 data-droptarget:ring-primary/60'
+          {...recentsDropProps}
+        >
           <SidebarGroupLabel>{t('sidebar_recents')}</SidebarGroupLabel>
           {_.isEmpty(recents) && !_.isNil(projects)
             ? <p className='px-2 py-1.5 text-xs text-muted-foreground'>{t('sidebar_recents_empty')}</p>
-            : <SidebarProjectList projects={recents} folders={folders} actions={actions} onNavigate={onNavigate} />}
+            : <SidebarProjectList projects={recents} folders={folders} actions={actions} onNavigate={onNavigate} isDraggable />}
         </SidebarGroup>
       )}
 
       <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
-      <DeleteProjectModal project={deletingProject} onClose={() => setDeletingProject(null)} onDeleted={afterProjectDeleted} />
+      <TrashProjectModal project={trashingProject} onClose={() => setTrashingProject(null)} onTrashed={afterProjectTrashed} />
       <FolderNameModal
         folder={editingFolder}
         onClose={() => {
@@ -435,7 +503,7 @@ export default function AppSidebar() {
               className={cn('h-8 w-full justify-start gap-2 px-2 font-normal', isCollapsed && 'justify-center px-0')}
             />
           </SidebarMenuItem>
-          <SidebarMenuItem>
+          <SidebarMenuItem data-tour='help'>
             <SidebarMenuButton tooltip={t('help_open')} onClick={() => setIsHelpOpen(true)} className={_ITEM_TEXT_CLASS}>
               <LifeBuoyIcon />
               <span>{t('help_open')}</span>

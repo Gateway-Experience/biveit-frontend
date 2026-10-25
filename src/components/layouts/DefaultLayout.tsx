@@ -15,6 +15,9 @@ import { MAIN_CONTENT_WIDTH_CLASS, SIDEBAR_WIDTH_PX } from 'src/utils/constants'
 // exactly the screen's height, as a column the page can stretch into (`flex-1`), with no width cap (the page
 // goes wide once there's a preview). Regular pages get the usual centred column and the footer, pushed to
 // the bottom of the screen when the page is short; the workspace skips the footer since it fills the screen.
+// The page area is its own stacking context (`isolate`), so a page can lay a backdrop behind itself
+// (ProjectDetail's WorkspaceBackdrop, ProjectList's DashboardBackdrop) without it slipping under the area's
+// own background.
 // The new-project form lives here too, so it can open over any page (see `isNewProjectOpen` in the store).
 export default function DefaultLayout({ isWorkspace = false }: { isWorkspace?: boolean }) {
   const isNewProjectOpen = useStore(state => state.isNewProjectOpen);
@@ -24,7 +27,7 @@ export default function DefaultLayout({ isWorkspace = false }: { isWorkspace?: b
     <SidebarProvider style={{ '--sidebar-width': `${SIDEBAR_WIDTH_PX}px` } as React.CSSProperties}>
       <AppSidebar />
       <NewProjectModal open={isNewProjectOpen} onClose={() => set({ isNewProjectOpen: false })} />
-      <SidebarInset className={cn(isWorkspace ? 'h-svh overflow-hidden' : 'min-h-svh')}>
+      <SidebarInset className={cn('isolate', isWorkspace ? 'h-svh overflow-hidden' : 'min-h-svh')}>
         <header className='flex h-14 shrink-0 items-center gap-2 border-b px-3 md:hidden'>
           <SidebarTrigger />
           <Link to='/' className='flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>

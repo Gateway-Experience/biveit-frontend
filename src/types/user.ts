@@ -3,6 +3,9 @@
 // as they're stored rather than renaming at the edge.
 export type UserType = 'USER' | 'GUEST';
 
+// The guided tours (see SpotlightTour), as the BE names them (its UserTour).
+export type UserTour = 'projects';
+
 export type User = {
   _id: string;
   id?: number; // the BE's primary key
@@ -15,6 +18,8 @@ export type User = {
   profile_picture?: string;
   language?: string; // the language picker's choice ('en' | 'vi'), saved by LanguageSelector
   google_id?: string;
+  // App-level data with no column of its own, e.g. `projects_tour_finished_at` (see services/user.hasFinishedTour).
+  meta?: Record<string, unknown>;
   social_data?: {
     email?: string;
     [key: string]: unknown;

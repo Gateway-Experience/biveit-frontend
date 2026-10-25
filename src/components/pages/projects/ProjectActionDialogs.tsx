@@ -9,7 +9,7 @@ import { useNotification } from 'src/components/common/NotificationProvider';
 import { Spinner } from 'src/components/common/Spinner';
 import { Button } from 'src/components/shadui/button';
 import {
-  createProjectFolder, deleteProject, deleteProjectFolder, renameProject, renameProjectFolder,
+  createProjectFolder, deleteProject, deleteProjectFolder, renameProject, renameProjectFolder, trashProject,
 } from 'src/services/project';
 import type { Project, ProjectFolder } from 'src/types/project';
 
@@ -86,7 +86,52 @@ export function RenameProjectModal({ project, onClose, onRenamed }: {
   );
 }
 
-// Original purpose: the project card's (and the sidebar's) "Delete" menu item.
+// Original purpose: the project card's (and the sidebar's) "Move to Trash" menu item.
+// Intentions: a light "are you sure" that names the project and says it can come back from Trash. Open
+// while `project` is set; the parent gets the trashed project back to move it between its lists.
+export function TrashProjectModal({ project, onClose, onTrashed }: {
+  project: Project | null;
+  onClose: () => void;
+  onTrashed: (project: Project) => void;
+}) {
+  const { t } = useTranslation();
+  const notify = useNotification();
+  const [isTrashing, setIsTrashing] = useState(false);
+
+  const moveToTrash = async () => {
+    const target = project as Project;
+    setIsTrashing(true);
+    try {
+      onTrashed(await trashProject(target.id));
+      notify('success', t('project_trash_done', { name: target.name }));
+      onClose();
+    } catch {
+      notify('error', t('project_trash_failed'));
+    } finally {
+      setIsTrashing(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={!!project}
+      onClose={() => !isTrashing && onClose()}
+      title={t('project_trash_title', { name: project?.name })}
+      fullScreenMobile={false}
+      buttons={[
+        <Button key='cancel' variant='outline' disabled={isTrashing} onClick={onClose}>{t('project_action_cancel')}</Button>,
+        <Button key='trash' variant='destructive' data-action='confirm-trash' disabled={isTrashing} onClick={moveToTrash}>
+          {isTrashing && <Spinner data-icon='inline-start' />}
+          {t('project_menu_trash')}
+        </Button>,
+      ]}
+    >
+      <p data-projectid={project?.id} className='text-muted-foreground'>{t('project_trash_body')}</p>
+    </Modal>
+  );
+}
+
+// Original purpose: Trash's "Delete forever".
 // Intentions: an "are you sure" that names the project, since there's no undo for the user. Open while
 // `project` is set; the parent drops it from its list once it's gone.
 export function DeleteProjectModal({ project, onClose, onDeleted }: {
@@ -121,9 +166,9 @@ export function DeleteProjectModal({ project, onClose, onDeleted }: {
       fullScreenMobile={false}
       buttons={[
         <Button key='cancel' variant='outline' disabled={isDeleting} onClick={onClose}>{t('project_action_cancel')}</Button>,
-        <Button key='delete' variant='destructive' disabled={isDeleting} onClick={remove}>
+        <Button key='delete' variant='destructive' data-action='confirm-delete' disabled={isDeleting} onClick={remove}>
           {isDeleting && <Spinner data-icon='inline-start' />}
-          {t('project_delete_confirm')}
+          {t('trash_delete')}
         </Button>,
       ]}
     >

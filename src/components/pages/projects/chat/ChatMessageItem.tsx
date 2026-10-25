@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -6,7 +7,9 @@ import {
 } from 'lucide-react';
 import { cn } from 'cn';
 
+import AgentAvatar from 'src/components/common/AgentAvatar';
 import Markdown from 'src/components/common/Markdown';
+import UserAvatar from 'src/components/common/UserAvatar';
 import ChatAttachment from 'src/components/pages/projects/chat/ChatAttachment';
 import { CHAT_TEXT_SIZE_CLASS } from 'src/components/pages/projects/chat/chatStyles';
 import {
@@ -15,13 +18,15 @@ import {
 import { Bubble, BubbleContent } from 'src/components/shadui/bubble';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'src/components/shadui/collapsible';
 import { Marker, MarkerContent, MarkerIcon } from 'src/components/shadui/marker';
-import { Message, MessageContent } from 'src/components/shadui/message';
+import { Message, MessageAvatar, MessageContent } from 'src/components/shadui/message';
 import { Spinner } from 'src/components/common/Spinner';
 import { APPROVAL_ACTION_TEXT_KEYS, flattenInteractionItems, type InteractionItem } from 'src/services/chatInteractions';
 import { getInteractionResults, isAskUser, isShowArtifact, isUserFacingTool } from 'src/services/chatLog';
+import { formatDateTime } from 'src/utils/common';
+import { useStore } from 'src/state-store';
 import { SITE_KIND_OPTIONS } from 'src/utils/constants';
 import type {
-  AiMessage, AskUserQuestion, AttachmentBlock, ContentBlock, InteractionResult, SignalBlock, TextBlock, ToolResultBlock,
+  AiMessage, AttachmentBlock, ContentBlock, InteractionResult, SignalBlock, TextBlock, ToolResultBlock,
   ToolUseBlock,
 } from 'src/types/chat';
 
@@ -39,6 +44,8 @@ export type ChatRenderContext = {
 // The registry's bubbles are sized for dense UIs (text-xs); chat reads better a notch above the UI's
 // usual text-sm. Same size on both sides of the conversation (see CHAT_TEXT_SIZE_CLASS).
 const _USER_BUBBLE_CONTENT_CLASS = cn('rounded-2xl px-4 py-2.5', CHAT_TEXT_SIZE_CLASS);
+// A dashed line above a part of a bubble, setting it apart from what comes before it.
+const _DASHED_DIVIDER_CLASS = 'border-t border-dashed border-foreground/35';
 // The agent writes markdown; Markdown's prose spacing is in em, so it scales along with the bigger size.
 const _AGENT_TEXT_CLASS = cn('w-full', CHAT_TEXT_SIZE_CLASS);
 
@@ -47,6 +54,58 @@ const _AGENT_TEXT_CLASS = cn('w-full', CHAT_TEXT_SIZE_CLASS);
 const _NOTICE_SIGNAL_KEYS: Record<string, string> = {
   DEVENV_FAILED: 'chat_signal_devenv_failed',
 };
+
+// Intentions: a chat bubble that tells when it was sent, but only when asked: tapping it (or Enter/Space on
+// it) shows the time under it, tapping again hides it. A tap that ends a text selection isn't a toggle, so
+// copying a bit of a message doesn't flip it, and neither is one on a link or a control inside the bubble
+// (the agent's file cards, its tool rows). Used for the user's messages and the agent's framed replies.
+function TimedBubble({ sentAt, variant, align = 'start', contentClassName, children, ...dataProps }: {
+  sentAt: string;
+  variant: React.ComponentProps<typeof Bubble>['variant'];
+  align?: 'start' | 'end';
+  contentClassName?: string;
+  children: React.ReactNode;
+} & Record<`data-${string}`, string | undefined>) {
+  const { i18n } = useTranslation();
+  const [isTimeShown, setIsTimeShown] = useState(false);
+
+  const toggleTime = (target: EventTarget, bubbleContent: EventTarget) => {
+    const control = (target as Element).closest?.('a, button, input, textarea, [role=button]');
+    if (!_.isEmpty(_.toString(window.getSelection())) || (control && control !== bubbleContent)) {
+      return;
+    }
+    setIsTimeShown(!isTimeShown);
+  };
+
+  return (
+    <Bubble variant={variant} align={align} {...dataProps}>
+      <BubbleContent
+        role='button'
+        tabIndex={0}
+        aria-expanded={isTimeShown}
+        onClick={event => toggleTime(event.target, event.currentTarget)}
+        onKeyDown={(event) => {
+          if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+            event.preventDefault();
+            toggleTime(event.target, event.currentTarget);
+          }
+        }}
+        className={cn('cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring/30', contentClassName)}
+      >
+        {children}
+      </BubbleContent>
+      {isTimeShown && (
+        <time
+          dateTime={sentAt}
+          data-component='chat-message-time'
+          className={cn('px-1 text-xs text-muted-foreground animate-in fade-in-0 duration-200', align === 'end' && 'self-end')}
+        >
+          {formatDateTime(sentAt, i18n.language)}
+        </time>
+      )}
+    </Bubble>
+  );
+}
 
 const _isTextBlock = (block: ContentBlock): block is TextBlock => block.type === 'text';
 const _isAttachmentBlock = (block: ContentBlock): block is AttachmentBlock => block.type === 'attachment';
@@ -60,22 +119,25 @@ function _summarizeToolInput(input: Record<string, unknown>) {
   return _.truncate(_.find(_.values(input), _.isString) as string | undefined, { length: 60 });
 }
 
-// The agent's `ask_user` / `request_actions` call, as it sits in the log. The questions (or actions)
-// themselves are in the panel that replaces the composer, and the answers show up as the user's reply — so
-// this stays a one-liner.
-function InteractionMarker({ toolUse, isPending }: { toolUse: ToolUseBlock; isPending: boolean }) {
+// The agent's `ask_user` / `request_actions` call, as it sits in the log: a section at the bottom of its
+// reply's frame with what it asked (the questions, or the go-ahead it wants). The options to pick from are
+// in the panel that replaces the composer while it's pending, and the answers show up as the user's reply.
+function InteractionSection({ toolUse, isPending }: { toolUse: ToolUseBlock; isPending: boolean }) {
   const { t } = useTranslation();
+  const items = flattenInteractionItems([toolUse]);
 
   return (
-    <Marker data-toolcallid={toolUse.id}>
-      <MarkerIcon>{isAskUser(toolUse) ? <MessageCircleQuestionIcon /> : <ThumbsUpIcon />}</MarkerIcon>
-      <MarkerContent>
-        {isAskUser(toolUse)
-          ? t('chat_asked_questions', { count: _.size(toolUse.input.questions as AskUserQuestion[]) })
-          : t('chat_requested_actions')}
-      </MarkerContent>
-      {isPending && <span className='rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground'>{t('chat_waiting_for_answer')}</span>}
-    </Marker>
+    // The dashed line only when something comes before it in the frame.
+    <div data-toolcallid={toolUse.id} className={cn('flex flex-col gap-2 not-first:pt-3', 'not-first:border-t not-first:border-dashed not-first:border-foreground/35')}>
+      <span className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
+        {isAskUser(toolUse) ? <MessageCircleQuestionIcon className='size-3.5' /> : <ThumbsUpIcon className='size-3.5' />}
+        {isAskUser(toolUse) ? t('chat_asked_questions', { count: _.size(items) }) : t('chat_requested_actions')}
+        {isPending && <span className='rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground'>{t('chat_waiting_for_answer')}</span>}
+      </span>
+      {_.map(items, (item, index) => (
+        <span key={index} className='font-medium'>{_getItemLabel(item, t)}</span>
+      ))}
+    </div>
   );
 }
 
@@ -118,6 +180,13 @@ function _getItemLabel(item: InteractionItem | undefined, t: TFunction) {
   return item?.question.question;
 }
 
+// What an item the user set aside reads as: an approval they put off says so in its own words ("Build later"),
+// a question just reads as dismissed.
+function _getSetAsideText(item: InteractionItem | undefined, t: TFunction) {
+  const laterKey = item?.kind === 'action' ? APPROVAL_ACTION_TEXT_KEYS[item.action.name]?.later : null;
+  return t(laterKey || 'chat_answer_dismissed');
+}
+
 // What a submitted answer reads as: the picked options (and custom text), or the approval button clicked.
 function _getSubmittedAnswerText(result: Extract<InteractionResult, { status: 'submitted' }>, t: TFunction) {
   if ('decision' in result.value) {
@@ -130,30 +199,39 @@ function _getSubmittedAnswerText(result: Extract<InteractionResult, { status: 's
 // they picked. One answer message can cover several calls (everything pending is answered in one go), so it's
 // one card for all of them, in the order asked. A dismiss shows where the user bailed out; items they never
 // reached are left out.
-function InteractionAnswerBubble({ answers }: { answers: { toolResult: ToolResultBlock; toolUse?: ToolUseBlock }[] }) {
+function InteractionAnswerBubble({ answers, sentAt }: {
+  answers: { toolResult: ToolResultBlock; toolUse?: ToolUseBlock }[];
+  sentAt: string;
+}) {
   const { t } = useTranslation();
   const answeredItems = _.flatMap(answers, ({ toolResult, toolUse }) => {
     const items = toolUse ? flattenInteractionItems([toolUse]) : [];
     return _.map(getInteractionResults(toolResult), (result, index) => ({
       key: `${toolResult.tool_use_id}:${index}`,
+      item: items[index] as InteractionItem | undefined,
       label: _getItemLabel(items[index] as InteractionItem | undefined, t),
       result,
     }));
   });
 
   return (
-    <Bubble variant='secondary' align='end' data-toolresultfor={_.map(answers, 'toolResult.tool_use_id').join(',')}>
-      <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2.5 py-3')}>
-        {_.map(_.reject(answeredItems, { result: { status: 'untouched' } }), ({ key, label, result }) => (
-          <div key={key} className='flex flex-col gap-0.5'>
-            <span className='text-xs text-muted-foreground'>{label}</span>
-            <span className={cn('font-medium', result.status === 'aborted' && 'font-normal text-muted-foreground italic')}>
-              {result.status === 'submitted' ? _getSubmittedAnswerText(result, t) : t('chat_answer_dismissed')}
-            </span>
-          </div>
-        ))}
-      </BubbleContent>
-    </Bubble>
+    <TimedBubble
+      variant='secondary'
+      align='end'
+      sentAt={sentAt}
+      data-toolresultfor={_.map(answers, 'toolResult.tool_use_id').join(',')}
+      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2 p-2')}
+    >
+      {/* One light tile per question, so several answers in one card don't run together. */}
+      {_.map(_.reject(answeredItems, { result: { status: 'untouched' } }), ({ key, item, label, result }) => (
+        <div key={key} data-answeritem={key} className='flex flex-col rounded-xl bg-background/60 px-3 py-2'>
+          <span className='pb-1.5 text-sm text-muted-foreground'>{label}</span>
+          <span className={cn('pt-1.5 font-medium', _DASHED_DIVIDER_CLASS, result.status === 'aborted' && 'font-normal text-muted-foreground italic')}>
+            {result.status === 'submitted' ? _getSubmittedAnswerText(result, t) : _getSetAsideText(item, t)}
+          </span>
+        </div>
+      ))}
+    </TimedBubble>
   );
 }
 
@@ -223,46 +301,79 @@ function UserMessageBlocks({ message, renderContext }: { message: AiMessage; ren
     _.map(_.filter(message.content, _isToolResultBlock), toolResult => ({ toolResult, toolUse: renderContext.toolUsesById[toolResult.tool_use_id] })),
     ({ toolUse }) => isUserFacingTool(toolUse),
   );
-  const answerCard = !_.isEmpty(answers) && <InteractionAnswerBubble key='answers' answers={answers} />;
+  const answerCard = !_.isEmpty(answers) && <InteractionAnswerBubble key='answers' answers={answers} sentAt={message.created_at} />;
 
   return [attachmentRow, answerCard, ..._.map(_.filter(message.content, _isTextBlock), (block, index) => (
-    <Bubble key={index} variant='secondary' align='end'>
-      <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'whitespace-pre-wrap')}>{block.text}</BubbleContent>
-    </Bubble>
+    <TimedBubble
+      key={index}
+      variant='secondary'
+      align='end'
+      sentAt={message.created_at}
+      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'whitespace-pre-wrap')}
+    >
+      {block.text}
+    </TimedBubble>
   ))];
 }
 
+const _isInteractionBlock = (block: ContentBlock): block is ToolUseBlock => _isToolUseBlock(block)
+  && isUserFacingTool(block) && !isShowArtifact(block);
+
+// One of the agent's blocks other than its questions: text, a file card, a notice, or a tool row.
+function AssistantBlock({ block, renderContext }: { block: ContentBlock; renderContext: ChatRenderContext }) {
+  if (_isTextBlock(block)) {
+    return <Markdown className={_AGENT_TEXT_CLASS} options={{ keepsLineBreaks: true }}>{block.text}</Markdown>;
+  }
+  if (_isToolUseBlock(block) && isShowArtifact(block)) {
+    return <ShowArtifactCard toolUse={block} onOpenArtifact={renderContext.onOpenArtifact} />;
+  }
+  if (_isNoticeSignalBlock(block)) {
+    return <SignalNotice signal={block} />;
+  }
+  if (_isToolUseBlock(block)) {
+    return <ToolCallMarker toolUse={block} toolResult={renderContext.toolResultsByCallId[block.id]} isAgentWorking={renderContext.isAgentWorking} />;
+  }
+  // Unknown block types (and the other signals) are skipped — the BE's set keeps growing.
+  return null;
+}
+
+// [Pure] The agent's blocks cut into bubbles: every text block after the first starts a new one (the runner
+// splits a long reply into several text blocks where the agent asked for a break), and whatever follows a
+// text (a file card, a tool row) stays in its bubble.
+const _groupIntoBubbles = (blocks: ContentBlock[]) => _.reduce(blocks, (groups, block) => (
+  _.isEmpty(groups) || (_isTextBlock(block) && _.some(_.last(groups), _isTextBlock))
+    ? [...groups, [block]]
+    : [..._.initial(groups), [..._.last(groups)!, block]]
+), [] as ContentBlock[][]);
+
+// Intentions: a reply that says something (text) or asks something sits in frames, one per text block, its
+// questions last in the last frame, under a dashed line. A message that's only the agent at work (tool rows,
+// notices) stays unframed: those are progress, not a reply.
 function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage; renderContext: ChatRenderContext }) {
-  return _.map(message.content, (block, index) => {
-    if (_isTextBlock(block)) {
-      return (
-        <Bubble key={index} variant='ghost'>
-          <BubbleContent className='w-full'><Markdown className={_AGENT_TEXT_CLASS} options={{ keepsLineBreaks: true }}>{block.text}</Markdown></BubbleContent>
-        </Bubble>
-      );
-    }
-    if (_isToolUseBlock(block) && isShowArtifact(block)) {
-      return <ShowArtifactCard key={block.id} toolUse={block} onOpenArtifact={renderContext.onOpenArtifact} />;
-    }
-    if (_isToolUseBlock(block) && isUserFacingTool(block)) {
-      return <InteractionMarker key={block.id} toolUse={block} isPending={_.includes(renderContext.pendingInteractionIds, block.id)} />;
-    }
-    if (_isNoticeSignalBlock(block)) {
-      return <SignalNotice key={index} signal={block} />;
-    }
-    if (_isToolUseBlock(block)) {
-      return (
-        <ToolCallMarker
-          key={block.id}
-          toolUse={block}
-          toolResult={renderContext.toolResultsByCallId[block.id]}
-          isAgentWorking={renderContext.isAgentWorking}
-        />
-      );
-    }
-    // Unknown block types (and the other signals) are skipped — the BE's set keeps growing.
-    return null;
-  });
+  const [interactionBlocks, otherBlocks] = _.partition(message.content, _isInteractionBlock);
+  const toNodes = (blocks: ContentBlock[]) => _.map(blocks, (block, index) => (
+    <AssistantBlock key={_isToolUseBlock(block) ? block.id : index} block={block} renderContext={renderContext} />
+  ));
+
+  if (_.isEmpty(interactionBlocks) && !_.some(otherBlocks, _isTextBlock)) {
+    return toNodes(otherBlocks);
+  }
+  // A question-only reply still gets its one frame.
+  const bubbleGroups = _.isEmpty(otherBlocks) ? [[]] : _groupIntoBubbles(otherBlocks);
+  return _.map(bubbleGroups, (blocks, groupIndex) => (
+    <TimedBubble
+      key={groupIndex}
+      variant='muted'
+      sentAt={message.created_at}
+      data-component='agent-reply'
+      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-3 py-3')}
+    >
+      {toNodes(blocks)}
+      {groupIndex === _.size(bubbleGroups) - 1 && _.map(interactionBlocks, block => (
+        <InteractionSection key={block.id} toolUse={block} isPending={_.includes(renderContext.pendingInteractionIds, block.id)} />
+      ))}
+    </TimedBubble>
+  ));
 }
 
 // [Pure] Whether a message has anything to draw. Users' messages carrying only results of regular tool
@@ -280,7 +391,19 @@ function hasVisibleContent(message: AiMessage, toolUsesById: Record<string, Tool
 // replying to it ("Thanks for the description..."), but it's not a chat message of its own, so without this
 // the conversation starts with an answer to nothing. Laid out like the answers card: each form question
 // with what they put. Kinds we offered are shown in the user's language; ones they typed, as typed.
-function StartingBriefMessage({ bootstrapData }: { bootstrapData: Record<string, unknown> }) {
+// Intentions: who's talking, beside their messages: the agent's avatar on the left, the user's on the right.
+// Only the first message of a run from the same side shows it (`isShown`), at its top, so it doesn't move
+// when a time is revealed under a bubble; the others keep its room, so the bubbles of a run line up.
+function ChatAvatar({ role, isShown }: { role: AiMessage['role']; isShown: boolean }) {
+  const user = useStore(state => state.user);
+  return (
+    <MessageAvatar aria-hidden={!isShown} className={cn('self-start bg-transparent', !isShown && 'invisible')}>
+      {role === 'user' ? <UserAvatar user={user} className='size-8' /> : <AgentAvatar />}
+    </MessageAvatar>
+  );
+}
+
+function StartingBriefMessage({ bootstrapData, hasAvatar = true }: { bootstrapData: Record<string, unknown>; hasAvatar?: boolean }) {
   const { t } = useTranslation();
   const description = _.trim(_.toString(_.get(bootstrapData, 'description', '')));
   const siteKindLabels = _.map(_.castArray(_.get(bootstrapData, 'site_kinds', [])), kind => {
@@ -297,6 +420,7 @@ function StartingBriefMessage({ bootstrapData }: { bootstrapData: Record<string,
   }
   return (
     <Message align='end' data-component='starting-brief'>
+      <ChatAvatar role='user' isShown={hasAvatar} />
       <MessageContent>
         <Bubble variant='secondary' align='end'>
           <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2.5 py-3')}>
@@ -314,13 +438,20 @@ function StartingBriefMessage({ bootstrapData }: { bootstrapData: Record<string,
 }
 
 // Intentions: renders one message. User messages sit on the right in bubbles (text, or their answers);
-// the agent's are open text with its tool calls inline as marker lines, in the order it produced them.
+// the agent's replies sit on the left in a frame (questions last), with its work in progress as marker
+// lines. Bubbles show their time when tapped (TimedBubble).
 // No avatars: alignment alone already says who's talking.
-export default function ChatMessageItem({ message, renderContext }: { message: AiMessage; renderContext: ChatRenderContext }) {
+// `hasAvatar`: whether this message starts a run from its side, and so shows the avatar (see ChatAvatar).
+export default function ChatMessageItem({ message, renderContext, hasAvatar = true }: {
+  message: AiMessage;
+  renderContext: ChatRenderContext;
+  hasAvatar?: boolean;
+}) {
   const isUser = message.role === 'user';
 
   return (
-    <Message align={isUser ? 'end' : 'start'} data-messageseq={message.seq}>
+    <Message align={isUser ? 'end' : 'start'} data-messageseq={message.seq} className='gap-2.5'>
+      <ChatAvatar role={message.role} isShown={hasAvatar} />
       <MessageContent>
         {isUser
           ? <UserMessageBlocks message={message} renderContext={renderContext} />

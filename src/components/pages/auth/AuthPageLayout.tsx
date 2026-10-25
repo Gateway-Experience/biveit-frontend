@@ -94,7 +94,9 @@ export default function AuthPageLayout({
               <LockIcon className='size-3.5 shrink-0' />
               <span>
                 {t('auth_agree_policies_prefix')}
-                {' '}<Link to={PATHS.privacyPolicy} className='font-medium text-foreground hover:underline'>{t('auth_policies')}</Link>
+                {' '}<Link to={PATHS.termsOfService} className='font-medium text-foreground hover:underline'>{t('terms_title')}</Link>
+                {' '}{t('auth_and')}
+                {' '}<Link to={PATHS.privacyPolicy} className='font-medium text-foreground hover:underline'>{t('privacy_policy_title')}</Link>
               </span>
             </p>
           </div>

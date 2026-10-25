@@ -187,6 +187,12 @@ const _RELATIVE_TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ['minute', 60],
 ];
 
+// Turns a timestamp into a date and time in the given locale, e.g. "Oct 25, 2026, 2:32 PM". [Pure-ish]: the
+// viewer's own time zone.
+function formatDateTime(dateRaw: string | number | Date, locale?: string) {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(dateRaw));
+}
+
 // Turns a timestamp into "3 hours ago" / "yesterday" in the given locale, using the largest unit
 // that fits. [Pure-ish]: reads the clock.
 function formatRelativeTime(dateRaw: string | number | Date, locale?: string) {
@@ -252,6 +258,7 @@ export {
   encryptData,
   decryptData,
   formatDate,
+  formatDateTime,
   formatRelativeTime,
   formatFileSize,
   formatNumber,

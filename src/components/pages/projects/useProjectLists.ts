@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useStore } from 'src/state-store';
-import { getProjectFolders, getProjects } from 'src/services/project';
+import { getProjectFolders, getProjects, getTrashedProjects } from 'src/services/project';
 import type { Project, ProjectFolder } from 'src/types/project';
 
 // Intentions: one copy of the user's projects and folders, shared by everything that lists them (the
@@ -17,6 +17,10 @@ function _foldersKey(userId: unknown) {
   return ['project-folders', userId];
 }
 
+function _trashedProjectsKey(userId: unknown) {
+  return ['trashed-projects', userId];
+}
+
 function useCurrentUserId() {
   const user = useStore(state => state.user);
   return user?.id;
@@ -28,6 +32,12 @@ function useCurrentUserId() {
 function useProjects() {
   const userId = useCurrentUserId();
   return useQuery({ queryKey: _projectsKey(userId), queryFn: getProjects, enabled: !_.isNil(userId), staleTime: 0 });
+}
+
+// The current user's projects in Trash (undefined while loading), most recently trashed first.
+function useTrashedProjects() {
+  const userId = useCurrentUserId();
+  return useQuery({ queryKey: _trashedProjectsKey(userId), queryFn: getTrashedProjects, enabled: !_.isNil(userId), staleTime: 0 });
 }
 
 function useProjectFolders() {
@@ -45,8 +55,20 @@ function useProjectListUpdaters() {
     queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => _.map(previous, item => (item.id === project.id ? project : item)));
   }, [queryClient, userId]);
 
-  const removeProject = useCallback((projectId: number) => {
-    queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => _.reject(previous, { id: projectId }));
+  // A project moving in or out of Trash leaves one list for the other. Either list may not be loaded yet
+  // (undefined): then there's nothing to update, it'll come from the BE as it is now. Readers sort them.
+  const moveProjectToTrash = useCallback((trashedProject: Project) => {
+    queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => _.reject(previous, { id: trashedProject.id }));
+    queryClient.setQueryData<Project[]>(_trashedProjectsKey(userId), previous => previous && [trashedProject, ...previous]);
+  }, [queryClient, userId]);
+
+  const restoreProjectFromTrash = useCallback((restoredProject: Project) => {
+    queryClient.setQueryData<Project[]>(_trashedProjectsKey(userId), previous => _.reject(previous, { id: restoredProject.id }));
+    queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => previous && [restoredProject, ...previous]);
+  }, [queryClient, userId]);
+
+  const removeTrashedProject = useCallback((projectId: number) => {
+    queryClient.setQueryData<Project[]>(_trashedProjectsKey(userId), previous => _.reject(previous, { id: projectId }));
   }, [queryClient, userId]);
 
   // A brand new project: simplest to fetch the list again (it comes sorted).
@@ -72,7 +94,9 @@ function useProjectListUpdaters() {
     )));
   }, [queryClient, userId]);
 
-  return { setProject, removeProject, reloadProjects, setFolder, removeFolder };
+  return {
+    setProject, reloadProjects, moveProjectToTrash, restoreProjectFromTrash, removeTrashedProject, setFolder, removeFolder,
+  };
 }
 
 // [Pure] `folderId` and the ids of every folder below it. UNION-style: an id already collected isn't walked
@@ -105,4 +129,5 @@ export {
   useProjectFolders,
   useProjectListUpdaters,
   useProjects,
+  useTrashedProjects,
 };

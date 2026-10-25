@@ -18,6 +18,11 @@ export type Project = {
   created_at: string;
   // "Last edited" — the list comes sorted by it, newest first. Pinning and filing don't change it.
   updated_at: string;
+  // When the user moved it to Trash; null = not in Trash. Only the Trash list has projects with it set.
+  trashed_at: string | null;
+  // When the BE last took a picture of its dev site (for the card); null/absent = no picture yet, e.g.
+  // still being spec-ed. Only the list and the edits that return a project carry it.
+  site_preview_at?: string | null;
 };
 
 // What PATCH /projects/{id} takes: any of these, only what changes. folder_id null = out of its folder.

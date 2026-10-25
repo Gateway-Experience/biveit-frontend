@@ -49,6 +49,7 @@ function PublicFooter() {
         </div>
         <div className='flex items-center gap-4'>
           <Link to={PATHS.pricing} className='hover:text-foreground'>{t('pricing_nav')}</Link>
+          <Link to={PATHS.termsOfService} className='hover:text-foreground'>{t('terms_title')}</Link>
           <Link to={PATHS.privacyPolicy} className='hover:text-foreground'>{t('landing_footer_privacy')}</Link>
           <Link to={PATHS.cookiePolicy} className='hover:text-foreground'>{t('cookie_policy_title')}</Link>
         </div>

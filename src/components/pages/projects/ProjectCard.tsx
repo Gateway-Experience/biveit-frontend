@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import _ from 'lodash';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { Button } from 'src/components/shadui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from 'src/components/shadui/dropdown-menu';
+import { getSitePreviewUrl } from 'src/services/project';
 import { choose, formatRelativeTime } from 'src/utils/common';
 import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
@@ -69,10 +71,16 @@ const _PREVIEW_LAYOUTS: Record<string, (props: { tintClass: string }) => React.R
 
 // Intentions: projects have no screenshot (yet), so show a tiny sketch of a "site in a browser window"
 // so the grid still reads as a gallery of websites rather than a wall of grey boxes.
-function ProjectPreviewPlaceholder({ projectId }: { projectId: number }) {
-  const tintClass = choose(_PREVIEW_TINT_CLASSES, String(projectId));
+// Intentions: the top of the card, a little browser window. It shows the real site once the BE has a picture
+// of it (`site_preview_at`); before that (still spec-ing), or if the picture won't load, a made-up sketch.
+function ProjectPreview({ project }: { project: Project }) {
+  const tintClass = choose(_PREVIEW_TINT_CLASSES, String(project.id));
   // A different seed than the tint, so layout and colour vary independently.
-  const PreviewLayout = _PREVIEW_LAYOUTS[choose(_.keys(_PREVIEW_LAYOUTS), `layout-${projectId}`)];
+  const PreviewLayout = _PREVIEW_LAYOUTS[choose(_.keys(_PREVIEW_LAYOUTS), `layout-${project.id}`)];
+  // The picture URL that failed to load, if any. Keyed by URL, so a newer picture gets its own try.
+  const [failedPictureUrl, setFailedPictureUrl] = useState<string | null>(null);
+  const pictureUrl = project.site_preview_at ? getSitePreviewUrl(project) : null;
+  const isPictureShown = !!pictureUrl && pictureUrl !== failedPictureUrl;
 
   return (
     <div className='flex size-full flex-col bg-linear-to-br from-accent to-muted p-3 pb-0'>
@@ -80,7 +88,18 @@ function ProjectPreviewPlaceholder({ projectId }: { projectId: number }) {
         <div className='flex items-center gap-1 border-b px-2 py-1.5'>
           {_.times(3, index => <span key={index} className='size-1.5 rounded-full bg-foreground/15' />)}
         </div>
-        <PreviewLayout tintClass={tintClass} />
+        {isPictureShown
+          ? (
+            <img
+              src={pictureUrl}
+              alt=''
+              loading='lazy'
+              data-sitepreviewat={project.site_preview_at}
+              onError={() => setFailedPictureUrl(pictureUrl)}
+              className='min-h-0 w-full flex-1 object-cover object-top'
+            />
+          )
+          : <PreviewLayout tintClass={tintClass} />}
       </div>
     </div>
   );
@@ -89,10 +108,10 @@ function ProjectPreviewPlaceholder({ projectId }: { projectId: number }) {
 // The card's "⋯" menu. A sibling of the card's link, not inside it: a button nested in a link would open the
 // project on every click. On wide screens it shows on hover (or focus); on touch screens there's no hover,
 // so it's always there.
-function ProjectCardMenu({ project, onRename, onDelete }: {
+function ProjectCardMenu({ project, onRename, onTrash }: {
   project: Project;
   onRename: (project: Project) => void;
-  onDelete: (project: Project) => void;
+  onTrash: (project: Project) => void;
 }) {
   const { t } = useTranslation();
 
@@ -118,20 +137,20 @@ function ProjectCardMenu({ project, onRename, onDelete }: {
           <PencilIcon />
           {t('project_menu_rename')}
         </DropdownMenuItem>
-        <DropdownMenuItem variant='destructive' onClick={() => onDelete(project)}>
+        <DropdownMenuItem variant='destructive' data-action='trash-project' onClick={() => onTrash(project)}>
           <Trash2Icon />
-          {t('project_menu_delete')}
+          {t('project_menu_trash')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-// `onRename` / `onDelete`: the card's menu asks; the list owns the dialogs (see ProjectActionDialogs).
-export default function ProjectCard({ project, onRename, onDelete }: {
+// `onRename` / `onTrash`: the card's menu asks; the list owns the dialogs (see ProjectActionDialogs).
+export default function ProjectCard({ project, onRename, onTrash }: {
   project: Project;
   onRename: (project: Project) => void;
-  onDelete: (project: Project) => void;
+  onTrash: (project: Project) => void;
 }) {
   const { t, i18n } = useTranslation();
 
@@ -148,7 +167,7 @@ export default function ProjectCard({ project, onRename, onDelete }: {
         )}
       >
         <div className='aspect-[16/10] overflow-hidden border-b'>
-          <ProjectPreviewPlaceholder projectId={project.id} />
+          <ProjectPreview project={project} />
         </div>
 
         <div className='flex flex-1 flex-col gap-1.5 p-4'>
@@ -161,7 +180,7 @@ export default function ProjectCard({ project, onRename, onDelete }: {
           </p>
         </div>
       </Link>
-      <ProjectCardMenu project={project} onRename={onRename} onDelete={onDelete} />
+      <ProjectCardMenu project={project} onRename={onRename} onTrash={onTrash} />
     </div>
   );
 }

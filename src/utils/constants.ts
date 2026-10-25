@@ -36,7 +36,7 @@ const PRICING = {
   publishPrice: 49,
   salePublishPrice: 39 as number | null,
   monthlyPrice: 9,
-  freeDomainBelow: 10,
+  freeDomainBelow: 20,
 };
 
 // The site kinds the new-project form offers up front (bootstrap_data.site_kinds). Values are what the agent
@@ -65,8 +65,10 @@ const PATHS = {
   resetPassword: '/reset-password',
   userProfile: '/user-profile',
   privacyPolicy: '/privacy-policy',
+  termsOfService: '/terms-of-service',
   cookiePolicy: '/cookie-policy',
   projects: '/projects',
+  trash: '/projects/trash',
   pricing: '/pricing',
   admin: '/admin',
 };

@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import _ from 'lodash';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { PlusIcon } from 'lucide-react';
+import { cn } from 'cn';
+import { PlusIcon, Trash2Icon } from 'lucide-react';
 
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
-import { DeleteProjectModal, RenameProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
-import { BuildFlowArt, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
-import { useProjectListUpdaters, useProjects } from 'src/components/pages/projects/useProjectLists';
+import { RenameProjectModal, TrashProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
+import ProjectSearchBox from 'src/components/pages/projects/ProjectSearchBox';
+import { BuildFlowArt, DashboardBackdrop, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
+import { useProjectListUpdaters, useProjects, useTrashedProjects } from 'src/components/pages/projects/useProjectLists';
+import ProjectsTour from 'src/components/pages/projects/ProjectsTour';
+import useProjectSearch from 'src/components/pages/projects/useProjectSearch';
 import { Button } from 'src/components/shadui/button';
 import { useStore } from 'src/state-store';
+import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
 
 const _GRID_CLASS = 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3';
@@ -30,7 +36,31 @@ function ProjectGridSkeleton() {
   );
 }
 
-// Intentions: first-run screen. The whole page is basically one invitation to start building.
+// The way into Trash, shaped like an empty slot in the project grid: where the projects it holds used to be.
+// References: fourpixie-frontend components/pages/projects/ProjectList.tsx (TrashTile)
+function TrashTile({ trashCount, className }: { trashCount: number; className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <Link
+      to={PATHS.trash}
+      data-action='open-trash'
+      data-trashcount={trashCount}
+      className={cn(
+        'group flex h-full min-h-44 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-foreground/15 p-5 text-muted-foreground transition',
+        'outline-none hover:border-primary/60 hover:bg-card/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
+        className,
+      )}
+    >
+      <span className='flex size-11 items-center justify-center rounded-full bg-foreground/5 transition group-hover:bg-primary/15 group-hover:text-foreground'>
+        <Trash2Icon className='size-5' />
+      </span>
+      <span className='font-heading text-base font-semibold'>{t('projects_trash')}</span>
+      <span className='text-sm'>{t('projects_trash_count', { count: trashCount })}</span>
+    </Link>
+  );
+}
+
+// Intentions: the page with no projects. The whole page is basically one invitation to start building.
 function ProjectsEmptyState() {
   const { t } = useTranslation();
   const set = useStore(state => state.set);
@@ -52,68 +82,98 @@ function ProjectsEmptyState() {
   );
 }
 
-// Original purpose: the home page — lists the current user's projects, or nudges them to make one.
+// Original purpose: the home page — lists the current user's projects, or nudges them to make one. Projects
+// can be searched, renamed, or moved to Trash (from their ⋯ menu); Trash is a tile at the end of the grid.
 export default function ProjectList() {
   const { t } = useTranslation();
   // Shared with the sidebar. undefined = still loading, [] = loaded but nothing there yet. Most recently
   // edited first (pinning and filing don't change that).
   const { data: unsortedProjects, isError: hasLoadFailed } = useProjects();
   const projects = unsortedProjects && _.orderBy(unsortedProjects, ['updated_at'], ['desc']);
-  const { setProject, removeProject } = useProjectListUpdaters();
-  // The project whose rename / delete dialog is open, if any.
+  const { data: trashedProjects } = useTrashedProjects();
+  const trashCount = _.size(trashedProjects);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { matchingProjects, isSearchActive, searchedQuery, isSearching } = useProjectSearch(projects, searchQuery);
+  const { setProject, moveProjectToTrash } = useProjectListUpdaters();
+  // The project whose rename / trash dialog is open, if any.
   const [renamingProject, setRenamingProject] = useState<Project | null>(null);
-  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const [trashingProject, setTrashingProject] = useState<Project | null>(null);
   const set = useStore(state => state.set);
 
   const hasProjects = !_.isEmpty(projects);
+  // Trash isn't a search result, so it steps aside while searching.
+  const isTrashShown = trashCount > 0 && !isSearchActive;
+  const hasNoProjects = _.isEmpty(projects) && !_.isNil(projects);
 
   return (
     <div data-page='project-list'>
+      <DashboardBackdrop />
       {/* A rename counts as an edit (fresh updated_at), so the sort moves the project to the top. */}
       <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
-      <DeleteProjectModal project={deletingProject} onClose={() => setDeletingProject(null)} onDeleted={removeProject} />
+      <TrashProjectModal project={trashingProject} onClose={() => setTrashingProject(null)} onTrashed={moveProjectToTrash} />
 
-      {/* The page header: a soft panel with line art on the right (dropped on small screens, and when the
-          empty state below is already showing the same art). */}
-      <div className='relative isolate mb-8 flex flex-wrap items-end justify-between gap-4 overflow-hidden rounded-3xl border bg-card px-6 py-7 sm:px-8'>
+      {/* The page header: a slim panel. Title and count on the left, search and "New project" on the right,
+          and the line art in between on wide screens (and not when the empty state below already shows it).
+          Search and "New project" are always there, even with nothing to search yet: the first-time tour
+          (ProjectsTour) starts by pointing at them. */}
+      <header className='relative isolate mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-2xl border bg-card px-5 py-4 sm:px-6'>
         <DotGridBackdrop />
-        <span aria-hidden='true' className='pointer-events-none absolute -top-24 right-24 -z-10 size-64 rounded-full bg-primary/10 blur-3xl' />
-        {hasProjects && <BuildFlowArt className='pointer-events-none absolute top-1/2 right-52 hidden h-[82%] -translate-y-1/2 lg:block' />}
-        <div className='relative'>
-          <span className='mb-2 block text-[0.625rem] font-bold tracking-[0.18em] text-muted-foreground uppercase'>
-            {t('projects_eyebrow')}
-          </span>
-          <h1 className='font-heading text-3xl font-bold tracking-[-0.03em]'>{t('projects_title')}</h1>
+        <span aria-hidden='true' className='pointer-events-none absolute -top-20 right-1/3 -z-10 size-48 rounded-full bg-primary/10 blur-3xl' />
+        <div className='min-w-0'>
+          <h1 className='font-heading text-2xl font-bold tracking-[-0.03em]'>{t('projects_title')}</h1>
           {hasProjects && (
-            <p className='mt-1 text-muted-foreground'>{t('projects_count', { count: _.size(projects) })}</p>
+            <p className='text-sm text-muted-foreground'>{t('projects_count', { count: _.size(projects) })}</p>
           )}
         </div>
-        {/* The empty state carries its own, bigger CTA, so don't show two. */}
         {hasProjects && (
-          <Button className='relative' onClick={() => set({ isNewProjectOpen: true })}>
+          <div className='hidden min-w-0 flex-1 justify-center xl:flex'>
+            <BuildFlowArt className='pointer-events-none h-16 w-auto' />
+          </div>
+        )}
+        <div className='flex w-full items-center gap-3 sm:ml-auto sm:w-auto'>
+          <div data-tour='search' className='flex-1 sm:w-64 sm:flex-none'>
+            <ProjectSearchBox value={searchQuery} onChange={setSearchQuery} isSearching={isSearching} />
+          </div>
+          {/* bg-clip-border: the theme's buttons paint inside their (transparent) border, so the fill reads 2px
+              shorter than the search box beside it, whose border shows. */}
+          <Button data-tour='new-project' className='h-10 shrink-0 bg-clip-border' onClick={() => set({ isNewProjectOpen: true })}>
             <PlusIcon data-icon='inline-start' />
             {t('projects_new')}
           </Button>
-        )}
-      </div>
+        </div>
+      </header>
 
       {hasLoadFailed && <p className='py-20 text-center text-muted-foreground'>{t('projects_load_failed')}</p>}
       {_.isNil(projects) && !hasLoadFailed && <ProjectGridSkeleton />}
-      {_.isEmpty(projects) && !_.isNil(projects) && <ProjectsEmptyState />}
-      {hasProjects && (
+      {hasNoProjects && (
+        <>
+          <ProjectsEmptyState />
+          {trashCount > 0 && <TrashTile trashCount={trashCount} className='mt-5 min-h-0 py-4 sm:w-80' />}
+        </>
+      )}
+      {hasProjects && isSearchActive && _.isEmpty(matchingProjects) && (
+        <p data-section='no-search-results' className='py-16 text-center text-muted-foreground'>
+          {t('projects_search_no_results', { query: searchedQuery })}
+        </p>
+      )}
+      {!_.isEmpty(matchingProjects) && (
         <div className={_GRID_CLASS}>
-          {_.map(projects, (project, index) => (
+          {_.map(matchingProjects, (project, index) => (
             // Staggered fade-up on first paint; the delay caps out so long lists don't crawl in.
             <div
               key={project.id}
               className='flex animate-in fade-in-0 slide-in-from-bottom-2 duration-500 fill-mode-both *:flex-1'
               style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
             >
-              <ProjectCard project={project} onRename={setRenamingProject} onDelete={setDeletingProject} />
+              <ProjectCard project={project} onRename={setRenamingProject} onTrash={setTrashingProject} />
             </div>
           ))}
+          {isTrashShown && <TrashTile trashCount={trashCount} />}
         </div>
       )}
+
+      {/* Once the page's content is in place, so it can find what it points at. */}
+      {!_.isNil(projects) && <ProjectsTour />}
     </div>
   );
 }

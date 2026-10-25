@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="300" viewBox="0 900 1440 300" preserveAspectRatio="none" fill="none">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#DCECF1"/><stop offset=".65" stop-color="#EFF4ED"/><stop offset="1" stop-color="#F7F5E5"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#FFF9D9" stop-opacity=".95"/><stop offset="1" stop-color="#FFF9D9" stop-opacity="0"/></radialGradient>
+ <linearGradient id="grass" x2="0" y2="1"><stop stop-color="#E7EDDF"/><stop offset="1" stop-color="#D9E3D0"/></linearGradient>
+ <g id="leaf"><path d="M-10 2C-7-10 5-13 13-10 13 1 2 8-10 2Z" fill="#B9CDA1"/><path d="m-9 2 16-9" stroke="#9DB38A" stroke-width="1"/></g>
+ <path id="star" d="M0-8 2-2 8 0 2 2 0 8-2 2-8 0-2-2Z" fill="#FFFDF0"/>
+ <g id="cloud" fill="#FFFDF7"><path d="M0 36C-2 21 12 10 29 13 35-6 66-6 77 12 93 1 118 11 120 28 141 24 157 36 155 46H0Z"/><path d="M14 50h120" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity=".4"/></g>
+</defs>
+<style>
+@keyframes cloudDrift{0%,100%{transform:translateX(-14px)}50%{transform:translateX(24px)}}
+@keyframes shimmer{0%,100%{opacity:.16;transform:scale(.65)}50%{opacity:.8;transform:scale(1)}}
+@keyframes leafFall{0%{transform:translate(0,0) rotate(-10deg);opacity:0}5%{transform:translate(0,0) rotate(-10deg);opacity:.85}10%{transform:translate(-5px,10px) rotate(8deg);opacity:.85}30%{transform:translate(-36px,105px) rotate(55deg)}55%{transform:translate(-12px,220px) rotate(-25deg)}80%{transform:translate(-72px,340px) rotate(75deg);opacity:.75}96%{opacity:.4}100%{transform:translate(-100px,460px) rotate(130deg);opacity:0}}
+@keyframes crownSway{0%,100%{transform:rotate(-.6deg)}50%{transform:rotate(.6deg)}}
+.cloud{animation:cloudDrift 26s ease-in-out infinite}.cloud.b{animation-duration:34s;animation-delay:-15s}.cloud.c{animation-duration:30s;animation-delay:-8s}
+.spark{animation:shimmer 7s ease-in-out infinite}.spark.b{animation-delay:-2.5s;animation-duration:9s}.spark.c{animation-delay:-5s;animation-duration:8s}
+.fall{animation:leafFall 18s linear infinite;opacity:0}.fall.b{animation-delay:-6s;animation-duration:22s}.fall.c{animation-delay:-12s;animation-duration:20s}.fall.d{animation-delay:-15s;animation-duration:25s}
+.crown{transform-origin:1335px 820px;animation:crownSway 14s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.cloud,.spark,.fall,.crown{animation:none!important}.fall{display:none}.spark{opacity:.5}}
+</style>
+<!-- Three broad meadow contours give depth without dense detail. -->
+<path d="M0 980c204-72 327-8 523 24 294 47 592-100 917-41v237H0Z" fill="#E5EBE0"/>
+<path d="M0 1070c232-90 440 15 702 2 272-14 505-85 738-24v152H0Z" fill="url(#grass)"/>
+<path d="M0 1162c214-58 379-15 557-8 361 15 569-62 883-35v81H0Z" fill="#CFDCC4" opacity=".45"/>
+</svg>

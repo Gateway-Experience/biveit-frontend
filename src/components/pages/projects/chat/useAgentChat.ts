@@ -8,9 +8,8 @@ import {
   subscribeToConversationEvents, uploadAttachments,
 } from 'src/services/chat';
 import {
-  findLastSpokenMessage, findPendingInteractions, getChatIntroState, getIntroductionOverdueAtMs, hasOlderMessages,
-  isAgentPresumedWorking,
-  isSignalMessage, mergeMessages,
+  findLastSpokenMessage, findPendingInteractions, getChatIntroState, getIntroductionOverdueAtMs, getTurnSilenceEndsAtMs,
+  hasOlderMessages, isAgentWorking as getIsAgentWorking, isSignalMessage, mergeMessages,
 } from 'src/services/chatLog';
 import type { AgentSessionStatus, AiMessage, Attachment, InteractionAnswer, PostChatMessageBody } from 'src/types/chat';
 
@@ -43,9 +42,12 @@ export default function useAgentChat(projectId: number, options: {
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   // Set when an older page fails, so the auto-load doesn't hammer a failing endpoint; the UI offers a retry.
   const [hasLoadOlderFailed, setHasLoadOlderFailed] = useState(false);
-  // Seqs of the messages this tab posted successfully. Only those make the agent count as "working" (see
-  // isAgentPresumedWorking), so a reply that never came for an older or failed message can't lock the chat.
+  // Seqs of the messages this tab posted successfully. Only used for conversations still on an older runner
+  // (see isAgentWorking's fallback), so a reply that never came for an older or failed message can't lock the chat.
   const [sentSeqs, setSentSeqs] = useState<number[]>([]);
+  // The newest seq we had when this tab's resend of an undelivered message went through, or null: the agent
+  // counts as working on it until its next AGENT_IDLE (see isAgentWorking).
+  const [handedOverAfterSeq, setHandedOverAfterSeq] = useState<number | null>(null);
   // A message was stored but didn't reach the agent (AGENT_UNAVAILABLE): the newest seq we had when that
   // happened, or null. It stops counting once the agent says anything after it (see `hasUndeliveredMessage`),
   // which doesn't depend on the stored message itself arriving on the stream.
@@ -166,6 +168,7 @@ export default function useAgentChat(projectId: number, options: {
     try {
       const resentMessage = await resendLastMessage(conversationId as number);
       setUndeliveredAfterSeq(null);
+      setHandedOverAfterSeq(_.last(messages)?.seq ?? 0);
       setSentSeqs(previous => [...previous, resentMessage.seq]);
     } catch (error) {
       // The agent replied in the meantime: nothing left to resend.
@@ -177,7 +180,7 @@ export default function useAgentChat(projectId: number, options: {
     } finally {
       setIsResending(false);
     }
-  }, [conversationId, notify, t]);
+  }, [conversationId, messages, notify, t]);
 
   // `attachmentPaths` come from `uploadFiles`; a message needs text, attachments, or both.
   const sendText = useCallback(
@@ -211,9 +214,21 @@ export default function useAgentChat(projectId: number, options: {
   // so the chat needs its own.
   const isSessionDown = sessionStatus === 'failed' && introState === 'started';
   // Also "working" while its opening message is on the way: the session is up, it just hasn't spoken yet.
+  // The clock a hung turn is judged by (see isAgentWorking): moved on when the log's been silent too long,
+  // nothing else having changed.
+  const [turnCheckedAtMs, setTurnCheckedAtMs] = useState(() => Date.now());
+  const turnSilenceEndsAtMs = getTurnSilenceEndsAtMs(messages || []);
+  useEffect(() => {
+    if (_.isNull(turnSilenceEndsAtMs)) {
+      return;
+    }
+    const timer = setTimeout(() => setTurnCheckedAtMs(Date.now()), Math.max(0, turnSilenceEndsAtMs - Date.now()) + 100);
+    return () => clearTimeout(timer);
+  }, [turnSilenceEndsAtMs]);
   const isAgentWorking = useMemo(
-    () => introState === 'awaiting-agent' || isAgentPresumedWorking(messages || [], sentSeqs),
-    [introState, messages, sentSeqs],
+    () => introState === 'awaiting-agent'
+      || getIsAgentWorking(messages || [], { sentSeqs, handedOverAfterSeq, nowMs: Math.max(turnCheckedAtMs, Date.now()) }),
+    [introState, messages, sentSeqs, handedOverAfterSeq, turnCheckedAtMs],
   );
 
   return {

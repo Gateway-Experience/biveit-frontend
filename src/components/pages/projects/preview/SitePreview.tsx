@@ -5,7 +5,6 @@ import { cn } from 'cn';
 import { ArrowLeftIcon, ArrowRightIcon, MonitorIcon, RotateCwIcon, SmartphoneIcon, TriangleAlertIcon } from 'lucide-react';
 
 import BuildSketch from 'src/components/pages/projects/preview/BuildSketch';
-import { BuildStatus } from 'src/components/pages/projects/preview/BuildIndicator';
 import { Button } from 'src/components/shadui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from 'src/components/shadui/input-group';
 import { Spinner } from 'src/components/common/Spinner';
@@ -179,16 +178,11 @@ export default function SitePreview({ state, siteUrl, build, buildSketch, classN
         )}
         {/* While the agent builds, an animation of the site being put together covers the panel: the real site
             underneath may be half-done or still the previous build, which reads as "nothing's happening". It
-            also keeps hands off the page meanwhile. The playful status says in plain words that it's busy. */}
+            also keeps hands off the page meanwhile. The status and timer are in the chat's build panel
+            (BuildProgressPanel), so they aren't repeated here. */}
         {isLive && build && (
           <div data-section='preview-building' className='absolute inset-0 animate-in fade-in-0 duration-500'>
             <BuildSketch siteName={buildSketch.siteName} tagline={buildSketch.tagline} className='absolute inset-0' />
-            <div className='absolute inset-x-0 bottom-4 flex justify-center'>
-              {/* On a card-coloured pill so it stands out over the sketch. */}
-              <div className='rounded-full bg-card px-5 py-2.5 shadow-lg ring-1 ring-foreground/10'>
-                <BuildStatus since={build.since} className='text-sm' />
-              </div>
-            </div>
           </div>
         )}
       </div>

@@ -7,6 +7,9 @@ import { ChevronLeftIcon } from 'lucide-react';
 
 import LinkButton from 'src/components/common/LinkButton';
 import AgentChat from 'src/components/pages/projects/chat/AgentChat';
+import ProjectProgress from 'src/components/pages/projects/ProjectProgress';
+import PanelResizeHandle from 'src/components/pages/projects/PanelResizeHandle';
+import { WorkspaceBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import DeployPanel from 'src/components/pages/projects/deploy/DeployPanel';
 import SiteReadyModal from 'src/components/pages/projects/deploy/SiteReadyModal';
 import useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
@@ -19,11 +22,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/
 import { getPreviewState } from 'src/services/devenv';
 import { getProjects } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
-import { useMediaQuery, usePrevious } from 'src/utils/hooks';
+import { useElementSize, useMediaQuery, usePrevious } from 'src/utils/hooks';
 import type { Project } from 'src/types/project';
 
 // Tailwind's `lg`: from here up the preview sits beside the chat; below it, it's a tab in the chat panel.
 const _SIDE_BY_SIDE_QUERY = '(min-width: 1024px)';
+
+// The chat's width beside the preview, in px: by default 26rem (45rem on Tailwind's `xl` screens and up), or
+// whatever the user dragged it to (kept in this browser, see _readStoredChatWidth). Never narrower than the
+// minimum, and never so wide the preview gets squeezed below its own.
+const _WIDE_SCREEN_QUERY = '(min-width: 1280px)';
+const _CHAT_DEFAULT_WIDTH_PX = { normal: 416, wide: 720 };
+const _CHAT_MIN_WIDTH_PX = 352;
+const _PREVIEW_MIN_WIDTH_PX = 420;
+// The handle between the panels, which also makes the gap between them (its w-4).
+const _HANDLE_WIDTH_PX = 16;
+const _CHAT_WIDTH_STORAGE_KEY = 'biveit:workspace-chat-width';
+
+// The width the user last dragged the chat to, or null (never, or storage isn't available). A per-browser
+// convenience only, so any trouble reading it just means the default.
+function _readStoredChatWidth() {
+  try {
+    const storedWidth = Number(window.localStorage.getItem(_CHAT_WIDTH_STORAGE_KEY));
+    return storedWidth > 0 ? storedWidth : null;
+  } catch {
+    return null;
+  }
+}
+
+function _storeChatWidth(width: number | null) {
+  try {
+    if (_.isNull(width)) {
+      window.localStorage.removeItem(_CHAT_WIDTH_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(_CHAT_WIDTH_STORAGE_KEY, String(width));
+    }
+  } catch {
+    // Private mode or blocked storage: the width just won't be remembered.
+  }
+}
 
 // The page's width while it's chat only (spec-ing): a step wider than the site's usual content width, since
 // the chat is the whole page then.
@@ -31,7 +68,8 @@ const _CHAT_ONLY_WIDTH_CLASS = 'max-w-5xl';
 
 // The panels take whatever height the screen has left under the title row (the layout's `isWorkspace` makes
 // the page exactly screen-tall). Below the minimum, the page scrolls instead of squashing the chat.
-const _PANEL_CLASS = 'min-h-[26rem] overflow-hidden rounded-2xl bg-background ring-1 ring-foreground/10';
+// The shadow lifts them off the backdrop.
+const _PANEL_CLASS = 'min-h-[26rem] overflow-hidden rounded-2xl bg-background shadow-xl shadow-foreground/8 ring-1 ring-foreground/10';
 
 // Original purpose: a single project's workspace — the agent chat, plus the site preview once the agent
 // has started implementing (specing is chat only, at the usual page width; implementing uses the full
@@ -51,6 +89,23 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   // The agent says when it's building in the chat itself (signals), so it's read off the messages.
   const activeBuild = useActiveBuild(chat.messages);
   const isSideBySide = useMediaQuery(_SIDE_BY_SIDE_QUERY);
+  const isWideScreen = useMediaQuery(_WIDE_SCREEN_QUERY);
+  // The user's own chat width (null = the default), and the room the two panels share.
+  const [chosenChatWidth, setChosenChatWidth] = useState<number | null>(_readStoredChatWidth);
+  const [setPanelsElement, panelsSize] = useElementSize<HTMLDivElement>();
+  // Not measured yet on the first render (0): no upper limit until it is, rather than a squashed chat for a frame.
+  const maxChatWidth = panelsSize.width
+    ? Math.max(_CHAT_MIN_WIDTH_PX, panelsSize.width - _HANDLE_WIDTH_PX - _PREVIEW_MIN_WIDTH_PX)
+    : Infinity;
+  const chatWidth = _.clamp(
+    chosenChatWidth ?? (isWideScreen ? _CHAT_DEFAULT_WIDTH_PX.wide : _CHAT_DEFAULT_WIDTH_PX.normal),
+    _CHAT_MIN_WIDTH_PX,
+    maxChatWidth,
+  );
+  const chooseChatWidth = (width: number | null) => {
+    setChosenChatWidth(width);
+    _storeChatWidth(width);
+  };
   // Until the status is known, assume specing: no preview, no wide layout.
   const previewState = devenv ? getPreviewState(devenv) : 'specing';
   // What the building animation calls the site: its name, and the first sentence of what it's about.
@@ -106,6 +161,16 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
         <h1 className='truncate font-heading text-lg font-bold tracking-[-0.02em]'>{project?.name}</h1>
       </div>
 
+      <WorkspaceBackdrop />
+      {project && (
+        // As wide as the chat frame under it: the whole row while it's chat only, the chat's own width beside the preview.
+        <ProjectProgress
+          stage={devenv?.stage || project.stage}
+          implementationDoneAt={devenv?.implementation_done_at}
+          className='mb-4'
+          style={hasSidePanel ? { width: chatWidth } : undefined}
+        />
+      )}
       <SiteReadyModal open={isSiteReadyModalOpen} onClose={() => setIsSiteReadyModalOpen(false)} />
 
       {_.isUndefined(project) && (
@@ -115,8 +180,12 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
       {project && (
         // The chat keeps its place in the tree whatever the layout, so switching layouts (the preview
         // arriving, or the window being resized) never remounts it — the draft and scroll position stay.
-        <div className='flex min-h-0 flex-1 gap-4'>
-          <div className={cn(_PANEL_CLASS, 'min-w-0', preview && isSideBySide ? 'w-[26rem] flex-none xl:w-[45rem]' : 'flex-1')}>
+        <div ref={setPanelsElement} className={cn('flex min-h-0 flex-1', !hasSidePanel && 'gap-4')}>
+          <div
+            data-workspace-panel='chat'
+            className={cn(_PANEL_CLASS, 'min-w-0', hasSidePanel ? 'flex-none' : 'flex-1')}
+            style={hasSidePanel ? { width: chatWidth } : undefined}
+          >
             <AgentChat
               projectId={project.id}
               bootstrapData={project.bootstrap_data}
@@ -124,16 +193,26 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
               onRetrySession={session.retry}
               isRetryingSession={session.isRetrying}
               preview={hasSidePanel ? null : preview}
-              isPreviewBuilding={!!activeBuild}
+              activeBuild={activeBuild}
               deploy={hasSidePanel ? null : deploy}
               className='h-full'
             />
           </div>
           {hasSidePanel && (
+            <PanelResizeHandle
+              width={chatWidth}
+              minWidth={_CHAT_MIN_WIDTH_PX}
+              maxWidth={maxChatWidth}
+              onResize={chooseChatWidth}
+              onReset={() => chooseChatWidth(null)}
+            />
+          )}
+          {hasSidePanel && (
             // Tabbed like the chat beside it. Deploy only once there's a finished site.
             <Tabs
               value={deploy ? sidePanelTab : 'preview'}
               onValueChange={setSidePanelTab}
+              data-workspace-panel='side'
               className={cn(_PANEL_CLASS, 'min-w-0 flex-1 gap-0')}
             >
               <div className='flex items-center gap-3 border-b pr-4'>

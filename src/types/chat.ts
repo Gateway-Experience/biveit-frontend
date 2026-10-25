@@ -61,13 +61,21 @@ export type ToolResultBlock = { type: 'tool_result'; tool_use_id: string; conten
 //   IMPLEMENTATION_STARTED    the user approved the spec
 //   IMPLEMENTATION_DONE       the user signed off the built site
 //   DEVENV_FAILED             setting up the dev environment failed; description = why
-export type SignalSlug = 'BUILDING' | 'BUILDING_DONE' | 'IMPLEMENTATION_STARTED' | 'IMPLEMENTATION_DONE' | 'DEVENV_FAILED';
+//   AGENT_IDLE                the agent finished a turn (meta.source 'runner'), or the platform closed it (see
+//                             isAgentWorking)
+export type SignalSlug = 'BUILDING' | 'BUILDING_DONE' | 'IMPLEMENTATION_STARTED' | 'IMPLEMENTATION_DONE' | 'DEVENV_FAILED'
+  | 'AGENT_IDLE';
 export type SignalBlock = { type: 'signal'; slug: SignalSlug | string; description?: string; meta?: Record<string, unknown> };
+
+// A reply the agent suggests the user send next, at the end of one of its messages. Not shown in the
+// transcript: while it's still the last thing said, the composer offers it as a tap-to-use hint.
+// References: biveit-session-runner channel.SUGGESTED_REPLY_BLOCK_TYPE (where the agent's tag becomes this block).
+export type SuggestedReplyBlock = { type: 'suggested_reply'; text: string };
 
 // The BE stores blocks verbatim and the set of types keeps growing, so anything unrecognized is skipped.
 export type UnknownBlock = { type: string; [key: string]: unknown };
 
-export type ContentBlock = TextBlock | AttachmentBlock | ToolUseBlock | ToolResultBlock | SignalBlock | UnknownBlock;
+export type ContentBlock = TextBlock | AttachmentBlock | ToolUseBlock | ToolResultBlock | SignalBlock | SuggestedReplyBlock | UnknownBlock;
 
 export type AiMessage = {
   id: number;

@@ -7,12 +7,14 @@ import DefaultLayout from 'src/components/layouts/DefaultLayout';
 import PublicLayout from 'src/components/layouts/PublicLayout';
 import ProjectList from 'src/components/pages/projects/ProjectList';
 import ProjectDetail from 'src/components/pages/projects/ProjectDetail';
+import ProjectTrash from 'src/components/pages/projects/ProjectTrash';
 import UserProfile from 'src/components/pages/UserProfile';
 import Login from 'src/components/pages/auth/Login';
 import Register from 'src/components/pages/auth/Register';
 import ForgotPassword from 'src/components/pages/auth/ForgotPassword';
 import ResetPassword from 'src/components/pages/auth/ResetPassword';
 import PrivacyPolicy from 'src/components/pages/PrivacyPolicy';
+import TermsOfService from 'src/components/pages/TermsOfService';
 import CookiePolicy from 'src/components/pages/CookiePolicy';
 import Pricing from 'src/components/pages/Pricing';
 import { PATHS } from 'src/utils/constants';
@@ -66,12 +68,14 @@ function AppRoutes() {
       <Route path='/' element={<HomeRoute />} />
       <Route element={<DefaultLayout />}>
         <Route path={PATHS.projects} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
+        <Route path={PATHS.trash} element={<ProtectedRoute><ProjectTrash /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path='/showcase' element={<ShowCase />} />
         <Route path={PATHS.admin} element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path={`${PATHS.admin}/projects/:projectId`} element={<AdminRoute><AdminProjectDetail /></AdminRoute>} />
       </Route>
       <Route element={<OpenPageLayout />}>
+        <Route path={PATHS.termsOfService} element={<TermsOfService />} />
         <Route path={PATHS.privacyPolicy} element={<PrivacyPolicy />} />
         <Route path={PATHS.cookiePolicy} element={<CookiePolicy />} />
         <Route path={PATHS.pricing} element={<Pricing />} />

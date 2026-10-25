@@ -24,6 +24,10 @@
   --color-brand-ink: var(--brand-ink);
   --color-brand-ink-foreground: var(--brand-ink-foreground);
   --color-brand-strong: var(--brand-strong);
+  --color-brand-lavender: var(--brand-lavender);
+  --color-backdrop-top: var(--backdrop-top);
+  --color-backdrop-bottom: var(--backdrop-bottom);
+  --color-dashboard-backdrop: var(--dashboard-backdrop);
   /* One font for everything: Commissioner, a Myriad-like humanist sans, for headings and body alike (the
      heading token stays so headings can move to their own font again with a one-line change). It covers
      Latin, Vietnamese and Cyrillic. Pick fonts that ship a Vietnamese subset, otherwise accented letters get
@@ -115,6 +119,8 @@
   --scrim: oklch(0 0 0 / 40%);
   --scrim-strong: oklch(0 0 0 / 80%);
   --scrim-foreground: oklch(1 0 0);
+  /* The guided tour's dim around its spotlight (SpotlightTour): the brand's navy, see-through. */
+  --spotlight-scrim: oklch(0.2 0.03 245 / 62%);
   /* Soft tint behind emphasised words and other light brand washes: pale lime. */
   --highlight: #E7F8BF;
   /* The brand lime and a deeper lime: the two ends of the brand gradient (logo tile, progress bars, glows,
@@ -129,6 +135,21 @@
      itself is too pale to read on white, so here it's a deep lime-green from the same hue (5.6:1 on the
      page). Dark theme: the lime itself, which reads fine on navy. */
   --brand-strong: #4A7012;
+  /* The lavender of the logo's "it" (sampled from the wordmark): a touch deeper than --primary. The same in both
+     themes, like the wordmark. */
+  --brand-lavender: #B29BE5;
+  /* The project workspace's backdrop under its picture (WorkspaceBackdrop): lavender mist at the top fading to a
+     pale lime haze. Only seen in the dark theme (its night sky, below) or before the picture has loaded. */
+  --backdrop-top: #E5DEF5;
+  --backdrop-bottom: #EDF4DD;
+  /* The projects page's backdrop: the warm white its artwork (`dashboard-washes`, `dashboard-outlines`) is
+     drawn on. The art is light-only: the dark theme shows just this. */
+  --dashboard-backdrop: #F8FAF3;
+  /* The project page's daytime sky (the `daydream-backdrop`): pale blue up top, through a misty green to warm
+     cream at the horizon. Light theme only: the dark one keeps its night sky (--backdrop-top/bottom). */
+  --daydream-sky-top: #DCECF1;
+  --daydream-sky-middle: #EFF4ED;
+  --daydream-sky-bottom: #F7F5E5;
   /* The sidebar is a plain surface with a hairline border, so the lime logo and buttons carry
      the brand. These only reference other tokens, so they follow .dark without being redeclared. */
   --sidebar: var(--card);
@@ -177,6 +198,11 @@
   --brand-ink: #0F1E2A;
   --brand-ink-foreground: #EEF2F5;
   --brand-strong: #C9F56A;
+  --brand-lavender: #B29BE5;
+  /* A night sky: deep indigo fading to the darkest navy, below the panels' own navy. */
+  --backdrop-top: #1A1C38;
+  --backdrop-bottom: #09131A;
+  --dashboard-backdrop: var(--background);
 }
 
 /* Rendered markdown (`prose`, from @tailwindcss/typography) takes its colours from the theme instead of
@@ -218,6 +244,31 @@
     @apply font-sans;
     scrollbar-gutter: stable;
   }
+  /* ...except on pages with a full-bleed backdrop, where the kept room would show as a bare strip down its right
+     edge: a project's workspace (WorkspaceBackdrop; it's exactly screen-tall and never scrolls the page anyway)
+     and the projects page (DashboardBackdrop; there the strip's the worse deal than a one-off shift once the
+     list outgrows the screen, with scrollbars that take up space). */
+  html:has([data-component='workspace-backdrop']),
+  html:has([data-component='dashboard-backdrop']) {
+    scrollbar-gutter: auto;
+  }
+  /* Intentions: and since it never scrolls the page, lock the page for real. On phones, a drag that starts
+     on something that can't scroll itself (like the gap between two cards) otherwise falls through to the
+     page and drags the whole screen (or rubber-bands it on iOS), instead of just the chat or Site plan. */
+  html:has([data-component='workspace-backdrop']),
+  html:has([data-component='workspace-backdrop']) body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  /* Intentions: while a panel edge is dragged (PanelResizeHandle): the drag cursor everywhere, no text selection,
+     and no iframe (the site preview) catching the pointer. */
+  html[data-panel-resizing] {
+    cursor: col-resize;
+    user-select: none;
+  }
+  html[data-panel-resizing] iframe {
+    pointer-events: none;
+  }
   /* Line breaking for languages without spaces between words (or with different rules): Japanese
      breaks at natural phrase boundaries instead of mid-word (where supported), and Korean keeps its
      space-separated words whole, the way Korean text is normally set. */
@@ -227,4 +278,77 @@
   :lang(ko) {
     word-break: keep-all;
   }
+}
+
+/* Intentions: the two backdrops' art, as layers of fixed-size pieces (made by cutting the designers' pictures
+   apart): each piece is drawn at its natural size and pinned where it belongs, so the art looks the same on a
+   laptop and on a huge screen. Only plain fills stretch with the window: the sky, and the meadow strips (their
+   gentle hills don't mind being stretched sideways). Layers are listed top first.
+   The ?v= on each piece's URL is bumped whenever the piece changes: browsers (Firefox especially) otherwise keep
+   showing a cached old piece next to new ones. */
+
+/* The projects page (DashboardBackdrop): a lime glow off the bottom-left corner and a lavender one off the
+   bottom-right, behind a website outline in each corner (the right one with a small chat bubble). The glows are
+   CSS gradients, not SVG ones: browsers smooth these, while Firefox draws faint gradients in an SVG background as
+   visible rings. */
+@utility dashboard-washes {
+  background-image:
+    radial-gradient(620px 460px at calc(100% - 20px) calc(100% - 60px), color-mix(in srgb, var(--primary) 18%, transparent), transparent),
+    radial-gradient(580px 430px at 65px calc(100% - 30px), color-mix(in srgb, var(--brand-light) 20%, transparent), transparent);
+}
+@utility dashboard-outlines {
+  background-image: url(/dashboard-outline-left.svg?v=2), url(/dashboard-outline-right.svg?v=2);
+  background-position: left bottom, right bottom;
+  background-repeat: no-repeat;
+}
+
+/* The project page (WorkspaceBackdrop): a daytime meadow. Grass and flowers in the bottom corners, over the front
+   meadow strip, over the tree pinned bottom-right (its trunk's base hides behind that strip, so its root is always
+   on the bottom edge), over the back meadow strip, over the clouds and sparkles at the top (with the sun and one
+   cloud pinned to the top-left corner, since they hang off the picture's edge), over the sky. */
+@utility daydream-backdrop {
+  background-image:
+    url(/daydream-grass-left.svg?v=2),
+    url(/daydream-grass-right.svg?v=2),
+    url(/daydream-meadow-front.svg?v=2),
+    url(/daydream-tree.svg?v=2),
+    url(/daydream-meadow-back.svg?v=2),
+    url(/daydream-sky.svg?v=2),
+    url(/daydream-sky-left.svg?v=2),
+    linear-gradient(var(--daydream-sky-top), var(--daydream-sky-middle) 65%, var(--daydream-sky-bottom));
+  background-position: 40px bottom, right bottom, left bottom, right bottom, left bottom, center top, left top, 0 0;
+  background-size: auto, auto, 100% 100px, auto, 100% 300px, auto, auto, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* Intentions: the rabbits playing across the project page's meadow (WorkspaceBackdrop's _RABBITS). Each one is a
+   runner (crosses the meadow) holding the rabbit itself (bounds). They cross in the first half of the loop and are
+   offscreen for the rest, so the meadow is quiet most of the time. 100cqw is the meadow band's width (it's the
+   container), so they cross the whole window whatever its size.
+   rabbit-run    a steady pace, for the one being chased
+   rabbit-chase  the chaser: speeds up to close the gap, eases off, speeds up again, every change of pace eased
+   rabbit-hop    one bound: a small squash to push off, up nose-first on an eased arc, down nose-first, and a
+                 squash on landing */
+@keyframes daydream-rabbit-run {
+  0% { transform: translateX(-80px); }
+  50%, 100% { transform: translateX(calc(100cqw + 80px)); }
+}
+@keyframes daydream-rabbit-chase {
+  0% { transform: translateX(-80px); animation-timing-function: ease-in-out; }
+  16% { transform: translateX(26cqw); animation-timing-function: ease-in-out; }
+  27% { transform: translateX(40cqw); animation-timing-function: ease-in-out; }
+  38% { transform: translateX(72cqw); animation-timing-function: ease-in-out; }
+  50%, 100% { transform: translateX(calc(100cqw + 80px)); }
+}
+@keyframes daydream-rabbit-hop {
+  0% { transform: translateY(0) rotate(0deg) scale(1.04, 0.94); animation-timing-function: ease-out; }
+  12% { transform: translateY(-2px) rotate(-5deg) scale(0.98, 1.04); animation-timing-function: ease-out; }
+  45% { transform: translateY(-15px) rotate(-2deg) scale(1, 1); animation-timing-function: ease-in; }
+  85% { transform: translateY(0) rotate(5deg) scale(1, 1); animation-timing-function: ease-out; }
+  100% { transform: translateY(0) rotate(0deg) scale(1.04, 0.94); }
+}
+/* Flat white, no outline or shadow: a plain 2D shape on the grass. */
+@utility daydream-rabbit {
+  background: url(/daydream-rabbit.svg?v=3) center / contain no-repeat;
+  transform-origin: bottom center;
 }

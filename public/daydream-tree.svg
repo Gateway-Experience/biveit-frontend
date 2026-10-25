@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="730" viewBox="1080 470 360 730" fill="none">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#DCECF1"/><stop offset=".65" stop-color="#EFF4ED"/><stop offset="1" stop-color="#F7F5E5"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#FFF9D9" stop-opacity=".95"/><stop offset="1" stop-color="#FFF9D9" stop-opacity="0"/></radialGradient>
+ <linearGradient id="grass" x2="0" y2="1"><stop stop-color="#E7EDDF"/><stop offset="1" stop-color="#D9E3D0"/></linearGradient>
+ <g id="leaf"><path d="M-10 2C-7-10 5-13 13-10 13 1 2 8-10 2Z" fill="#B8C5A9"/><path d="m-9 2 16-9" stroke="#9EAC91" stroke-width="1"/></g>
+ <path id="star" d="M0-8 2-2 8 0 2 2 0 8-2 2-8 0-2-2Z" fill="#FFFDF0"/>
+ <g id="cloud" fill="#FFFDF7"><path d="M0 36C-2 21 12 10 29 13 35-6 66-6 77 12 93 1 118 11 120 28 141 24 157 36 155 46H0Z"/><path d="M14 50h120" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity=".4"/></g>
+</defs>
+<style>
+@keyframes cloudDrift{0%,100%{transform:translateX(-14px)}50%{transform:translateX(24px)}}
+@keyframes shimmer{0%,100%{opacity:.16;transform:scale(.65)}50%{opacity:.8;transform:scale(1)}}
+@keyframes leafFall{0%{transform:translate(0,0) rotate(-10deg);opacity:0}5%{transform:translate(0,0) rotate(-10deg);opacity:.85}10%{transform:translate(-5px,10px) rotate(8deg);opacity:.85}30%{transform:translate(-36px,105px) rotate(55deg)}55%{transform:translate(-12px,220px) rotate(-25deg)}80%{transform:translate(-72px,340px) rotate(75deg);opacity:.75}96%{opacity:.4}100%{transform:translate(-100px,460px) rotate(130deg);opacity:0}}
+@keyframes crownSway{0%,100%{transform:rotate(-.6deg)}50%{transform:rotate(.6deg)}}
+.cloud{animation:cloudDrift 26s ease-in-out infinite}.cloud.b{animation-duration:34s;animation-delay:-15s}.cloud.c{animation-duration:30s;animation-delay:-8s}
+.spark{animation:shimmer 7s ease-in-out infinite}.spark.b{animation-delay:-2.5s;animation-duration:9s}.spark.c{animation-delay:-5s;animation-duration:8s}
+.fall{animation:leafFall 18s linear infinite;opacity:0}.fall.b{animation-delay:-6s;animation-duration:22s}.fall.c{animation-delay:-12s;animation-duration:20s}.fall.d{animation-delay:-15s;animation-duration:25s}
+.crown{transform-origin:1335px 820px;animation:crownSway 14s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.cloud,.spark,.fall,.crown{animation:none!important}.fall{display:none}.spark{opacity:.5}}
+</style>
+<!-- Tall tree anchored at bottom right, with a gently asymmetrical crown. -->
+<g>
+<path d="M1295 1175c27-91 29-174 29-240l-12-197 28-13 20 210c4 94 10 183 33 240Z" fill="#A3AB93"/>
+<path d="M1333 1019c-2-100-12-178-44-232l-60-67 12-13 69 62c23 32 39 72 43 112Z" fill="#A3AB93"/>
+<path d="M1340 937c18-73 41-111 85-143l15-9v28c-45 25-64 74-78 138Z" fill="#A3AB93"/>
+<path d="M1334 1160c13-138 8-244-1-328" stroke="#C4C6AF" stroke-width="5" stroke-linecap="round" opacity=".65"/>
+<g class="crown">
+ <path d="M1153 751c-29-27-17-72 16-90-16-41 14-89 61-87 4-39 45-64 83-45 34-31 86-16 100 20 43-12 85 20 82 62 43 17 53 66 25 97 17 40-8 81-49 86-10 42-59 61-97 40-29 25-76 17-96-14-53 15-94-13-94-49-12-4-23-11-31-20Z" fill="#ABBDA0"/>
+ <path d="M1167 668c-7-31 19-62 51-61 1-35 33-61 68-51 30-32 75-21 91 9 44-10 77 19 77 54 32 8 47 36 35 62-31 17-57 13-77-1-26 27-63 26-84 6-30 21-65 11-78-9-35 17-62 10-83-9Z" fill="#C2D0AE"/>
+ <path d="M1197 620c8-17 26-26 45-22 12-26 39-35 64-22 24-20 58-15 72 7 26-4 51 10 58 29-28-6-44 2-59 14-21-13-45-14-65 0-23-10-43-9-61 5-24-13-37-15-54-11Z" fill="#D3DFBE"/>
+ <path d="M1187 748c27 24 48 24 72 15 27 28 67 30 94 12 28 21 67 15 89-7" stroke="#95AC8F" stroke-width="23" stroke-linecap="round" opacity=".36"/>
+</g>
+</g>
+<!-- Each leaf starts within the actual canopy, pauses, then detaches. -->
+<g transform="translate(1190 735)"><g class="fall" style="animation-duration:20s;animation-delay:-0.0s"><g transform="scale(0.62)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1220 755)"><g class="fall" style="animation-duration:22s;animation-delay:-2.9s"><g transform="scale(0.74)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1250 770)"><g class="fall" style="animation-duration:24s;animation-delay:-5.8s"><g transform="scale(0.86)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1280 780)"><g class="fall" style="animation-duration:26s;animation-delay:-8.7s"><g transform="scale(0.98)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1310 775)"><g class="fall" style="animation-duration:28s;animation-delay:-11.6s"><g transform="scale(0.62)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1340 790)"><g class="fall" style="animation-duration:30s;animation-delay:-14.5s"><g transform="scale(0.74)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1370 778)"><g class="fall" style="animation-duration:20s;animation-delay:-17.4s"><g transform="scale(0.86)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1400 762)"><g class="fall" style="animation-duration:22s;animation-delay:-20.3s"><g transform="scale(0.98)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1425 745)"><g class="fall" style="animation-duration:24s;animation-delay:-23.2s"><g transform="scale(0.62)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1205 710)"><g class="fall" style="animation-duration:26s;animation-delay:-26.1s"><g transform="scale(0.74)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1235 732)"><g class="fall" style="animation-duration:28s;animation-delay:-29.0s"><g transform="scale(0.86)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1265 750)"><g class="fall" style="animation-duration:30s;animation-delay:-31.9s"><g transform="scale(0.98)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1295 757)"><g class="fall" style="animation-duration:20s;animation-delay:-34.8s"><g transform="scale(0.62)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1325 763)"><g class="fall" style="animation-duration:22s;animation-delay:-37.7s"><g transform="scale(0.74)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1355 750)"><g class="fall" style="animation-duration:24s;animation-delay:-40.6s"><g transform="scale(0.86)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1385 735)"><g class="fall" style="animation-duration:26s;animation-delay:-43.5s"><g transform="scale(0.98)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1415 720)"><g class="fall" style="animation-duration:28s;animation-delay:-46.4s"><g transform="scale(0.62)"><use href="#leaf"/></g></g></g>
+<g transform="translate(1245 715)"><g class="fall" style="animation-duration:30s;animation-delay:-49.3s"><g transform="scale(0.74)"><use href="#leaf"/></g></g></g>
+</svg>

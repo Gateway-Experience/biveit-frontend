@@ -1,8 +1,8 @@
 import _ from 'lodash';
 
 import type {
-  AgentSessionStatus, AiMessage, AskUserQuestion, ChatIntroState, InteractionResult, SignalBlock, ToolResultBlock,
-  ToolUseBlock,
+  AgentSessionStatus, AiMessage, AskUserQuestion, ChatIntroState, InteractionResult, SignalBlock, SuggestedReplyBlock,
+  ToolResultBlock, ToolUseBlock,
 } from 'src/types/chat';
 import type { DevenvBuild } from 'src/types/preview';
 
@@ -80,6 +80,17 @@ function findLastSpokenMessage(messages: AiMessage[], options: { role?: AiMessag
   return _.findLast(messages, message => !isSignalMessage(message) && (!options.role || message.role === options.role));
 }
 
+// The reply the agent suggested the user send next, while its message is still the last thing said (once
+// the user says anything, it's moot). Null when there's none.
+function getSuggestedReply(messages: AiMessage[]): string | null {
+  const lastMessage = findLastSpokenMessage(messages);
+  if (lastMessage?.role !== 'assistant') {
+    return null;
+  }
+  const suggestion = _.findLast(lastMessage.content, { type: 'suggested_reply' }) as SuggestedReplyBlock | undefined;
+  return _.trim(suggestion?.text) || null;
+}
+
 // The build in progress, if any, read off the BUILDING / BUILDING_DONE signals: on while the latest of them
 // is a BUILDING less than _BUILDING_TTL_MS old. `since` is when the run started (its first BUILDING after
 // the last BUILDING_DONE), `summary` the latest description in it. `nowMs` is the caller's clock — a build
@@ -129,13 +140,55 @@ function getAnsweredQuestions(messages: AiMessage[]): string[] {
   });
 }
 
-// Best guess at "the agent is on it" — the API has no status for it, so it's read off the log: the user
+// A turn the agent has gone quiet on for this long (nothing new in the log at all) is taken as hung: it stops
+// showing as working, so the input unlocks. Generous: a real turn posts something now and then.
+const _TURN_SILENCE_LIMIT_MS = 30 * 60 * 1000;
+
+function _isIdleSignal(message: AiMessage) {
+  return isSignalMessage(message) && _.some(message.content, { slug: 'AGENT_IDLE' });
+}
+
+// When an open turn counts as hung (see isAgentWorking), for the caller's clock to tick at. Null with no log.
+function getTurnSilenceEndsAtMs(messages: AiMessage[]) {
+  const latestMessage = _.last(messages);
+  return latestMessage ? Date.parse(latestMessage.created_at) + _TURN_SILENCE_LIMIT_MS : null;
+}
+
+// Whether the agent is on it, read off the log: the user said something (text, or answers) after the latest
+// AGENT_IDLE, and nothing's waiting on the user. The runner writes an AGENT_IDLE at the end of every turn,
+// and the BE writes one when a session stops or dies, or a message couldn't be handed over — so it holds
+// across tabs and reloads. Also on while a resend this tab made (`handedOverAfterSeq`: the newest seq it had
+// then) has had no AGENT_IDLE since: the resent message is older than the one written when it first failed.
+// A turn silent past _TURN_SILENCE_LIMIT_MS (`nowMs` is the caller's clock) is taken as hung.
+// A conversation whose runner never sent an AGENT_IDLE (meta.source: runner) is still on an older runner,
+// which doesn't: the old guess (_isAgentPresumedWorking) then, until the runner is replaced.
+// References: biveit-session-runner main._post_idle, biveit-backend services/agent/signals.end_open_turn
+function isAgentWorking(messages: AiMessage[], options: { sentSeqs: number[]; handedOverAfterSeq: number | null; nowMs: number }) {
+  const idleMessages = _.filter(messages, _isIdleSignal);
+  const hasRunnerReported = _.some(idleMessages, message => _.some(message.content, { slug: 'AGENT_IDLE', meta: { source: 'runner' } }));
+  if (!hasRunnerReported) {
+    return _isAgentPresumedWorking(messages, options.sentSeqs);
+  }
+  if (!_.isEmpty(findPendingInteractions(messages))) {
+    return false;
+  }
+  const lastIdleSeq = _.last(idleMessages)?.seq ?? 0;
+  const lastUserSeq = _.findLast(messages, { role: 'user' })?.seq ?? 0;
+  const isResentSinceIdle = !_.isNil(options.handedOverAfterSeq) && lastIdleSeq <= options.handedOverAfterSeq;
+  if (lastUserSeq <= lastIdleSeq && !isResentSinceIdle) {
+    return false;
+  }
+  return options.nowMs < (getTurnSilenceEndsAtMs(messages) ?? 0);
+}
+
+// The fallback for conversations still on an older runner (see isAgentWorking), which sends no AGENT_IDLE.
+// Best guess at "the agent is on it", read off the log: the user
 // spoke last (signals don't count as speaking), that wasn't a dismiss (a dismiss closes the question
 // without waking the agent), nothing is still waiting on the user (the agent only resumes once everything
 // it asked is answered), and this tab is the one that sent it (`sentSeqs`: the seqs its successful posts
 // got back) — in which case it waits for the reply indefinitely. Anything else (loaded with the history, sent from another tab, or a send that
 // errored) never counts: a reply that didn't come must not leave the chat locked.
-function isAgentPresumedWorking(messages: AiMessage[], sentSeqs: number[]) {
+function _isAgentPresumedWorking(messages: AiMessage[], sentSeqs: number[]) {
   const lastMessage = findLastSpokenMessage(messages);
   if (lastMessage?.role !== 'user' || !_.includes(sentSeqs, lastMessage.seq) || !_.isEmpty(findPendingInteractions(messages))) {
     return false;
@@ -178,10 +231,12 @@ export {
   getChatIntroState,
   getInteractionResults,
   getIntroductionOverdueAtMs,
+  getSuggestedReply,
+  getTurnSilenceEndsAtMs,
   hasOlderMessages,
   indexToolResults,
   indexToolUses,
-  isAgentPresumedWorking,
+  isAgentWorking,
   isAskUser,
   isRequestActions,
   isShowArtifact,

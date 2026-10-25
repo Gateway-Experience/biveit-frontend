@@ -6,6 +6,7 @@ import { APP_NAME, MAIN_CONTENT_WIDTH_CLASS, PATHS } from 'src/utils/constants';
 
 const FOOTER_LINKS = [
   { labelKey: 'pricing_nav', path: PATHS.pricing },
+  { labelKey: 'terms_title', path: PATHS.termsOfService },
   { labelKey: 'privacy_policy_title', path: PATHS.privacyPolicy },
   { labelKey: 'cookie_policy_title', path: PATHS.cookiePolicy },
 ];

@@ -54,7 +54,35 @@ async function deleteProjectFolder(folderId: number): Promise<void> {
   return callBe({ method: 'DELETE', url: `/project-folders/${folderId}` });
 }
 
-// Gone from the user's list for good (the BE turns off whatever was running for it).
+// The picture of the project's dev site, for its card (only when it has one: see site_preview_at). The time
+// it was taken is in the URL, so each picture has its own URL and the browser can cache it for good.
+function getSitePreviewUrl(project: Project): string {
+  const takenAt = encodeURIComponent(project.site_preview_at || '');
+  return `${import.meta.env.VITE_API_BASE_URL}/projects/${project.id}/site-preview?v=${takenAt}`;
+}
+
+// Whether the user has ever made a project, counting ones since trashed or deleted for good.
+async function getProjectHistory(): Promise<{ has_created_project: boolean }> {
+  return callBe('/projects/history');
+}
+
+// The user's projects in Trash, most recently trashed first.
+async function getTrashedProjects(): Promise<Project[]> {
+  return callBe('/projects/trash');
+}
+
+// Out of the project list and into Trash (the BE turns off whatever was running for it). Resolves to the
+// trashed project.
+async function trashProject(projectId: number): Promise<Project> {
+  return callBe({ method: 'POST', url: `/projects/${projectId}/trash` });
+}
+
+// Out of Trash, back in the list where it was. Resolves to the restored project.
+async function restoreProject(projectId: number): Promise<Project> {
+  return callBe({ method: 'POST', url: `/projects/${projectId}/restore` });
+}
+
+// Gone for good. Only works on a project in Trash.
 async function deleteProject(projectId: number): Promise<void> {
   return callBe({ method: 'DELETE', url: `/projects/${projectId}` });
 }
@@ -65,10 +93,15 @@ export {
   deleteProject,
   deleteProjectFolder,
   getProjectFolders,
+  getProjectHistory,
   getProjects,
+  getSitePreviewUrl,
+  getTrashedProjects,
   openProject,
   renameProject,
   renameProjectFolder,
+  restoreProject,
   searchProjectPrompts,
+  trashProject,
   updateProject,
 };

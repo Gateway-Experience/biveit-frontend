@@ -12,15 +12,18 @@ import {
 import { Button } from 'src/components/shadui/button';
 import { Spinner } from 'src/components/common/Spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
+import AgentWaitLine from 'src/components/pages/projects/chat/AgentWaitLine';
 import ArtifactsPanel from 'src/components/pages/projects/chat/ArtifactsPanel';
+import BuildProgressPanel from 'src/components/pages/projects/chat/BuildProgressPanel';
 import { BuildGlyph } from 'src/components/pages/projects/preview/BuildIndicator';
 import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
 import InteractionPanel from 'src/components/pages/projects/chat/InteractionPanel';
 import ChatMessageItem, { hasVisibleContent, StartingBriefMessage, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
 import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import { getArtifacts } from 'src/services/chat';
-import { getAnsweredQuestions, indexToolResults, indexToolUses } from 'src/services/chatLog';
+import { getAnsweredQuestions, getSuggestedReply, indexToolResults, indexToolUses } from 'src/services/chatLog';
 import type { ChatIntroState } from 'src/types/chat';
+import type { DevenvBuild } from 'src/types/preview';
 
 // Readable column inside a box of any width. Shared by the transcript and the composer so they line up.
 const _COLUMN_CLASS = 'mx-auto w-full max-w-4xl px-4';
@@ -164,7 +167,7 @@ type AgentChatTab = 'chat' | 'documents' | 'preview' | 'deploy';
 // given, as a tab of its own — for screens too narrow to show it beside the chat. Deploy = likewise
 // `deploy`, once there's a finished site to publish.
 // The chat's state comes from the parent (`useAgentChat`), which also needs it to lay the page out.
-export default function AgentChat({ projectId, bootstrapData, chat, onRetrySession, isRetryingSession = false, preview, isPreviewBuilding = false, deploy, className }: {
+export default function AgentChat({ projectId, bootstrapData, chat, onRetrySession, isRetryingSession = false, preview, activeBuild = null, deploy, className }: {
   projectId: number;
   // The new-project form's answers (project.bootstrap_data): shown as the user's first message.
   bootstrapData: Record<string, unknown>;
@@ -173,12 +176,14 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
   onRetrySession: () => void;
   isRetryingSession?: boolean;
   preview?: ReactNode;
-  // The agent is building the site: the Preview tab gets a twinkle so it's noticed from the chat.
-  isPreviewBuilding?: boolean;
+  // The build in progress (useActiveBuild), if any: the Preview tab gets a twinkle so it's noticed from the
+  // chat, and a loading bar takes the input's place.
+  activeBuild?: DevenvBuild | null;
   deploy?: ReactNode;
   className?: string;
 }) {
   const { t } = useTranslation();
+  const isPreviewBuilding = !!activeBuild;
   const {
     conversationId, latestAssistantSeq, messages, introState, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting,
     sendText, submitAnswers, uploadFiles, getFileUrl, loadOlderMessages, isLoadingOlder, hasLoadOlderFailed, hasOlder,
@@ -207,9 +212,10 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
     };
   }, [conversationId, latestAssistantSeq]);
   const answeredQuestions = useMemo(() => getAnsweredQuestions(messages || []), [messages]);
+  const suggestedReply = useMemo(() => getSuggestedReply(messages || []), [messages]);
   // One thing at a time: no sending while history loads, a message is in flight, or the agent is replying.
-  // "Replying" is inferred (see isAgentPresumedWorking) and only ever for a message this tab sent: if that
-  // reply never comes, it stays locked until a refresh — older or failed messages never lock it.
+  // "Replying" is read off the log (see isAgentWorking): the same in every tab and after a reload, and a turn
+  // that never ends unlocks once it's been silent too long.
   // Nor before the conversation has started: the agent speaks first, once its project is set up.
   const isSendDisabled = introState !== 'started' || isPosting || isAgentWorking;
 
@@ -228,6 +234,9 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
     () => _.filter(messages, message => hasVisibleContent(message, renderContext.toolUsesById)),
     [messages, renderContext],
   );
+
+  const isWaitingForUser = introState === 'started' && !isAgentWorking && !isPosting && _.isEmpty(pendingInteractions)
+    && _.last(visibleMessages)?.role === 'assistant';
 
   if (hasLoadFailed) {
     return (
@@ -285,11 +294,30 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
                   </MessageScrollerItem>
                 )}
                 <ChatSetupState introState={introState} onRetry={onRetrySession} />
-                {_.map(visibleMessages, message => (
+                {/* The avatar goes on the first message of each run from one side. The starting brief counts as the
+                    user's, when it's shown (the whole history is loaded). */}
+                {_.map(visibleMessages, (message, index) => (
                   <MessageScrollerItem key={message.seq} messageId={String(message.seq)} className={_SCROLLER_ITEM_CLASS}>
-                    <ChatMessageItem message={message} renderContext={renderContext} />
+                    <ChatMessageItem message={message} renderContext={renderContext} hasAvatar={(index ? visibleMessages[index - 1].role : !hasOlder && 'user') !== message.role} />
                   </MessageScrollerItem>
                 ))}
+                {/* The agent's done and it's the user's move: a quiet pill under its last bubble (offset past the
+                    avatar), so it's clear the chat is waiting on them. Questions waiting for an answer carry their own. */}
+                {isWaitingForUser && (
+                  <MessageScrollerItem className={_SCROLLER_ITEM_CLASS}>
+                    <div data-component='chat-waiting-for-user' className='-mt-2 pl-[2.625rem]'>
+                      <span className='inline-flex items-center gap-2.5 rounded-full bg-brand-light px-4 py-2 text-sm font-semibold text-brand-ink shadow-md shadow-brand-light/40 animate-in fade-in-0 slide-in-from-bottom-1 duration-500'>
+                        {/* A pinging dot: the "it's your turn" cue that catches the eye without moving the layout. In
+                            the logo's lavender, on the lime pill. */}
+                        <span className='relative flex size-2.5'>
+                          <span className='absolute inline-flex size-full animate-ping rounded-full bg-brand-lavender opacity-75' />
+                          <span className='relative inline-flex size-2.5 rounded-full bg-brand-lavender' />
+                        </span>
+                        {t('chat_waiting_for_answer')}
+                      </span>
+                    </div>
+                  </MessageScrollerItem>
+                )}
                 {isAgentWorking && (
                   <MessageScrollerItem className={_SCROLLER_ITEM_CLASS}>
                     <Marker className='animate-in fade-in-0'>
@@ -313,6 +341,7 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
             {(isSessionDown || (isRetryingSession && introState === 'started')) && (
               <ChatRetryBanner messageKey='chat_session_down' isRetrying={isRetryingSession} onRetry={onRetrySession} />
             )}
+            {activeBuild && _.isEmpty(pendingInteractions) && <BuildProgressPanel since={activeBuild.since} />}
             {!_.isEmpty(pendingInteractions) && (
               <InteractionPanelWithSend
                 key={_.map(pendingInteractions, 'id').join(',')}
@@ -323,7 +352,9 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
                 specDocNames={specDocNames}
               />
             )}
-            <div hidden={!_.isEmpty(pendingInteractions)}>
+            {/* Hidden (not unmounted) while building too: the build panel takes its place, and the draft survives. */}
+            <div hidden={!_.isEmpty(pendingInteractions) || isPreviewBuilding}>
+              {isAgentWorking && <AgentWaitLine isBuilding={false} />}
               <ChatComposerWithSend
                 sendText={sendText}
                 onUpload={uploadFiles}
@@ -331,6 +362,8 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
                 isSendDisabled={isSendDisabled}
                 // Uploads need the conversation, which only exists once the chat has loaded.
                 isAttachDisabled={!conversationId}
+                // Not while it couldn't be sent anyway (e.g. the agent is still replying).
+                suggestedReply={isSendDisabled ? null : suggestedReply}
               />
             </div>
           </div>

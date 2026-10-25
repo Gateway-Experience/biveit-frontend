@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { v4 } from 'uuid';
-import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
+import { ArrowUpIcon, PaperclipIcon, SparklesIcon } from 'lucide-react';
 import { cn } from 'cn';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
@@ -26,7 +26,9 @@ type DraftAttachment = { clientId: string; name: string; mime: string; size: num
 // up to a cap. Files (picked with the paperclip, or pasted — handy for screenshots) upload straight
 // away and sit above the text as removable chips; sending waits until they've all landed.
 // Typing is always allowed; only sending is held back (see `isSendDisabled` in AgentChat).
-export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisabled, isAttachDisabled = false }: {
+// When the agent suggested a reply, the empty box shows it in the placeholder's spot: a tap (or Tab) types it
+// in, and Enter sends it. Typing anything else just hides it, like a placeholder.
+export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisabled, isAttachDisabled = false, suggestedReply = null }: {
   // Resolves to false when the send failed, in which case the text and chips are put back.
   onSend: (text: string, attachmentPaths: string[]) => Promise<boolean>;
   // Resolves to the stored files in the order given, or null when the upload failed.
@@ -34,6 +36,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
   getFileUrl: (path: string) => string;
   isSendDisabled: boolean;
   isAttachDisabled?: boolean;
+  suggestedReply?: string | null;
 }) {
   const { t } = useTranslation();
   const notify = useNotification();
@@ -57,6 +60,19 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
   const canSend = !isSendDisabled && !isUploading && (!_.isEmpty(trimmedDraft) || !_.isEmpty(draftAttachments));
 
   const isAtAttachmentLimit = _.size(draftAttachments) >= _MAX_ATTACHMENTS_PER_MESSAGE;
+
+  // Only in an empty box: the hint sits where the placeholder would, which the attachment chips push down.
+  const shownSuggestion = suggestedReply && _.isEmpty(draft) && _.isEmpty(draftAttachments) ? suggestedReply : null;
+
+  function acceptSuggestion(suggestion: string) {
+    setDraft(suggestion);
+    // Next frame, once the text is in: focus with the caret at its end, so Enter sends it straight away.
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      textarea?.focus();
+      textarea?.setSelectionRange(suggestion.length, suggestion.length);
+    });
+  }
 
   async function attachFiles(pickedFiles: File[]) {
     if (isAttachDisabled) {
@@ -147,6 +163,11 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
               e.preventDefault();
               submit();
             }
+            // Tab takes the suggestion, like autocomplete. Only while it's showing, so Tab moves focus as usual otherwise.
+            if (e.key === 'Tab' && !e.shiftKey && shownSuggestion) {
+              e.preventDefault();
+              acceptSuggestion(shownSuggestion);
+            }
           }}
           onPaste={e => {
             const pastedFiles = Array.from(e.clipboardData.files);
@@ -155,7 +176,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
               attachFiles(pastedFiles);
             }
           }}
-          placeholder={t('chat_placeholder')}
+          placeholder={shownSuggestion ? '' : t('chat_placeholder')}
           aria-label={t('chat_placeholder')}
           // flex-none: the input-group stacks vertically here, and its default flex-1 would size the textarea
           // from its row count, ignoring the height set by the auto-grow above.
@@ -165,6 +186,31 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
           // class, which `cn` treats as overriding any earlier leading.
           className={cn('max-h-48 min-h-0 flex-none px-4 pt-2.5 pb-2', CHAT_TEXT_SIZE_CLASS, 'leading-6')}
         />
+        {shownSuggestion && (
+          // Laid over the textarea's first line, lined up with where its placeholder would be (its px-4 pt-2.5 and
+          // line height), so it reads as hint text. Only the hint itself is the button: a click anywhere else in the
+          // box still lands in the textarea to type something else.
+          <button
+            type='button'
+            data-component='chat-suggested-reply'
+            title={t('chat_suggestion_tip')}
+            aria-label={t('chat_suggestion_use', { text: shownSuggestion })}
+            onClick={() => acceptSuggestion(shownSuggestion)}
+            className={cn(
+              'group/suggestion absolute top-2.5 left-4 flex max-w-[calc(100%-2rem)] items-center gap-1.5 rounded-md text-left text-muted-foreground',
+              'outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 animate-in fade-in-0 duration-300',
+              CHAT_TEXT_SIZE_CLASS,
+              'leading-6',
+            )}
+          >
+            <SparklesIcon className='size-3.5 shrink-0 text-ring' />
+            <span className='truncate underline decoration-dotted decoration-muted-foreground/50 underline-offset-4 group-hover/suggestion:decoration-foreground/60'>
+              {shownSuggestion}
+            </span>
+            {/* Desktop only: on phones there's no Tab key, and the tap is the obvious move. */}
+            <kbd className='hidden shrink-0 rounded border bg-muted px-1.5 font-sans text-[0.6875rem] leading-4 text-muted-foreground md:inline'>Tab</kbd>
+          </button>
+        )}
         {/* pt-0: the gap above the buttons lives in the textarea's pb-2 instead, so that strip is clickable text area. */}
         <InputGroupAddon align='block-end' className='justify-between pt-0'>
           <input
