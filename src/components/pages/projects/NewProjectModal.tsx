@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import _ from 'lodash';
 import { Controller, useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { XIcon } from 'lucide-react';
@@ -17,7 +18,8 @@ import { Spinner } from 'src/components/common/Spinner';
 import { createProject } from 'src/services/project';
 import { useProjectListUpdaters } from 'src/components/pages/projects/useProjectLists';
 import { NEW_PROJECT_IDEA_PARAM, PATHS, SITE_KIND_OPTIONS } from 'src/utils/constants';
-import { useOneTimeQueryParams } from 'src/utils/hooks';
+import { useStore } from 'src/state-store';
+import { isSignedInUser } from 'src/services/user';
 
 const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-3.5 py-3 text-base transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15';
 
@@ -61,8 +63,9 @@ type NewProjectFormValues = {
 // Shown as a full-screen modal over whatever page you're on (mounted in DefaultLayout), so closing it just
 // leaves you where you were. Built from the dialog's parts rather than the shared
 // Modal: that one always brings an 80%-black backdrop, which flashed the page dark grey on the way to white.
-// The sheet is opaque and covers everything, so it needs no backdrop at all. Whether it's open is the parent's call. A draft
-// survives closing and reopening it, as long as you stay within the same layout (it's cleared once sent).
+// The sheet is opaque and covers everything, so it needs no backdrop at all. Whether it's open is the parent's call -- except
+// that an idea arriving in the URL opens it (see below). A draft survives closing and reopening it, as long as you stay
+// within the same layout (it's cleared once sent).
 // Flow: submit -> POST /projects -> straight into the new project's page, which opens on the chat.
 export default function NewProjectModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
@@ -73,14 +76,25 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
     mode: 'onSubmit',
     defaultValues: { name: '', description: '', siteKinds: [], otherSiteKind: '' },
   });
-  // An idea typed on the landing site arrives as ?idea=... (biveit-landing's HeroPrompt): start the description with it.
-  // The param is dropped from the URL once read, so a refresh doesn't put it back over their edits.
-  useOneTimeQueryParams([NEW_PROJECT_IDEA_PARAM], params => {
-    const idea = params[NEW_PROJECT_IDEA_PARAM];
-    if (idea) {
-      setValue('description', idea.slice(0, _DESCRIPTION_MAX_LENGTH));
+  const user = useStore(state => state.user);
+  const set = useStore(state => state.set);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const idea = searchParams.get(NEW_PROJECT_IDEA_PARAM);
+  // An idea typed on the landing site arrives as /projects?idea=... (biveit-landing's HeroPrompt, through Log in): open
+  // the form with it starting the description. Only once signed in -- until then the page sends them to Log in, and the
+  // idea has to still be in the URL to ride along. Dropped from the URL once taken, so a refresh doesn't put it back
+  // over their edits.
+  useEffect(() => {
+    if (!idea || !isSignedInUser(user)) {
+      return;
     }
-  });
+    setValue('description', idea.slice(0, _DESCRIPTION_MAX_LENGTH));
+    set({ isNewProjectOpen: true });
+    setSearchParams(
+      previous => new URLSearchParams(_.filter([...previous], ([key]) => key !== NEW_PROJECT_IDEA_PARAM)),
+      { replace: true },
+    );
+  }, [idea, user, setValue, set, setSearchParams]);
 
   const onSubmit = async (values: NewProjectFormValues) => {
     try {

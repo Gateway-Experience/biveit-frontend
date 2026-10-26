@@ -48,10 +48,9 @@ const SITE_KIND_OPTIONS = [
   { value: 'web app', labelKey: 'new_project_kind_web_app' },
 ];
 
-// The query param that carries a site idea into the new-project form (/projects/new?idea=...), so someone who
-// types their idea on the landing site finds it waiting in the form after logging in. NewProjectModal reads it
-// (and drops it from the URL); the landing site's prompt box (biveit-landing, HeroPrompt) sets it, with its own
-// copy of this name.
+// The query param that carries a site idea into the new-project form (/projects?idea=...), so someone who types
+// their idea on the landing site finds the form open with it, after logging in. NewProjectModal reads it (and drops
+// it from the URL); the landing site's prompt box (biveit-landing, HeroPrompt) sets it, with its own copy of this name.
 const NEW_PROJECT_IDEA_PARAM = 'idea';
 
 // Example site ideas, as i18n keys: typed out in the auth pages' showcase panel, as if someone were asking
