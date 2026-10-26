@@ -26,7 +26,7 @@ function _getEnterStyle(order: number) {
 }
 
 // Original purpose: offering payment/deployment once the user has signed off the built site
-// (implementation_done_at).
+// (build_approved_at).
 // `variant`: 'tab' is the steady Deploy tab. 'celebration' is the pop-up at the moment of sign-off: roomier,
 // headlined "Your site is ready!", and animated in — and it must sit inside a dialog, since its headline
 // and pitch become the dialog's title and description.

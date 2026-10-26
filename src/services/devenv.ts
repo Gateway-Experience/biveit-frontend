@@ -14,10 +14,10 @@ async function getDevenvStatus(conversationId: number): Promise<DevenvStatus> {
 
 // [Pure]
 function getPreviewState(devenv: DevenvStatus): PreviewState {
-  // Only an explicit "implementing" gets a preview — anything else (specing, or a stage we don't know yet)
+  // Only an explicit "building" gets a preview — anything else (planning, or a stage we don't know yet)
   // stays chat only rather than showing a broken preview.
-  if (devenv.stage !== 'implementing') {
-    return 'specing';
+  if (devenv.stage !== 'building') {
+    return 'planning';
   }
   // A setup/restart in progress wins over the servers' status, which is in flux then.
   if (devenv.busy) {

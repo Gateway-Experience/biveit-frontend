@@ -5,9 +5,9 @@ export type Project = {
   user_id: number;
   name: string;
   description: string | null;
-  stage: 'specing' | 'implementing';
+  stage: 'planning' | 'building';
   // When the user signed off the built site (see DevenvStatus). null until then.
-  implementation_done_at: string | null;
+  build_approved_at: string | null;
   // The bootstrap form's answers ({} for projects from before the form). See ProjectBootstrapData.
   bootstrap_data: Record<string, unknown>;
   meta: Record<string, unknown>;

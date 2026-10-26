@@ -1543,7 +1543,7 @@ export default {
     ru: 'Ваше решение',
     ko: '결정해 주세요',
   },
-  chat_action_approve_spec_title: {
+  chat_action_approve_plan_title: {
     en: 'Ready to start building?',
     vi: 'Sẵn sàng bắt tay làm website chưa?',
     zh: '准备好开始搭建了吗？',
@@ -1551,7 +1551,7 @@ export default {
     ru: 'Начинаем делать сайт?',
     ko: '이제 만들기 시작할까요?',
   },
-  chat_action_approve_spec_hint: {
+  chat_action_approve_plan_hint: {
     en: 'Approve the plan and your site gets built, or keep iterating to tweak it first.',
     vi: 'Duyệt kế hoạch để bắt đầu làm website, hoặc tiếp tục chỉnh sửa trước đã.',
     zh: '批准这个方案就开始搭建网站，也可以先继续调整。',
@@ -1559,7 +1559,7 @@ export default {
     ru: 'Одобрите план, и сайт начнут делать. Или сначала доработайте его.',
     ko: '계획을 승인하면 사이트를 만들기 시작해요. 먼저 더 다듬어도 괜찮아요.',
   },
-  chat_action_approve_spec_later: {
+  chat_action_approve_plan_later: {
     en: 'Build later',
     vi: 'Để sau',
     zh: '稍后再建',
@@ -1567,7 +1567,7 @@ export default {
     ru: 'Позже',
     ko: '나중에 만들기',
   },
-  chat_action_approve_spec_later_hint: {
+  chat_action_approve_plan_later_hint: {
     en: 'Pauses the project here. Nothing is lost: come back any time and build when you\'re ready.',
     vi: 'Dự án sẽ tạm dừng ở đây. Không mất gì cả: quay lại bất cứ lúc nào và bắt đầu làm khi bạn sẵn sàng.',
     zh: '项目会在这里暂停，什么都不会丢失。随时回来，准备好了再开始搭建。',
@@ -1575,7 +1575,7 @@ export default {
     ru: 'Проект встанет на паузу. Ничего не потеряется: возвращайтесь в любой момент, когда будете готовы.',
     ko: '프로젝트가 여기서 잠시 멈춰요. 잃는 건 없어요. 준비되면 언제든 돌아와서 만들면 돼요.',
   },
-  chat_action_approve_implementation_later: {
+  chat_action_approve_build_later: {
     en: 'Decide later',
     vi: 'Để sau',
     zh: '稍后再定',
@@ -1583,7 +1583,7 @@ export default {
     ru: 'Решу позже',
     ko: '나중에 결정하기',
   },
-  chat_action_approve_implementation_later_hint: {
+  chat_action_approve_build_later_hint: {
     en: 'Pauses the project here. Nothing is lost: your site stays as it is until you come back.',
     vi: 'Dự án sẽ tạm dừng ở đây. Không mất gì cả: website giữ nguyên cho đến khi bạn quay lại.',
     zh: '项目会在这里暂停，什么都不会丢失。你回来之前，网站会保持原样。',
@@ -1591,7 +1591,7 @@ export default {
     ru: 'Проект встанет на паузу. Ничего не потеряется: сайт останется как есть до вашего возвращения.',
     ko: '프로젝트가 여기서 잠시 멈춰요. 잃는 건 없어요. 돌아올 때까지 사이트는 그대로예요.',
   },
-  chat_action_approve_implementation_title: {
+  chat_action_approve_build_title: {
     en: 'Happy with your site?',
     vi: 'Bạn hài lòng với website chưa?',
     zh: '对你的网站满意吗？',
@@ -1599,7 +1599,7 @@ export default {
     ru: 'Сайт вам нравится?',
     ko: '사이트가 마음에 드세요?',
   },
-  chat_action_approve_implementation_hint: {
+  chat_action_approve_build_hint: {
     en: 'Approve it to wrap things up, or keep iterating to change anything.',
     vi: 'Duyệt để hoàn tất, hoặc tiếp tục chỉnh sửa nếu muốn thay đổi gì đó.',
     zh: '批准即可收尾，想改什么也可以继续调整。',

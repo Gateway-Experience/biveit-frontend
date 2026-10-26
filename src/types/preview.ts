@@ -9,18 +9,18 @@ export type PreviewNavigation = {
 
 export type PreviewDevice = 'desktop' | 'mobile';
 
-// GET /conversations/{id}/devenv (biveit-backend). The agent decides when a project moves from specing to
-// implementing.
+// GET /conversations/{id}/devenv (biveit-backend). The user approving the plan moves a project from planning
+// to building.
 export type DevenvStatus = {
-  stage: 'specing' | 'implementing';
+  stage: 'planning' | 'building';
   // When the user signed off the built site — from then on, payment/deployment is offered (whatever the
   // stage: it's set once and never cleared). null until then.
-  implementation_done_at: string | null;
+  build_approved_at: string | null;
   // A setup or a server restart is running right now.
   busy: boolean;
-  // null while specing.
+  // null while planning.
   preview_url: string | null;
-  // [] while specing. `status` comes from pm2: only "online" means running.
+  // [] while planning. `status` comes from pm2: only "online" means running.
   servers: { app: 'backend' | 'frontend'; status: string; port: number }[];
 };
 
@@ -35,4 +35,4 @@ export type DevenvBuild = {
 };
 
 // What the preview area shows, decided from a DevenvStatus (see getPreviewState).
-export type PreviewState = 'specing' | 'busy' | 'live' | 'down';
+export type PreviewState = 'planning' | 'busy' | 'live' | 'down';

@@ -160,7 +160,7 @@ type AgentChatTab = 'chat' | 'documents' | 'preview' | 'deploy';
 
 // Original purpose: talking to a project's site-building agent.
 // Intentions: fills whatever box it's given (no width or height of its own) — a full page column while
-// spec-ing, a side panel next to the site preview once building.
+// planning, a side panel next to the site preview once building.
 // Layout: tabs. Chat = transcript (official message-scroller: follows new messages, jump-to-latest
 // button) with the composer — or the agent's open question — pinned underneath. Documents = the files the
 // agent wrote; a file card in the chat switches over with that file open. Preview = whatever `preview` is

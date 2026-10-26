@@ -28,17 +28,17 @@ const _EMPTY_ACTION_DRAFT: ActionDraft = { decision: null };
 // and `laterHint` says what that means for the project. Any other action name is one we don't know yet: the user
 // can only skip it (aborted too).
 const APPROVAL_ACTION_TEXT_KEYS: Record<string, { title: string; hint: string; later: string; laterHint: string }> = {
-  APPROVE_SPEC: {
-    title: 'chat_action_approve_spec_title',
-    hint: 'chat_action_approve_spec_hint',
-    later: 'chat_action_approve_spec_later',
-    laterHint: 'chat_action_approve_spec_later_hint',
+  APPROVE_PLAN: {
+    title: 'chat_action_approve_plan_title',
+    hint: 'chat_action_approve_plan_hint',
+    later: 'chat_action_approve_plan_later',
+    laterHint: 'chat_action_approve_plan_later_hint',
   },
-  APPROVE_IMPLEMENTATION: {
-    title: 'chat_action_approve_implementation_title',
-    hint: 'chat_action_approve_implementation_hint',
-    later: 'chat_action_approve_implementation_later',
-    laterHint: 'chat_action_approve_implementation_later_hint',
+  APPROVE_BUILD: {
+    title: 'chat_action_approve_build_title',
+    hint: 'chat_action_approve_build_hint',
+    later: 'chat_action_approve_build_later',
+    laterHint: 'chat_action_approve_build_later_hint',
   },
 };
 

@@ -45,7 +45,7 @@ function PreviewFrame({ src, ...frameProps }: ComponentProps<'iframe'> & { src: 
 // Where the user was browsing survives those in-betweens, so a restart lands them back on the same page.
 // Fills whatever box it's given.
 export default function SitePreview({ state, siteUrl, build, buildSketch, className }: {
-  state: Exclude<PreviewState, 'specing'>;
+  state: Exclude<PreviewState, 'planning'>;
   // The dev site's origin, e.g. http://localhost:10102. Always there when `live`.
   siteUrl: string | null;
   // The agent's build in progress, if any: the site may be half-done meanwhile.

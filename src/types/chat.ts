@@ -38,10 +38,10 @@ export type Artifact = Attachment & { title: string; version: string };
 
 // One thing the agent asks the user to do (a `request_actions` call's input is { actions: RequestedAction[] }).
 // The names keep growing: one we don't know yet still has to be dismissable (see InteractionPanel).
-export type ActionName = 'APPROVE_SPEC' | 'APPROVE_IMPLEMENTATION';
+export type ActionName = 'APPROVE_PLAN' | 'APPROVE_BUILD';
 export type RequestedAction = { name: ActionName | string; params: Record<string, unknown> };
 
-// The two buttons of an approval action (APPROVE_SPEC, APPROVE_IMPLEMENTATION).
+// The two buttons of an approval action (APPROVE_PLAN, APPROVE_BUILD).
 export type ApprovalDecision = 'approved' | 'iterate';
 
 // `ask_user` is the agent asking the user multiple-choice questions; `request_actions` is it asking them to
@@ -58,12 +58,12 @@ export type ToolResultBlock = { type: 'tool_result'; tool_use_id: string; conten
 // only block of an assistant message. Not something said, so it's no chat bubble and never counts as "the
 // last message" (see isSignalMessage). Slugs keep growing: unknown ones are just ignored.
 //   BUILDING / BUILDING_DONE  a big build started (or was refreshed: description = what's being built) / ended
-//   IMPLEMENTATION_STARTED    the user approved the spec
-//   IMPLEMENTATION_DONE       the user signed off the built site
+//   PLAN_APPROVED             the user approved the plan: the Building stage starts
+//   BUILD_APPROVED            the user signed off the built site
 //   DEVENV_FAILED             setting up the dev environment failed; description = why
 //   AGENT_IDLE                the agent finished a turn (meta.source 'runner'), or the platform closed it (see
 //                             isAgentWorking)
-export type SignalSlug = 'BUILDING' | 'BUILDING_DONE' | 'IMPLEMENTATION_STARTED' | 'IMPLEMENTATION_DONE' | 'DEVENV_FAILED'
+export type SignalSlug = 'BUILDING' | 'BUILDING_DONE' | 'PLAN_APPROVED' | 'BUILD_APPROVED' | 'DEVENV_FAILED'
   | 'AGENT_IDLE';
 export type SignalBlock = { type: 'signal'; slug: SignalSlug | string; description?: string; meta?: Record<string, unknown> };
 

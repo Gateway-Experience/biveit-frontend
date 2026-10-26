@@ -62,7 +62,7 @@ function _storeChatWidth(width: number | null) {
   }
 }
 
-// The page's width while it's chat only (spec-ing): a step wider than the site's usual content width, since
+// The page's width while it's chat only (planning): a step wider than the site's usual content width, since
 // the chat is the whole page then.
 const _CHAT_ONLY_WIDTH_CLASS = 'max-w-5xl';
 
@@ -72,7 +72,7 @@ const _CHAT_ONLY_WIDTH_CLASS = 'max-w-5xl';
 const _PANEL_CLASS = 'min-h-[26rem] overflow-hidden rounded-2xl bg-background shadow-xl shadow-foreground/8 ring-1 ring-foreground/10';
 
 // Original purpose: a single project's workspace — the agent chat, plus the site preview once the agent
-// has started implementing (specing is chat only, at the usual page width; implementing uses the full
+// has started building (planning is chat only, at the usual page width; building uses the full
 // width).
 // Everything is keyed on the project, so moving between projects starts clean.
 function ProjectWorkspace({ projectId }: { projectId: number }) {
@@ -106,15 +106,15 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
     setChosenChatWidth(width);
     _storeChatWidth(width);
   };
-  // Until the status is known, assume specing: no preview, no wide layout.
-  const previewState = devenv ? getPreviewState(devenv) : 'specing';
+  // Until the status is known, assume planning: no preview, no wide layout.
+  const previewState = devenv ? getPreviewState(devenv) : 'planning';
   // What the building animation calls the site: its name, and the first sentence of what it's about.
   const buildSketch = useMemo(() => {
     const description = _.trim(project?.description || _.toString(_.get(project, 'bootstrap_data.description', '')));
     return { siteName: project?.name || '', tagline: _.truncate(_.first(description.split(/(?<=[.!?。！？])\s*/)), { length: 90 }) };
   }, [project]);
 
-  const preview = previewState !== 'specing' && (
+  const preview = previewState !== 'planning' && (
     <SitePreview
       state={previewState}
       siteUrl={devenv?.preview_url || null}
@@ -124,10 +124,10 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
     />
   );
   // Once the user has signed off the site, publishing is on offer from then on, whatever the stage.
-  const implementationDoneAt = devenv?.implementation_done_at;
+  const buildApprovedAt = devenv?.build_approved_at;
   const [isSiteReadyModalOpen, setIsSiteReadyModalOpen] = useState(false);
   // TODO: `onShowCelebration` is a testing aid (a button to open the pop-up); drop it once that's signed off.
-  const deploy = implementationDoneAt && <DeployPanel onShowCelebration={() => setIsSiteReadyModalOpen(true)} className='flex-1' />;
+  const deploy = buildApprovedAt && <DeployPanel onShowCelebration={() => setIsSiteReadyModalOpen(true)} className='flex-1' />;
   // Preview and Deploy sit beside the chat when there's room for a side panel (and something to preview);
   // otherwise they're tabs of the chat.
   const hasSidePanel = !!preview && isSideBySide;
@@ -135,12 +135,12 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
 
   // The "just now" moment: the sign-off happened while this tab was open, i.e. a re-read took it from null
   // to a time. A fresh load (undefined -> time) is just the steady Deploy tab, no pop-up.
-  const previousImplementationDoneAt = usePrevious(implementationDoneAt);
+  const previousBuildApprovedAt = usePrevious(buildApprovedAt);
   useEffect(() => {
-    if (previousImplementationDoneAt === null && implementationDoneAt) {
+    if (previousBuildApprovedAt === null && buildApprovedAt) {
       setIsSiteReadyModalOpen(true);
     }
-  }, [previousImplementationDoneAt, implementationDoneAt]);
+  }, [previousBuildApprovedAt, buildApprovedAt]);
 
   useEffect(() => {
     // There's no GET /projects/{id}; the user's own list is small, so pick it out of that.
@@ -166,7 +166,7 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
         // As wide as the chat frame under it: the whole row while it's chat only, the chat's own width beside the preview.
         <ProjectProgress
           stage={devenv?.stage || project.stage}
-          implementationDoneAt={devenv?.implementation_done_at}
+          buildApprovedAt={devenv?.build_approved_at}
           className='mb-4'
           style={hasSidePanel ? { width: chatWidth } : undefined}
         />

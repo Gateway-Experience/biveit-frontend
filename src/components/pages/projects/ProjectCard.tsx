@@ -72,7 +72,7 @@ const _PREVIEW_LAYOUTS: Record<string, (props: { tintClass: string }) => React.R
 // Intentions: projects have no screenshot (yet), so show a tiny sketch of a "site in a browser window"
 // so the grid still reads as a gallery of websites rather than a wall of grey boxes.
 // Intentions: the top of the card, a little browser window. It shows the real site once the BE has a picture
-// of it (`site_preview_at`); before that (still spec-ing), or if the picture won't load, a made-up sketch.
+// of it (`site_preview_at`); before that (still planning), or if the picture won't load, a made-up sketch.
 function ProjectPreview({ project }: { project: Project }) {
   const tintClass = choose(_PREVIEW_TINT_CLASSES, String(project.id));
   // A different seed than the tint, so layout and colour vary independently.
