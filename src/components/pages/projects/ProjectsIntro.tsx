@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import SpotlightTour from 'src/components/common/SpotlightTour';
@@ -22,12 +23,23 @@ const _STEPS: SpotlightStep[] = [
 // trashed or deleted for good) already knows their way around, so never gets it. Once it's finished or skipped
 // it's gone for good, on every device: it's the account's `projects_intro` journey (services/user.getMyJourneys),
 // and any step logged in it means it's been seen.
+// It stays out of the new-project form's way: if the form has been open during this visit to the page -- it opens
+// by itself when someone arrives with an idea from the landing page -- the tour waits for the next visit (a reload,
+// or coming back to the page) instead of popping up the moment the form closes. It isn't marked seen meanwhile.
 // Mount it once the page's content is on screen, so the tour can find what it points at.
 export default function ProjectsIntro() {
   const queryClient = useQueryClient();
   const user = useStore(state => state.user);
   // The cookie card goes first: it sits in the corner the tour's last stop (Help) is in, and one thing at a time.
   const cookieConsent = useStore(state => state.cookieConsent);
+  const isNewProjectOpen = useStore(state => state.isNewProjectOpen);
+  // Latches for as long as this page is up: the form having been open once is enough (see the top).
+  const [hasNewProjectFormShown, setHasNewProjectFormShown] = useState(isNewProjectOpen);
+  useEffect(() => {
+    if (isNewProjectOpen) {
+      setHasNewProjectFormShown(true);
+    }
+  }, [isNewProjectOpen]);
   const journeysKey = ['my-journeys', user?.id];
   const { data: journeys } = useQuery({ queryKey: journeysKey, queryFn: getMyJourneys, enabled: !!user });
   // undefined until the journeys are in: no tour meanwhile.
@@ -40,7 +52,7 @@ export default function ProjectsIntro() {
     staleTime: 0,
   });
 
-  if (!user || !isTourDue || !cookieConsent || projectHistory?.has_created_project !== false) {
+  if (!user || !isTourDue || !cookieConsent || hasNewProjectFormShown || projectHistory?.has_created_project !== false) {
     return null;
   }
 
