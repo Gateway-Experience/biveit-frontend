@@ -70,6 +70,7 @@ const PATHS = {
   trash: '/projects/trash',
   pricing: '/pricing',
   admin: '/admin',
+  adminDomainTest: '/admin/domain-name-test',
 };
 
 export {

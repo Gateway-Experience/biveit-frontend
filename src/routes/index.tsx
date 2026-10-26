@@ -21,6 +21,7 @@ import { PATHS } from 'src/utils/constants';
 import ShowCase from 'src/components/pages/ShowCase';
 import AdminDashboard from 'src/components/pages/admin/AdminDashboard';
 import AdminProjectDetail from 'src/components/pages/admin/AdminProjectDetail';
+import AdminDomainTest from 'src/components/pages/admin/AdminDomainTest';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
 import { useTrackPageViews } from 'src/utils/hooks';
@@ -73,6 +74,7 @@ function AppRoutes() {
         <Route path='/showcase' element={<ShowCase />} />
         <Route path={PATHS.admin} element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path={`${PATHS.admin}/projects/:projectId`} element={<AdminRoute><AdminProjectDetail /></AdminRoute>} />
+        <Route path={PATHS.adminDomainTest} element={<AdminRoute><AdminDomainTest /></AdminRoute>} />
       </Route>
       <Route element={<OpenPageLayout />}>
         <Route path={PATHS.termsOfService} element={<TermsOfService />} />
