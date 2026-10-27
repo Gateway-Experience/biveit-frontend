@@ -1,5 +1,5 @@
 import { callBe } from 'src/utils/request';
-import type { PlatformStatus, ProjectStatus, ServerUsage } from 'src/types/admin';
+import type { PlatformStatus, ProjectDeployments, ProjectStatus, ServerUsage } from 'src/types/admin';
 import type { DnsRecord, DomainContact, DomainVerification, RegistrarDomain } from 'src/types/domains';
 
 // Intentions: the admin dashboard's calls (biveit-backend controllers/admin). Admins only -- the BE answers
@@ -25,6 +25,16 @@ async function getProjectStatus(projectId: number): Promise<ProjectStatus> {
 // so the owner opening it again brings it all back.
 async function stopProject(projectId: number): Promise<unknown> {
   return callBe({ url: `/admin/projects/${projectId}/stop`, method: 'POST' });
+}
+
+async function getProjectDeployments(projectId: number): Promise<ProjectDeployments> {
+  return callBe(`/admin/projects/${projectId}/deployments`);
+}
+
+// Sets the site's domains (REPLACING its current ones; none = the default <hash>.<PROD_DOMAIN>), then deploys
+// what's in the project's workspace now. The rollout runs in the background: watch getProjectDeployments.
+async function deployProject(projectId: number, domains: string[]): Promise<{ run_id: string; commit: string }> {
+  return callBe({ url: `/admin/projects/${projectId}/deployments`, method: 'POST', data: { domains } });
 }
 
 // The domain test bench (/admin/domain-name-test): the registrar primitives, raw. Sandbox only -- the BE answers
@@ -98,6 +108,8 @@ export {
   getPlatformStatus,
   getProjectStatus,
   stopProject,
+  getProjectDeployments,
+  deployProject,
   getDomainTestAccount,
   listTestDomains,
   registerTestDomain,

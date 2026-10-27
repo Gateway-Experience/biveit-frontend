@@ -4,6 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import Modal from 'src/components/common/Modal';
 import { useNotification } from 'src/components/common/NotificationProvider';
+import AdminDeployments from 'src/components/pages/admin/AdminDeployments';
 import StatusSections from 'src/components/pages/admin/StatusSections';
 import { Button } from 'src/components/shadui/button';
 import { Spinner } from 'src/components/common/Spinner';
@@ -12,7 +13,7 @@ import { PATHS } from 'src/utils/constants';
 
 // Intentions: one project in the admin dashboard (/admin/projects/<id>) -- its status sections (workspace,
 // the agent's session, container, dev servers, data), the same ones `scripts.manage status <id>` prints --
-// and turning it off. Stopping takes down its runners, dev servers and container; nothing on disk is
+// its production site (AdminDeployments: deploying it by hand), and turning it off. Stopping takes down its runners, dev servers and container; nothing on disk is
 // touched, and the owner opening the project brings it all back. English only, like the rest of /admin.
 
 export default function AdminProjectDetail() {
@@ -53,6 +54,7 @@ export default function AdminProjectDetail() {
       </div>
 
       {isError && <p className='text-sm text-destructive'>Couldn’t read this project’s status (does it exist?).</p>}
+      {status && <AdminDeployments projectId={projectId} />}
       {status && <StatusSections sections={status.sections} />}
 
       <Modal
