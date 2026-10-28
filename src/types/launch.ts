@@ -16,7 +16,9 @@ export type LaunchStage =
   | 'not_paid' | 'code_only' | 'ended' | 'finish_domain' | 'choose_domain' | 'registering_domain'
   | 'waiting_dns' | 'deploying' | 'failed' | 'live';
 
-export type DnsRecord = { type: 'A' | 'TXT'; name: string; value: string; found: boolean };
+// action 'add': a record the domain needs (found = it's there). 'remove': one it must lose -- an AAAA pointing
+// elsewhere would make the certificate fail; listed only while it's there.
+export type DnsRecord = { type: 'A' | 'TXT' | 'AAAA'; name: string; value: string; action: 'add' | 'remove'; found: boolean };
 
 export type OwnDomainCheck = {
   domain: string;

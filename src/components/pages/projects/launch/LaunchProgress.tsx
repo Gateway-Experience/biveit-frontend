@@ -33,21 +33,29 @@ function getLaunchSteps(status: LaunchStatus, t: (key: string, params?: Record<s
 
 export function DnsRecordsTable({ records }: { records: DnsRecord[] }) {
   const { t } = useTranslation();
+  const hasRecordsToRemove = _.some(records, { action: 'remove' });
   return (
-    <table className='w-full text-left text-xs' data-component='dns-records'>
-      <tbody>
-        {_.map(records, record => (
-          <tr key={record.type} className='border-b align-top last:border-0' data-recordtype={record.type}>
-            <td className='py-2 pr-3 font-mono font-semibold'>{record.type}</td>
-            <td className='py-2 pr-3 font-mono break-all'>{record.name}</td>
-            <td className='py-2 pr-3 font-mono break-all'>{record.value}</td>
-            <td className={cn('py-2 whitespace-nowrap', record.found ? 'text-primary' : 'text-muted-foreground')}>
-              {record.found ? t('launch_own_found') : t('launch_own_not_yet')}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div className='flex flex-col gap-2'>
+      <table className='w-full text-left text-xs' data-component='dns-records'>
+        <tbody>
+          {_.map(records, record => (
+            <tr key={`${record.type}-${record.value}`} className='border-b align-top last:border-0' data-recordtype={record.type} data-action={record.action}>
+              <td className='py-2 pr-3 font-mono font-semibold'>{record.type}</td>
+              <td className='py-2 pr-3 font-mono break-all'>{record.name}</td>
+              <td className={cn('py-2 pr-3 font-mono break-all', record.action === 'remove' && 'line-through')}>{record.value}</td>
+              {record.action === 'remove'
+                ? <td className='py-2 whitespace-nowrap text-destructive'>{t('launch_own_remove')}</td>
+                : (
+                  <td className={cn('py-2 whitespace-nowrap', record.found ? 'text-primary' : 'text-muted-foreground')}>
+                    {record.found ? t('launch_own_found') : t('launch_own_not_yet')}
+                  </td>
+                )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {hasRecordsToRemove && <p className='text-xs text-destructive'>{t('launch_own_remove_aaaa_note')}</p>}
+    </div>
   );
 }
 

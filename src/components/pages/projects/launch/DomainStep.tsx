@@ -23,7 +23,7 @@ import type { DomainChoice, DomainOffer } from 'src/types/launch';
 // from the monthly plan (absent when it doesn't apply).
 
 const _SEARCH_DEBOUNCE_MS = 400;
-const _OWN_RECHECK_MS = 10000;
+const _OWN_RECHECK_MS = 30000;
 
 export default function DomainStep({ projectId, freeFirstYear, onSwitchToYearly, onAskAgent, onChoose, onBack }: {
   projectId: number;

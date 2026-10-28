@@ -4328,6 +4328,22 @@ export default {
     ru: 'Пока нет',
     ko: '아직 없음',
   },
+  launch_own_remove: {
+    en: 'Remove it',
+    vi: 'Hãy xoá',
+    zh: '请删除',
+    ja: '削除してください',
+    ru: 'Удалите',
+    ko: '삭제하세요',
+  },
+  launch_own_remove_aaaa_note: {
+    en: 'Also remove the AAAA records above: they point your domain somewhere else, and the security certificate can\'t be set up while they\'re there.',
+    vi: 'Hãy xoá cả các bản ghi AAAA ở trên: chúng trỏ tên miền đi nơi khác, và không thể cấp chứng chỉ bảo mật khi chúng còn đó.',
+    zh: '另外请删除上面的 AAAA 记录：它们把域名指向了别处，存在时无法签发安全证书。',
+    ja: '上の AAAA レコードも削除してください。ドメインが別の場所を指しているため、残っているとセキュリティ証明書を発行できません。',
+    ru: 'Удалите и записи AAAA выше: они направляют домен в другое место, и пока они есть, сертификат безопасности не выпустить.',
+    ko: '위의 AAAA 레코드도 삭제하세요. 도메인을 다른 곳으로 가리키고 있어서, 남아 있으면 보안 인증서를 발급할 수 없어요.',
+  },
   launch_own_ready: {
     en: 'All set: your domain points here.',
     vi: 'Xong: tên miền đã trỏ về đây.',

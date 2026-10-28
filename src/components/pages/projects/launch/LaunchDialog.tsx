@@ -26,7 +26,9 @@ import type { DomainChoice, LaunchCheckout, LaunchStatus, PlanKey, Registrant } 
 
 type Step = 'plan' | 'domain' | 'review' | 'paying' | 'progress';
 
+// Quick while paying and building (the user watches); slower while waiting on the user's DNS.
 const _STATUS_POLL_MS = 3000;
+const _WAITING_DNS_POLL_MS = 30000;
 
 export default function LaunchDialog({ projectId, projectName, open, mode, status, onClose }: {
   projectId: number;
@@ -61,7 +63,7 @@ export default function LaunchDialog({ projectId, projectName, open, mode, statu
     queryKey: [LAUNCH_QUERY_KEY, projectId, 'status'],
     queryFn: () => getLaunchStatus(projectId),
     enabled: isFollowing,
-    refetchInterval: isFollowing ? _STATUS_POLL_MS : false,
+    refetchInterval: query => (isFollowing ? (query.state.data?.stage === 'waiting_dns' ? _WAITING_DNS_POLL_MS : _STATUS_POLL_MS) : false),
   });
   const currentStatus = liveStatus || status;
 
