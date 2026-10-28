@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from 'cn';
 import { CheckIcon, RocketIcon } from 'lucide-react';
 
@@ -9,7 +9,7 @@ import { Spinner } from 'src/components/common/Spinner';
 import LaunchProgress from 'src/components/pages/projects/launch/LaunchProgress';
 import { Button } from 'src/components/shadui/button';
 import { DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
-import { downloadCode, redeploySite } from 'src/services/launch';
+import { LAUNCH_QUERY_KEY, activateLaunchDomain, downloadCode, redeploySite } from 'src/services/launch';
 import { formatUsd } from 'src/services/pricing';
 import type { LaunchStatus } from 'src/types/launch';
 
@@ -135,6 +135,18 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
     mutationFn: () => downloadCode(projectId, projectName),
     onError: () => notify('error', t('launch_error_generic')),
   });
+  const queryClient = useQueryClient();
+  const { mutate: activateDomain, isPending: isActivating, variables: activatingDomain } = useMutation({
+    mutationFn: (domain: string) => activateLaunchDomain(projectId, domain),
+    onSuccess: (_result, domain) => {
+      notify('success', t('launch_domain_switching', { domain }));
+      queryClient.invalidateQueries({ queryKey: [LAUNCH_QUERY_KEY, projectId] });
+    },
+    onError: (error, domain) => {
+      const code: string = _.get(error, 'data.detail') || '';
+      notify('error', t(`launch_error_${code}`, { domain, defaultValue: t('launch_error_generic') }));
+    },
+  });
   const isGoingLive = _.includes(['registering_domain', 'waiting_dns', 'deploying', 'failed', 'live'], status.stage);
   const canRedeploy = status.access.can_host && !!status.domain?.servable && !status.deployment.deploying;
   const planName = status.plan ? t(`launch_plan_${status.plan.plan}`) : '';
@@ -182,13 +194,29 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
             <dd>{t('launch_edits_until', { date: formatDate(status.access.edit_until) })}</dd>
           </>
         )}
-        {status.domain && (
-          <>
-            <dt className='text-muted-foreground'>{t('launch_domain_label')}</dt>
-            <dd className='break-all'>{status.domain.domain}</dd>
-          </>
-        )}
       </dl>
+
+      {status.access.can_host && !_.isEmpty(status.site_domains) && (
+        <div className='flex flex-col gap-2' data-component='launch-domains'>
+          <h3 className='text-sm font-medium text-muted-foreground'>{t('launch_domains_title')}</h3>
+          {_.map(status.site_domains, row => (
+            <div key={row.domain} className='flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm' data-domain={row.domain} data-active={row.active}>
+              <span className='min-w-0 break-all'>{row.domain}</span>
+              {row.active
+                ? <span className='shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>{t('launch_domain_active')}</span>
+                : (
+                  <Button variant='ghost' size='sm' className='shrink-0' disabled={isActivating} onClick={() => activateDomain(row.domain)} data-action='use-domain'>
+                    {isActivating && activatingDomain === row.domain && <Spinner data-icon='inline-start' />}
+                    {t('launch_domain_use')}
+                  </Button>
+                )}
+            </div>
+          ))}
+          <Button variant='link' size='sm' className='self-start px-0' onClick={() => onLaunch('domain')} data-action='add-domain'>
+            {t('launch_domain_add')}
+          </Button>
+        </div>
+      )}
 
       <div className='flex flex-wrap gap-2'>
         {status.access.can_host && status.domain && (

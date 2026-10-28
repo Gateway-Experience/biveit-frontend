@@ -38,6 +38,12 @@ async function startLaunchCheckout(projectId: number, choice: {
   });
 }
 
+// Switch the site to another of its attached domains. Refused (DOMAIN_NOT_VERIFIED) for the user's own domain
+// until its DNS records are found, so a live site never moves somewhere it can't be served.
+async function activateLaunchDomain(projectId: number, domain: string): Promise<{ domain: string }> {
+  return callBe({ url: `/projects/${projectId}/launch/domains/activate`, method: 'POST', data: { domain } });
+}
+
 async function redeploySite(projectId: number): Promise<{ run_id: string; commit: string }> {
   return callBe({ url: `/projects/${projectId}/deployments`, method: 'POST' });
 }
@@ -67,6 +73,7 @@ export {
   searchLaunchDomains,
   checkOwnDomain,
   startLaunchCheckout,
+  activateLaunchDomain,
   redeploySite,
   downloadCode,
   getMockCheckout,
