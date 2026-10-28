@@ -1983,6 +1983,14 @@ export default {
     ru: 'Всё настраиваем…',
     ko: '준비하는 중…',
   },
+  preview_loading: {
+    en: 'Loading the site…',
+    vi: 'Đang tải trang…',
+    zh: '正在加载网站…',
+    ja: 'サイトを読み込んでいます…',
+    ru: 'Загружаем сайт…',
+    ko: '사이트를 불러오는 중…',
+  },
   preview_down_title: {
     en: 'The preview isn\'t running',
     vi: 'Bản xem trước hiện không hoạt động',
