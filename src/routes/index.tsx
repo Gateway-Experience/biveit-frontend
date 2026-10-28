@@ -9,6 +9,7 @@ import ProjectList from 'src/components/pages/projects/ProjectList';
 import ProjectDetail from 'src/components/pages/projects/ProjectDetail';
 import ProjectTrash from 'src/components/pages/projects/ProjectTrash';
 import UserProfile from 'src/components/pages/UserProfile';
+import MockCheckout from 'src/components/pages/MockCheckout';
 import Login from 'src/components/pages/auth/Login';
 import Register from 'src/components/pages/auth/Register';
 import ForgotPassword from 'src/components/pages/auth/ForgotPassword';
@@ -71,6 +72,7 @@ function AppRoutes() {
         <Route path={PATHS.projects} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         <Route path={PATHS.trash} element={<ProtectedRoute><ProjectTrash /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path={`${PATHS.mockCheckout}/:checkoutId`} element={<ProtectedRoute><MockCheckout /></ProtectedRoute>} />
         <Route path='/showcase' element={<ShowCase />} />
         <Route path={PATHS.admin} element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path={`${PATHS.admin}/projects/:projectId`} element={<AdminRoute><AdminProjectDetail /></AdminRoute>} />

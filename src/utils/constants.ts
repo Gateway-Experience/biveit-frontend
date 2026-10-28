@@ -71,6 +71,8 @@ const PATHS = {
   pricing: '/pricing',
   admin: '/admin',
   adminDomainTest: '/admin/domain-name-test',
+  // The stand-in payment page (backend payments_mock only).
+  mockCheckout: '/mock-checkout',
 };
 
 export {

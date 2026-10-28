@@ -21,6 +21,7 @@ import InteractionPanel from 'src/components/pages/projects/chat/InteractionPane
 import ChatMessageItem, { hasVisibleContent, StartingBriefMessage, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
 import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import { getArtifacts } from 'src/services/chat';
+import { useStore } from 'src/state-store';
 import { getAnsweredQuestions, getSuggestedReply, indexToolResults, indexToolUses } from 'src/services/chatLog';
 import type { ChatIntroState } from 'src/types/chat';
 import type { DevenvBuild } from 'src/types/preview';
@@ -190,6 +191,13 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
     hasUndeliveredMessage, resendUndelivered, isResending, isSessionDown,
   } = chat;
   const [selectedTab, setSelectedTab] = useState<AgentChatTab>('chat');
+  // Text handed over for the chat box (state-store's chatPrefill, e.g. from the launch dialog): show the chat.
+  const chatPrefill = useStore(state => state.chatPrefill);
+  useEffect(() => {
+    if (chatPrefill) {
+      setSelectedTab('chat');
+    }
+  }, [chatPrefill]);
   // Preview and Deploy can go away while selected (e.g. the window got wider and they moved beside the
   // chat): fall back to chat.
   const activeTab = (selectedTab === 'preview' && !preview) || (selectedTab === 'deploy' && !deploy) ? 'chat' : selectedTab;

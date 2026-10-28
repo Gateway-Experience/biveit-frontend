@@ -12,6 +12,8 @@ import PanelResizeHandle from 'src/components/pages/projects/PanelResizeHandle';
 import { WorkspaceBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import DeployPanel from 'src/components/pages/projects/deploy/DeployPanel';
 import SiteReadyModal from 'src/components/pages/projects/deploy/SiteReadyModal';
+import LaunchDialog from 'src/components/pages/projects/launch/LaunchDialog';
+import useLaunchStatus from 'src/components/pages/projects/launch/useLaunchStatus';
 import useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import SitePreview from 'src/components/pages/projects/preview/SitePreview';
 import useActiveBuild from 'src/components/pages/projects/preview/useActiveBuild';
@@ -126,8 +128,24 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   // Once the user has signed off the site, publishing is on offer from then on, whatever the stage.
   const buildApprovedAt = devenv?.build_approved_at;
   const [isSiteReadyModalOpen, setIsSiteReadyModalOpen] = useState(false);
+  // The launch: its status (shared by the Deploy tab and the dialog) and the dialog, opened in the mode asked for.
+  const { data: launchStatus } = useLaunchStatus(projectId, !!buildApprovedAt);
+  const [launchDialogMode, setLaunchDialogMode] = useState<'new' | 'domain' | null>(null);
+  const openLaunchDialog = (mode: 'new' | 'domain') => {
+    setIsSiteReadyModalOpen(false);
+    setLaunchDialogMode(mode);
+  };
   // TODO: `onShowCelebration` is a testing aid (a button to open the pop-up); drop it once that's signed off.
-  const deploy = buildApprovedAt && <DeployPanel onShowCelebration={() => setIsSiteReadyModalOpen(true)} className='flex-1' />;
+  const deploy = buildApprovedAt && (
+    <DeployPanel
+      projectId={projectId}
+      projectName={project?.name || ''}
+      status={launchStatus}
+      onLaunch={openLaunchDialog}
+      onShowCelebration={() => setIsSiteReadyModalOpen(true)}
+      className='flex-1'
+    />
+  );
   // Preview and Deploy sit beside the chat when there's room for a side panel (and something to preview);
   // otherwise they're tabs of the chat.
   const hasSidePanel = !!preview && isSideBySide;
@@ -171,7 +189,24 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
           style={hasSidePanel ? { width: chatWidth } : undefined}
         />
       )}
-      <SiteReadyModal open={isSiteReadyModalOpen} onClose={() => setIsSiteReadyModalOpen(false)} />
+      <SiteReadyModal
+        open={isSiteReadyModalOpen}
+        onClose={() => setIsSiteReadyModalOpen(false)}
+        projectId={projectId}
+        projectName={project?.name || ''}
+        status={launchStatus}
+        onLaunch={openLaunchDialog}
+      />
+      {launchStatus && (
+        <LaunchDialog
+          projectId={projectId}
+          projectName={project?.name || ''}
+          open={!!launchDialogMode}
+          mode={launchDialogMode || 'new'}
+          status={launchStatus}
+          onClose={() => setLaunchDialogMode(null)}
+        />
+      )}
 
       {_.isUndefined(project) && (
         <div className='flex justify-center py-20'><Spinner className='size-5 text-muted-foreground' /></div>

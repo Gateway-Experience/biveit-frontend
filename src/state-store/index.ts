@@ -14,6 +14,9 @@ type AppState = {
   // The new-project form is a modal over whatever page you're on (mounted once, in DefaultLayout), so any
   // "New project" button can open it without leaving the page.
   isNewProjectOpen: boolean;
+  // Text to put in the project chat's box (focused, not sent) -- e.g. the launch dialog handing a question over to
+  // the agent. The chat takes it in and clears it.
+  chatPrefill: string | null;
   set: (partial: Partial<AppState>) => void;
 };
 
@@ -21,6 +24,7 @@ const useStore = create<AppState>((set) => ({
   cookieConsent: readCookieConsent(),
   isCookiePreferencesOpen: false,
   isNewProjectOpen: false,
+  chatPrefill: null,
   set,
 }));
 

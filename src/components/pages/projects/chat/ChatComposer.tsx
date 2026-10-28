@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { v4 } from 'uuid';
@@ -10,6 +10,7 @@ import ChatAttachment from 'src/components/pages/projects/chat/ChatAttachment';
 import { CHAT_TEXT_SIZE_CLASS } from 'src/components/pages/projects/chat/chatStyles';
 import { AttachmentGroup } from 'src/components/shadui/attachment';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from 'src/components/shadui/input-group';
+import { useStore } from 'src/state-store';
 import { formatFileSize } from 'src/utils/common';
 import type { Attachment } from 'src/types/chat';
 
@@ -63,6 +64,16 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
 
   // Only in an empty box: the hint sits where the placeholder would, which the attachment chips push down.
   const shownSuggestion = suggestedReply && _.isEmpty(draft) && _.isEmpty(draftAttachments) ? suggestedReply : null;
+
+  // Text handed over from elsewhere on the page (state-store's chatPrefill): taken in like a suggestion, then cleared.
+  const chatPrefill = useStore(state => state.chatPrefill);
+  const setStore = useStore(state => state.set);
+  useEffect(() => {
+    if (chatPrefill) {
+      acceptSuggestion(chatPrefill);
+      setStore({ chatPrefill: null });
+    }
+  }, [chatPrefill, setStore]);
 
   function acceptSuggestion(suggestion: string) {
     setDraft(suggestion);
