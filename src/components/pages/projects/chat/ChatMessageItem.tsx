@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -51,18 +51,15 @@ const _NOTICE_SIGNAL_KEYS: Record<string, string> = {
   DEVENV_FAILED: 'chat_signal_devenv_failed',
 };
 
-// How long a tap waits before it counts as one: the usual double-click window. A second click within it means
-// the user is selecting text (double-click a word, triple-click a paragraph), not asking for the time.
-const _SINGLE_TAP_WAIT_MS = 250;
-
 // Intentions: a chat bubble that tells when it was sent, but only when asked: tapping it (or Enter/Space on
 // it) shows the time under it, tapping again hides it. Made so it never gets in the way of copying text:
-// - a tap only counts once the double-click window has passed with no second click and nothing selected, so
-//   double- and triple-clicking select words and paragraphs as usual;
+// - a tap toggles right away, but a click that ends a drag-selection doesn't count, and neither do the 2nd and
+//   3rd clicks of a double/triple-click (so those select words and paragraphs as usual -- the 1st click does
+//   show the time, which is harmless since it takes no room);
 // - the time floats in the gap under the bubble instead of taking up a line, so showing it never shifts the
 //   messages (the chat would scroll to make up for it, moving the text out from under the pointer).
 // A tap on a link or a control inside the bubble (the agent's file cards, its tool rows) isn't a toggle either.
-// Used for the user's messages and the agent's framed replies.
+// Used for the user's messages and the agent's framed replies; when a message has several, only its last one.
 function TimedBubble({ sentAt, variant, align = 'start', contentClassName, children, ...dataProps }: {
   sentAt: string;
   variant: React.ComponentProps<typeof Bubble>['variant'];
@@ -72,16 +69,6 @@ function TimedBubble({ sentAt, variant, align = 'start', contentClassName, child
 } & Record<`data-${string}`, string | undefined>) {
   const { i18n } = useTranslation();
   const [isTimeShown, setIsTimeShown] = useState(false);
-  // The pending single tap, cancelled by a second click. null = none waiting.
-  const tapTimerRef = useRef<number | null>(null);
-
-  const cancelPendingTap = () => {
-    if (tapTimerRef.current !== null) {
-      window.clearTimeout(tapTimerRef.current);
-      tapTimerRef.current = null;
-    }
-  };
-  useEffect(() => cancelPendingTap, []);
 
   const isOnInnerControl = (target: EventTarget, bubbleContent: EventTarget) => {
     const control = (target as Element).closest?.('a, button, input, textarea, [role=button]');
@@ -90,21 +77,22 @@ function TimedBubble({ sentAt, variant, align = 'start', contentClassName, child
   const isTextSelected = () => !_.isEmpty(_.toString(window.getSelection()));
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    cancelPendingTap();
     // The second (or third) click of a double- or triple-click: selecting text, not a tap.
-    if (event.detail > 1 || isOnInnerControl(event.target, event.currentTarget)) {
+    if (event.detail > 1 || isOnInnerControl(event.target, event.currentTarget) || isTextSelected()) {
       return;
     }
-    tapTimerRef.current = window.setTimeout(() => {
-      tapTimerRef.current = null;
-      if (!isTextSelected()) {
-        setIsTimeShown(isShown => !isShown);
-      }
-    }, _SINGLE_TAP_WAIT_MS);
+    setIsTimeShown(isShown => !isShown);
   };
 
   return (
-    <Bubble variant={variant} align={align} {...dataProps}>
+    // Only a message's last bubble tells the time (they're all the same time anyway): the bubbles before it sit
+    // gap-2 apart, too close for a line of text between them, so they're not tappable.
+    <Bubble
+      variant={variant}
+      align={align}
+      className='not-last:*:data-[slot=bubble-content]:cursor-auto! not-last:[&>time]:hidden'
+      {...dataProps}
+    >
       <BubbleContent
         role='button'
         tabIndex={0}
@@ -127,7 +115,7 @@ function TimedBubble({ sentAt, variant, align = 'start', contentClassName, child
           dateTime={sentAt}
           data-component='chat-message-time'
           className={cn(
-            'pointer-events-none absolute top-full mt-0.5 px-1 text-xs whitespace-nowrap text-muted-foreground animate-in fade-in-0 duration-200',
+            'pointer-events-none absolute top-full mt-0.5 px-1 text-xs whitespace-nowrap text-muted-foreground animate-in fade-in-0 duration-100',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >
@@ -451,17 +439,20 @@ function StartingBriefMessage({ bootstrapData, hasAvatar = true }: { bootstrapDa
 // the agent's replies sit on the left in a frame (questions last), with its work in progress as marker
 // lines. Bubbles show their time when tapped (TimedBubble).
 // `hasAvatar`: whether this message starts a run from its side, and so shows the avatar (see ChatAvatar).
-export default function ChatMessageItem({ message, renderContext, hasAvatar = true }: {
+// `isRunEnd`: whether it ends one. Only the run's last message tells the time: the ones before it sit as close
+// together as one message's bubbles, with no room for the time between them.
+export default function ChatMessageItem({ message, renderContext, hasAvatar = true, isRunEnd = true }: {
   message: AiMessage;
   renderContext: ChatRenderContext;
   hasAvatar?: boolean;
+  isRunEnd?: boolean;
 }) {
   const isUser = message.role === 'user';
 
   return (
     <Message align={isUser ? 'end' : 'start'} data-messageseq={message.seq} className='gap-2.5'>
       <ChatAvatar role={message.role} isShown={hasAvatar} />
-      <MessageContent>
+      <MessageContent className={cn(!isRunEnd && '**:data-[slot=bubble-content]:cursor-auto! [&_[data-component=chat-message-time]]:hidden')}>
         {isUser
           ? <UserMessageBlocks message={message} renderContext={renderContext} />
           : <AssistantMessageBlocks message={message} renderContext={renderContext} />}
