@@ -5,7 +5,7 @@ import { PATHS } from 'src/utils/constants';
 
 // Bump this whenever the policy text changes. A fixed date (not "today") so the page doesn't claim a
 // fresh update on every visit. Month is 0-based.
-const LAST_UPDATED = new Date(2026, 9, 21);
+const LAST_UPDATED = new Date(2026, 9, 28);
 
 // Where people write to about their data. Shown in the text, so changing it here changes it everywhere.
 const PRIVACY_CONTACT_EMAIL = 'privacy@biveit.com';
