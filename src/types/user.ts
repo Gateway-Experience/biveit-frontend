@@ -4,7 +4,7 @@
 export type UserType = 'USER' | 'GUEST';
 
 // The flows the FE walks a user through step by step, as the BE names them (its UserJourney).
-export type UserJourney = 'projects_intro';
+export type UserJourney = 'projects_intro' | 'welcome';
 
 // One step a user took through a journey (the BE's user_journey_steps row). Which steps there are is up to
 // the journey; a journey's latest step is where the user is in it now.

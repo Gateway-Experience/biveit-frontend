@@ -10,10 +10,10 @@ import {
   MessageScrollerViewport, useMessageScroller, useMessageScrollerScrollable,
 } from 'src/components/shadui/message-scroller';
 import { Button } from 'src/components/shadui/button';
+import HumanContact from 'src/components/common/HumanContact';
 import { Spinner } from 'src/components/common/Spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
 import AgentWaitLine from 'src/components/pages/projects/chat/AgentWaitLine';
-import ArtifactsPanel from 'src/components/pages/projects/chat/ArtifactsPanel';
 import BuildProgressPanel from 'src/components/pages/projects/chat/BuildProgressPanel';
 import { BuildGlyph } from 'src/components/pages/projects/preview/BuildIndicator';
 import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
@@ -57,6 +57,7 @@ function ChatSetupState({ introState, onRetry }: { introState: ChatIntroState; o
         <p className='font-medium'>{t('chat_agent_overdue')}</p>
         <p className='max-w-xs text-sm text-muted-foreground'>{t('chat_agent_overdue_hint')}</p>
         <Button variant='outline' onClick={onRetry}>{t('chat_setup_retry')}</Button>
+        <HumanContact i18nKey='chat_human_contact' className='max-w-xs text-xs text-muted-foreground' />
       </div>
     );
   }
@@ -65,6 +66,7 @@ function ChatSetupState({ introState, onRetry }: { introState: ChatIntroState; o
       <div className='flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center'>
         <p className='font-medium'>{t('chat_setup_failed')}</p>
         <Button variant='outline' onClick={onRetry}>{t('chat_setup_retry')}</Button>
+        <HumanContact i18nKey='chat_human_contact' className='max-w-xs text-xs text-muted-foreground' />
       </div>
     );
   }
@@ -74,13 +76,16 @@ function ChatSetupState({ introState, onRetry }: { introState: ChatIntroState; o
 // Intentions: the chat can't reach the agent, and here's the one button that fixes it — instead of leaving the
 // user to guess (people typed "retry" into the chat). Two cases: a message that was stored but didn't get
 // through (try again = hand it over again), and the project failing to open with the chat already going
-// (try again = open it again).
+// (try again = open it again). If trying again doesn't fix it, there's a person to write to.
 function ChatRetryBanner({ messageKey, isRetrying, onRetry }: { messageKey: string; isRetrying: boolean; onRetry: () => void }) {
   const { t } = useTranslation();
   return (
     <div role='alert' data-component='chat-retry' className='mb-2 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm animate-in fade-in-0'>
       <TriangleAlertIcon className='size-4 shrink-0 text-destructive' />
-      <p className='flex-1'>{t(messageKey)}</p>
+      <div className='flex-1'>
+        <p>{t(messageKey)}</p>
+        <HumanContact i18nKey='chat_human_contact' className='mt-0.5 text-xs text-muted-foreground' />
+      </div>
       <Button size='sm' variant='outline' disabled={isRetrying} onClick={onRetry} className='shrink-0 bg-card'>
         {isRetrying && <Spinner data-icon='inline-start' />}
         {t('chat_setup_retry')}
@@ -157,14 +162,13 @@ function OlderMessagesLoader({ hasOlder, isLoading, hasFailed, onLoad }: {
   return null;
 }
 
-type AgentChatTab = 'chat' | 'documents' | 'preview' | 'deploy';
+type AgentChatTab = 'chat' | 'preview' | 'deploy';
 
 // Original purpose: talking to a project's site-building agent.
 // Intentions: fills whatever box it's given (no width or height of its own) — a full page column while
 // planning, a side panel next to the site preview once building.
 // Layout: tabs. Chat = transcript (official message-scroller: follows new messages, jump-to-latest
-// button) with the composer — or the agent's open question — pinned underneath. Documents = the files the
-// agent wrote; a file card in the chat switches over with that file open. Preview = whatever `preview` is
+// button) with the composer — or the agent's open question — pinned underneath. Preview = whatever `preview` is
 // given, as a tab of its own — for screens too narrow to show it beside the chat. Deploy = likewise
 // `deploy`, once there's a finished site to publish.
 // The chat's state comes from the parent (`useAgentChat`), which also needs it to lay the page out.
@@ -201,8 +205,6 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
   // Preview and Deploy can go away while selected (e.g. the window got wider and they moved beside the
   // chat): fall back to chat.
   const activeTab = (selectedTab === 'preview' && !preview) || (selectedTab === 'deploy' && !deploy) ? 'chat' : selectedTab;
-  // The artifact open in the Documents tab; null = showing the list.
-  const [openArtifactPath, setOpenArtifactPath] = useState<string | null>(null);
   // Names of the agent's documents so far: the question panel's encouragement follows the planning progress.
   // Re-read whenever the agent says something new, since that's when a document can appear.
   const [specDocNames, setSpecDocNames] = useState<string[]>([]);
@@ -233,10 +235,6 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
     pendingInteractionIds: _.map(pendingInteractions, 'id'),
     isAgentWorking,
     getFileUrl,
-    onOpenArtifact: path => {
-      setOpenArtifactPath(path);
-      setSelectedTab('documents');
-    },
   }), [messages, pendingInteractions, isAgentWorking, getFileUrl]);
   const visibleMessages = useMemo(
     () => _.filter(messages, message => hasVisibleContent(message, renderContext.toolUsesById)),
@@ -265,7 +263,6 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
     >
       <TabsList variant='line' className='w-full justify-start border-b px-3'>
         <TabsTrigger value='chat' className='flex-none px-3'>{t('chat_tab_chat')}</TabsTrigger>
-        <TabsTrigger value='documents' className='flex-none px-3'>{t('chat_tab_documents')}</TabsTrigger>
         {preview && (
           <TabsTrigger value='preview' className='flex-none px-3' data-building={isPreviewBuilding || undefined}>
             {t('chat_tab_preview')}
@@ -276,7 +273,7 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
       </TabsList>
 
       {/* Kept mounted while hidden so the draft, scroll position and any half-answered question survive a
-          trip to Documents. */}
+          trip to another tab. */}
       <TabsContent value='chat' keepMounted className='flex min-h-0 flex-col text-base'>
         {/* autoScroll: follow new messages unless the user has scrolled up to read (then the button shows).
           Deliberately no `scrollAnchor` items: the scroller jumps to any anchor it hasn't visited yet,
@@ -310,10 +307,11 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
                   </MessageScrollerItem>
                 ))}
                 {/* The agent's done and it's the user's move: a quiet pill under its last bubble (offset past the
-                    avatar), so it's clear the chat is waiting on them. Questions waiting for an answer carry their own. */}
+                    avatar), so it's clear the chat is waiting on them. Questions waiting for an answer carry their own.
+                    A bit more than the usual gap above it: a tapped bubble shows its time in that gap (TimedBubble). */}
                 {isWaitingForUser && (
                   <MessageScrollerItem className={_SCROLLER_ITEM_CLASS}>
-                    <div data-component='chat-waiting-for-user' className='-mt-2 pl-[2.625rem]'>
+                    <div data-component='chat-waiting-for-user' className='mt-1 pl-[2.625rem] max-sm:pl-0'>
                       <span className='inline-flex items-center gap-2.5 rounded-full bg-brand-light px-4 py-2 text-sm font-semibold text-brand-ink shadow-md shadow-brand-light/40 animate-in fade-in-0 slide-in-from-bottom-1 duration-500'>
                         {/* A pinging dot: the "it's your turn" cue that catches the eye without moving the layout. In
                             the logo's lavender, on the lime pill. */}
@@ -376,20 +374,6 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
             </div>
           </div>
         </MessageScrollerProvider>
-      </TabsContent>
-
-      <TabsContent value='documents' className='flex min-h-0 flex-col text-base'>
-        {/* The agent can revise a document without showing it again, so the list refetches whenever it
-            says anything new. */}
-        {conversationId && (
-          <ArtifactsPanel
-            conversationId={conversationId}
-            refreshKey={latestAssistantSeq}
-            openPath={openArtifactPath}
-            onOpenPath={setOpenArtifactPath}
-            getFileUrl={getFileUrl}
-          />
-        )}
       </TabsContent>
 
       {/* Kept mounted so switching tabs doesn't reload the site or lose where it was. */}

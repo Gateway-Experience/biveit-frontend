@@ -17,6 +17,9 @@ type AppState = {
   // Text to put in the project chat's box (focused, not sent) -- e.g. the launch dialog handing a question over to
   // the agent. The chat takes it in and clears it.
   chatPrefill: string | null;
+  // This visit started with an idea typed on the landing site (/projects?idea=..., see NewProjectModal). Those
+  // people came to build something right away, so the first-time welcome (WelcomeShow) leaves them be.
+  hasLandingIdea: boolean;
   set: (partial: Partial<AppState>) => void;
 };
 
@@ -25,6 +28,7 @@ const useStore = create<AppState>((set) => ({
   isCookiePreferencesOpen: false,
   isNewProjectOpen: false,
   chatPrefill: null,
+  hasLandingIdea: false,
   set,
 }));
 

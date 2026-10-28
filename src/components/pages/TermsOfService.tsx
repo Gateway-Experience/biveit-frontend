@@ -1,15 +1,11 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import { PATHS } from 'src/utils/constants';
+import { PATHS, SUPPORT_EMAIL } from 'src/utils/constants';
 
 // Bump this whenever the terms change. A fixed date (not "today") so the page doesn't claim a fresh update on
 // every visit. Month is 0-based.
 const LAST_UPDATED = new Date(2026, 9, 25);
-
-// Where people write to about their account and these terms. Shown in the text, so changing it here changes it
-// everywhere.
-const TERMS_CONTACT_EMAIL = 'support@biveit.com';
 
 // Keep these in step with how the product actually works and is sold:
 // - what's paid for, and when: PRICING in utils/constants (the Pricing page reads it too)
@@ -37,7 +33,7 @@ const TermsOfService = () => {
   const { t, i18n } = useTranslation();
   // No escaping: React already escapes text, and i18next's would show a date's slashes as &#x2F;.
   const textValues = {
-    email: TERMS_CONTACT_EMAIL,
+    email: SUPPORT_EMAIL,
     date: LAST_UPDATED.toLocaleDateString(i18n.resolvedLanguage),
     interpolation: { escapeValue: false },
   };

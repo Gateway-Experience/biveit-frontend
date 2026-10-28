@@ -5,7 +5,7 @@ const USER_TYPES = {
   GUEST: 'GUEST',
 };
 
-const APP_NAME = 'biveit';
+const APP_NAME = 'Biveit';
 
 // The UI languages, in the order the language menu lists them. This is the one list: AppProvider loads
 // a translation bundle for each code (from i18nMappings), and LanguageSelector shows these entries.
@@ -28,16 +28,23 @@ const SIDEBAR_WIDTH_PX = 240;
 // What biveit costs, in USD — the one place prices live in the app (formatted for display by services/pricing).
 // Every screen that mentions a price reads it from here: the Pricing page, the Deploy tab, Help. The landing site
 // (biveit-landing, src/utils/constants.ts) has its own copy for its FAQ: change both together.
-//   publishPrice     the regular one-time price to publish a site
-//   salePublishPrice what it's sold for while there's a sale; null = no sale, publishPrice applies
-//   monthlyPrice     charged every month after that
-//   freeDomainBelow  a domain costing less than this is included free
+// References: the business side (what each option gets, how access works) is biveit-backend docs/plans/launch-flow.md.
+//   oneTimePrice     pay once: the site's code to host yourself, plus the AI assistant for a month
+//   monthlyPrice     subscription, billed monthly: we host and deploy it, the AI assistant stays on
+//   yearlyPrice      the same subscription, billed yearly
+//   domainFromPrice  the cheapest yearly price of a domain bought from us (domains are billed on their own)
+//   yearlyDomainCredit  on the yearly plan, how much of the domain's price we cover: a cheaper domain is free, a
+//                       dearer one costs only the difference
 const PRICING = {
-  publishPrice: 49,
-  salePublishPrice: 39 as number | null,
-  monthlyPrice: 9,
-  freeDomainBelow: 20,
+  oneTimePrice: 19,
+  monthlyPrice: 19,
+  yearlyPrice: 159,
+  domainFromPrice: 10,
+  yearlyDomainCredit: 20,
 };
+
+// Where people reach a human: the Help chat, the Pricing page's FAQ and the Terms all show it.
+const SUPPORT_EMAIL = 'support@biveit.com';
 
 // The site kinds the new-project form offers up front (bootstrap_data.site_kinds). Values are what the agent
 // reads, so they stay in English; the labels are translated. The chat shows them back in the user's language.
@@ -80,6 +87,7 @@ export {
   USER_TYPES,
   PATHS,
   PRICING,
+  SUPPORT_EMAIL,
   SITE_KIND_OPTIONS,
   NEW_PROJECT_IDEA_PARAM,
   EXAMPLE_IDEA_KEYS,

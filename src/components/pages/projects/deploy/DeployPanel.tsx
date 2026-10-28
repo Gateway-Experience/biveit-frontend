@@ -1,20 +1,19 @@
 import _ from 'lodash';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from 'cn';
-import { CheckIcon, RocketIcon } from 'lucide-react';
+import { RocketIcon } from 'lucide-react';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
+import PlanList from 'src/components/common/PlanList';
 import { Spinner } from 'src/components/common/Spinner';
 import LaunchProgress from 'src/components/pages/projects/launch/LaunchProgress';
 import { Button } from 'src/components/shadui/button';
 import { DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
 import { LAUNCH_QUERY_KEY, activateLaunchDomain, downloadCode, redeploySite } from 'src/services/launch';
-import { formatUsd } from 'src/services/pricing';
 import type { LaunchStatus } from 'src/types/launch';
-
-// The pitch's list -- what launching gets them. Keys of i18nMappings.
-const _PITCH_FEATURE_KEYS = ['launch_feature_online', 'launch_feature_edits_plan', 'launch_feature_download', 'launch_feature_free_domain'];
+import { PATHS } from 'src/utils/constants';
 
 // The celebration's blocks come in one after another, once the pop-up itself has risen into place.
 // `both` keeps each one hidden during its delay instead of flashing in first.
@@ -52,7 +51,7 @@ export default function DeployPanel({ variant = 'tab', projectId, projectName, s
     <div data-component='deploy-panel' data-variant={variant} data-stage={status?.stage} className={cn('min-h-0 overflow-y-auto', className)}>
       <div className={cn('mx-auto flex w-full max-w-md flex-col', isCelebration ? 'gap-7 px-6 pt-12 pb-10 sm:px-10' : 'gap-5 px-4 py-8')}>
         {!isCelebration && !status && <div className='flex justify-center py-10'><Spinner className='size-5 text-muted-foreground' /></div>}
-        {showsOffer && <LaunchOffer isCelebration={isCelebration} status={status} onLaunch={() => onLaunch('new')} />}
+        {showsOffer && <LaunchOffer isCelebration={isCelebration} onLaunch={() => onLaunch('new')} />}
         {!showsOffer && status && <LaunchState projectId={projectId} projectName={projectName} status={status} onLaunch={onLaunch} />}
         {onShowCelebration && (
           <Button variant='link' size='sm' className='self-center text-muted-foreground' onClick={onShowCelebration}>
@@ -64,13 +63,12 @@ export default function DeployPanel({ variant = 'tab', projectId, projectName, s
   );
 }
 
-function LaunchOffer({ isCelebration, status, onLaunch }: { isCelebration: boolean; status?: LaunchStatus; onLaunch: () => void }) {
-  const { t, i18n } = useTranslation();
+function LaunchOffer({ isCelebration, onLaunch }: { isCelebration: boolean; onLaunch: () => void }) {
+  const { t } = useTranslation();
   // Each block's entrance, only when celebrating.
   const enter = (order: number) => (isCelebration ? { className: _ENTER_CLASS, style: _getEnterStyle(order) } : {});
   const Title = isCelebration ? DialogTitle : 'h2';
   const Description = isCelebration ? DialogDescription : 'p';
-  const monthly = _.find(status?.plans, { key: 'monthly' });
 
   return (
     <>
@@ -96,18 +94,14 @@ function LaunchOffer({ isCelebration, status, onLaunch }: { isCelebration: boole
       </div>
       <div {...enter(2)}>
         <div className='rounded-2xl border bg-card p-5'>
-          {monthly && <div className='text-lg font-bold'>{t('launch_from_price', { price: formatUsd(monthly.price_usd, i18n.language) })}</div>}
-          <ul className='mt-4 flex flex-col gap-2.5 text-sm'>
-            {_.map(_PITCH_FEATURE_KEYS, key => (
-              <li key={key} className='flex items-start gap-2.5'>
-                <CheckIcon className='mt-0.5 size-4 shrink-0 text-ring' />
-                {t(key)}
-              </li>
-            ))}
-          </ul>
+          <PlanList />
           <Button size='lg' className='mt-5 w-full' onClick={onLaunch} data-action='launch'>
             {t('launch_cta')}
           </Button>
+          {/* A new tab: this sits in the project workspace (or its celebration pop-up), which shouldn't be left. */}
+          <Link to={PATHS.pricing} target='_blank' className='mt-3 block text-center text-xs text-muted-foreground hover:text-foreground hover:underline'>
+            {t('pricing_see_details')}
+          </Link>
         </div>
       </div>
     </>

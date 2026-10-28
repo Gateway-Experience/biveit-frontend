@@ -452,6 +452,18 @@ export default function AppSidebar() {
             {isSignedIn
               ? (
                 <>
+                  {/* Signed in, home is the projects page. */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location.pathname === PATHS.projects}
+                      tooltip={t('nav_home')}
+                      render={<Link to={PATHS.projects} onClick={closeIfMobile} />}
+                      className={_ITEM_TEXT_CLASS}
+                    >
+                      <HouseIcon />
+                      <span>{t('nav_home')}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       tooltip={t('projects_new')}

@@ -45,10 +45,14 @@ export default function BrandLogo({ className, markClassName, hasWordmark = true
 // The wordmark on its own, sized by its line of text (in em), for putting the name inside a sentence or heading
 // ("Log in to biveit"). It sits on the text's baseline; "biveit" has no descenders, so the image's bottom edge
 // is the letters' baseline. Read out as the name.
-function BrandWordmark({ className }: { className?: string }) {
+// `isOnDark`: always the dark-background version, whatever the theme, for surfaces that are dark in both
+// (e.g. the welcome show's stage).
+function BrandWordmark({ className, isOnDark = false }: { className?: string; isOnDark?: boolean }) {
   return (
     <span role='img' aria-label={APP_NAME} className={cn('inline-flex h-[0.74em] align-baseline', className)}>
-      {_renderThemedImage(wordmarkUrl, wordmarkDarkUrl, 'h-full w-auto')}
+      {isOnDark
+        ? <img src={wordmarkDarkUrl} alt='' aria-hidden='true' draggable={false} className='h-full w-auto' />
+        : _renderThemedImage(wordmarkUrl, wordmarkDarkUrl, 'h-full w-auto')}
     </span>
   );
 }

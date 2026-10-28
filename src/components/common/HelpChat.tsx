@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { ArrowUpIcon, LifeBuoyIcon } from 'lucide-react';
 
+import HumanContact from 'src/components/common/HumanContact';
 import { Button } from 'src/components/shadui/button';
 import { Input } from 'src/components/shadui/input';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from 'src/components/shadui/sheet';
@@ -101,6 +102,7 @@ export default function HelpChat({ open, onOpenChange }: { open: boolean; onOpen
               <div key={index} data-nomatch className='flex flex-col gap-2 animate-in fade-in-0 slide-in-from-bottom-1'>
                 <p className={cn(_BUBBLE_CLASS, 'bg-muted')}>{t('help_no_match')}</p>
                 {renderTopicChips()}
+                <HumanContact i18nKey='help_human_no_match' className={cn(_BUBBLE_CLASS, 'bg-muted')} />
               </div>
             );
           })}
@@ -108,7 +110,8 @@ export default function HelpChat({ open, onOpenChange }: { open: boolean; onOpen
         </div>
 
         <div className='border-t px-5 py-4'>
-          <p className='mb-2.5 text-xs text-muted-foreground'>{t('help_project_hint')}</p>
+          <p className='mb-1 text-xs text-muted-foreground'>{t('help_project_hint')}</p>
+          <HumanContact i18nKey='help_human' className='mb-2.5 text-xs text-muted-foreground' />
           <form
             onSubmit={event => {
               event.preventDefault();
