@@ -372,3 +372,12 @@
   to { transform: scaleX(1); }
 }
 
+/* The chat's "thinking" spark (AgentWaitLine): dots circling it, and the spark breathing as it turns. */
+@keyframes wait-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes wait-twinkle {
+  0%, 100% { transform: scale(0.82) rotate(0deg); opacity: 0.8; }
+  50% { transform: scale(1.08) rotate(45deg); opacity: 1; }
+}
+

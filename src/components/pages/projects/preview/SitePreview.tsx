@@ -33,9 +33,24 @@ const _NAV_BUTTON_CLASS = 'max-sm:size-7';
 // The site in a frame. It opens `src` when it mounts and then leaves the frame alone: a new `src` on a live
 // frame would navigate it (and add an entry to the PAGE's history, hijacking the browser's own back
 // button). To open somewhere else, mount a new one (see `loadCount`).
+// Until the page has loaded, a spinner covers it: a dev server that just started compiles the site on its
+// first visit, which can take a while, and a blank white frame reads as broken. Each mount (a new load, the
+// site coming back) starts covered again. Placed over the frame's box, so its parent has to be `relative`.
 function PreviewFrame({ src, ...frameProps }: ComponentProps<'iframe'> & { src: string }) {
+  const { t } = useTranslation();
   const [initialSrc] = useState(src);
-  return <iframe src={initialSrc} {...frameProps} />;
+  const [isLoaded, setIsLoaded] = useState(false);
+  return (
+    <>
+      <iframe src={initialSrc} onLoad={() => setIsLoaded(true)} {...frameProps} />
+      {!isLoaded && (
+        <div data-section='preview-loading' className='absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground'>
+          <Spinner className='size-5' />
+          {t('preview_loading')}
+        </div>
+      )}
+    </>
+  );
 }
 
 // Original purpose: the live preview of the site being built, next to (or tabbed with) the agent chat.
@@ -161,7 +176,7 @@ export default function SitePreview({ state, siteUrl, build, buildSketch, classN
         {/* The scaled-down footprint, so the frame can be centred by its visible size. */}
         {isLive && (
           <div
-            className={cn('mx-auto overflow-hidden bg-background', device === 'mobile' && 'rounded-[1.75rem] shadow-lg ring-1 ring-foreground/10')}
+            className={cn('relative mx-auto overflow-hidden bg-background', device === 'mobile' && 'rounded-[1.75rem] shadow-lg ring-1 ring-foreground/10')}
             style={{ width: deviceWidth * scale, height: stageSize.height }}
           >
             <PreviewFrame

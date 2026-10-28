@@ -5,7 +5,7 @@ import { PATHS, SUPPORT_EMAIL } from 'src/utils/constants';
 
 // Bump this whenever the terms change. A fixed date (not "today") so the page doesn't claim a fresh update on
 // every visit. Month is 0-based.
-const LAST_UPDATED = new Date(2026, 9, 25);
+const LAST_UPDATED = new Date(2026, 9, 28);
 
 // Keep these in step with how the product actually works and is sold:
 // - what's paid for, and when: PRICING in utils/constants (the Pricing page reads it too)
@@ -18,6 +18,8 @@ const SECTIONS: { titleKey: string; bodyKey: string; link?: { to: string; labelK
   { titleKey: 'terms_content_title', bodyKey: 'terms_content_body' },
   { titleKey: 'terms_ai_title', bodyKey: 'terms_ai_body', link: { to: PATHS.privacyPolicy, labelKey: 'privacy_policy_title' } },
   { titleKey: 'terms_use_title', bodyKey: 'terms_use_body' },
+  // Mirrored for the agent in the backend's data/template/CLAUDE.md ("Websites we don't build"): keep the two lists in step.
+  { titleKey: 'terms_prohibited_title', bodyKey: 'terms_prohibited_body' },
   { titleKey: 'terms_payments_title', bodyKey: 'terms_payments_body', link: { to: PATHS.pricing, labelKey: 'pricing_nav' } },
   { titleKey: 'terms_domains_title', bodyKey: 'terms_domains_body' },
   { titleKey: 'terms_ending_title', bodyKey: 'terms_ending_body' },

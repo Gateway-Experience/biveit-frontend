@@ -299,13 +299,22 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
                   </MessageScrollerItem>
                 )}
                 <ChatSetupState introState={introState} onRetry={onRetrySession} />
-                {/* The avatar goes on the first message of each run from one side. The starting brief counts as the
-                    user's, when it's shown (the whole history is loaded). */}
-                {_.map(visibleMessages, (message, index) => (
-                  <MessageScrollerItem key={message.seq} messageId={String(message.seq)} className={_SCROLLER_ITEM_CLASS}>
-                    <ChatMessageItem message={message} renderContext={renderContext} hasAvatar={(index ? visibleMessages[index - 1].role : !hasOlder && 'user') !== message.role} />
-                  </MessageScrollerItem>
-                ))}
+                {/* The avatar goes on the first message of each run from one side, and the time on its last. The
+                    starting brief counts as the user's, when it's shown (the whole history is loaded). The rest of a
+                    run sits as close together as one message's bubbles (-mt-3: gap-5 down to 8px, like gap-2). */}
+                {_.map(visibleMessages, (message, index) => {
+                  const isRunStart = (index ? visibleMessages[index - 1].role : !hasOlder && 'user') !== message.role;
+                  return (
+                    <MessageScrollerItem key={message.seq} messageId={String(message.seq)} className={cn(_SCROLLER_ITEM_CLASS, !isRunStart && '-mt-3')}>
+                      <ChatMessageItem
+                        message={message}
+                        renderContext={renderContext}
+                        hasAvatar={isRunStart}
+                        isRunEnd={visibleMessages[index + 1]?.role !== message.role}
+                      />
+                    </MessageScrollerItem>
+                  );
+                })}
                 {/* The agent's done and it's the user's move: a quiet pill under its last bubble (offset past the
                     avatar), so it's clear the chat is waiting on them. Questions waiting for an answer carry their own.
                     A bit more than the usual gap above it: a tapped bubble shows its time in that gap (TimedBubble). */}
