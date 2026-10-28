@@ -10,8 +10,8 @@ import { RenameProjectModal, TrashProjectModal } from 'src/components/pages/proj
 import ProjectSearchBox from 'src/components/pages/projects/ProjectSearchBox';
 import { BuildFlowArt, DashboardBackdrop, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import { useProjectListUpdaters, useProjects, useTrashedProjects } from 'src/components/pages/projects/useProjectLists';
-import ProjectsIntro from 'src/components/pages/projects/ProjectsIntro';
 import useProjectSearch from 'src/components/pages/projects/useProjectSearch';
+import WelcomeShow from 'src/components/pages/projects/WelcomeShow';
 import { Button } from 'src/components/shadui/button';
 import { useStore } from 'src/state-store';
 import { PATHS } from 'src/utils/constants';
@@ -172,8 +172,10 @@ export default function ProjectList() {
         </div>
       )}
 
-      {/* Once the page's content is in place, so it can find what it points at. */}
-      {!_.isNil(projects) && <ProjectsIntro />}
+      {/* The first-time welcome. Mounted with the page so it can cover it from the first paint while it works out
+          whether it's due. The spotlight tour (ProjectsIntro) is parked for now while we try this one out; mount
+          it here again to bring it back. */}
+      <WelcomeShow />
     </div>
   );
 }

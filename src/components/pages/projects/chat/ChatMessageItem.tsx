@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
-  CheckIcon, ChevronRightIcon, FileTextIcon, MessageCircleQuestionIcon, ThumbsUpIcon, TriangleAlertIcon, XIcon,
+  CheckIcon, ChevronRightIcon, MessageCircleQuestionIcon, ThumbsUpIcon, TriangleAlertIcon, XIcon,
 } from 'lucide-react';
 import { cn } from 'cn';
 
@@ -12,9 +12,6 @@ import Markdown from 'src/components/common/Markdown';
 import UserAvatar from 'src/components/common/UserAvatar';
 import ChatAttachment from 'src/components/pages/projects/chat/ChatAttachment';
 import { CHAT_TEXT_SIZE_CLASS } from 'src/components/pages/projects/chat/chatStyles';
-import {
-  Attachment, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle, AttachmentTrigger,
-} from 'src/components/shadui/attachment';
 import { Bubble, BubbleContent } from 'src/components/shadui/bubble';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'src/components/shadui/collapsible';
 import { Marker, MarkerContent, MarkerIcon } from 'src/components/shadui/marker';
@@ -25,6 +22,7 @@ import { getInteractionResults, isAskUser, isShowArtifact, isUserFacingTool } fr
 import { formatDateTime } from 'src/utils/common';
 import { useStore } from 'src/state-store';
 import { SITE_KIND_OPTIONS } from 'src/utils/constants';
+import { useIsMobile } from 'src/utils/hooks';
 import type {
   AiMessage, AttachmentBlock, ContentBlock, InteractionResult, SignalBlock, TextBlock, ToolResultBlock,
   ToolUseBlock,
@@ -37,8 +35,6 @@ export type ChatRenderContext = {
   pendingInteractionIds: string[];
   isAgentWorking: boolean;
   getFileUrl: (path: string) => string;
-  // Switches to the Documents tab with that artifact open.
-  onOpenArtifact: (path: string) => void;
 };
 
 // The registry's bubbles are sized for dense UIs (text-xs); chat reads better a notch above the UI's
@@ -55,10 +51,18 @@ const _NOTICE_SIGNAL_KEYS: Record<string, string> = {
   DEVENV_FAILED: 'chat_signal_devenv_failed',
 };
 
+// How long a tap waits before it counts as one: the usual double-click window. A second click within it means
+// the user is selecting text (double-click a word, triple-click a paragraph), not asking for the time.
+const _SINGLE_TAP_WAIT_MS = 250;
+
 // Intentions: a chat bubble that tells when it was sent, but only when asked: tapping it (or Enter/Space on
-// it) shows the time under it, tapping again hides it. A tap that ends a text selection isn't a toggle, so
-// copying a bit of a message doesn't flip it, and neither is one on a link or a control inside the bubble
-// (the agent's file cards, its tool rows). Used for the user's messages and the agent's framed replies.
+// it) shows the time under it, tapping again hides it. Made so it never gets in the way of copying text:
+// - a tap only counts once the double-click window has passed with no second click and nothing selected, so
+//   double- and triple-clicking select words and paragraphs as usual;
+// - the time floats in the gap under the bubble instead of taking up a line, so showing it never shifts the
+//   messages (the chat would scroll to make up for it, moving the text out from under the pointer).
+// A tap on a link or a control inside the bubble (the agent's file cards, its tool rows) isn't a toggle either.
+// Used for the user's messages and the agent's framed replies.
 function TimedBubble({ sentAt, variant, align = 'start', contentClassName, children, ...dataProps }: {
   sentAt: string;
   variant: React.ComponentProps<typeof Bubble>['variant'];
@@ -68,13 +72,35 @@ function TimedBubble({ sentAt, variant, align = 'start', contentClassName, child
 } & Record<`data-${string}`, string | undefined>) {
   const { i18n } = useTranslation();
   const [isTimeShown, setIsTimeShown] = useState(false);
+  // The pending single tap, cancelled by a second click. null = none waiting.
+  const tapTimerRef = useRef<number | null>(null);
 
-  const toggleTime = (target: EventTarget, bubbleContent: EventTarget) => {
+  const cancelPendingTap = () => {
+    if (tapTimerRef.current !== null) {
+      window.clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = null;
+    }
+  };
+  useEffect(() => cancelPendingTap, []);
+
+  const isOnInnerControl = (target: EventTarget, bubbleContent: EventTarget) => {
     const control = (target as Element).closest?.('a, button, input, textarea, [role=button]');
-    if (!_.isEmpty(_.toString(window.getSelection())) || (control && control !== bubbleContent)) {
+    return !!control && control !== bubbleContent;
+  };
+  const isTextSelected = () => !_.isEmpty(_.toString(window.getSelection()));
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    cancelPendingTap();
+    // The second (or third) click of a double- or triple-click: selecting text, not a tap.
+    if (event.detail > 1 || isOnInnerControl(event.target, event.currentTarget)) {
       return;
     }
-    setIsTimeShown(!isTimeShown);
+    tapTimerRef.current = window.setTimeout(() => {
+      tapTimerRef.current = null;
+      if (!isTextSelected()) {
+        setIsTimeShown(isShown => !isShown);
+      }
+    }, _SINGLE_TAP_WAIT_MS);
   };
 
   return (
@@ -83,11 +109,11 @@ function TimedBubble({ sentAt, variant, align = 'start', contentClassName, child
         role='button'
         tabIndex={0}
         aria-expanded={isTimeShown}
-        onClick={event => toggleTime(event.target, event.currentTarget)}
+        onClick={handleClick}
         onKeyDown={(event) => {
           if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
             event.preventDefault();
-            toggleTime(event.target, event.currentTarget);
+            setIsTimeShown(!isTimeShown);
           }
         }}
         className={cn('cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring/30', contentClassName)}
@@ -95,10 +121,15 @@ function TimedBubble({ sentAt, variant, align = 'start', contentClassName, child
         {children}
       </BubbleContent>
       {isTimeShown && (
+        // In the gap under the bubble (the messages are gap-5 apart, room for one line of text-xs), out of the
+        // layout, so nothing moves.
         <time
           dateTime={sentAt}
           data-component='chat-message-time'
-          className={cn('px-1 text-xs text-muted-foreground animate-in fade-in-0 duration-200', align === 'end' && 'self-end')}
+          className={cn(
+            'pointer-events-none absolute top-full mt-0.5 px-1 text-xs whitespace-nowrap text-muted-foreground animate-in fade-in-0 duration-200',
+            align === 'end' ? 'right-0' : 'left-0',
+          )}
         >
           {formatDateTime(sentAt, i18n.language)}
         </time>
@@ -141,24 +172,6 @@ function InteractionSection({ toolUse, isPending }: { toolUse: ToolUseBlock; isP
   );
 }
 
-// The agent pointing at one of its files. Opens it in the Documents tab (in place of the chat); always
-// the latest version, since revisions overwrite the same path.
-function ShowArtifactCard({ toolUse, onOpenArtifact }: { toolUse: ToolUseBlock; onOpenArtifact: (path: string) => void }) {
-  const { t } = useTranslation();
-  const { path, title } = toolUse.input as { path: string; title: string };
-
-  return (
-    <Attachment data-toolcallid={toolUse.id} data-artifactpath={path} className='min-w-56'>
-      <AttachmentMedia><FileTextIcon /></AttachmentMedia>
-      <AttachmentContent>
-        <AttachmentTitle className='text-sm'>{title}</AttachmentTitle>
-        <AttachmentDescription>{t('artifact_open_in_documents')}</AttachmentDescription>
-      </AttachmentContent>
-      <AttachmentTrigger aria-label={title} onClick={() => onOpenArtifact(path)} />
-    </Attachment>
-  );
-}
-
 // A notice the agent's side put in the log (e.g. the preview environment failing to set up): one quiet line,
 // the details (the BE's reason) on hover.
 function SignalNotice({ signal }: { signal: SignalBlock }) {
@@ -178,13 +191,6 @@ function _getItemLabel(item: InteractionItem | undefined, t: TFunction) {
     return t(APPROVAL_ACTION_TEXT_KEYS[item.action.name]?.title || 'chat_action_unknown_title');
   }
   return item?.question.question;
-}
-
-// What an item the user set aside reads as: an approval they put off says so in its own words ("Build later"),
-// a question just reads as dismissed.
-function _getSetAsideText(item: InteractionItem | undefined, t: TFunction) {
-  const laterKey = item?.kind === 'action' ? APPROVAL_ACTION_TEXT_KEYS[item.action.name]?.later : null;
-  return t(laterKey || 'chat_answer_dismissed');
 }
 
 // What a submitted answer reads as: the picked options (and custom text), or the approval button clicked.
@@ -208,7 +214,6 @@ function InteractionAnswerBubble({ answers, sentAt }: {
     const items = toolUse ? flattenInteractionItems([toolUse]) : [];
     return _.map(getInteractionResults(toolResult), (result, index) => ({
       key: `${toolResult.tool_use_id}:${index}`,
-      item: items[index] as InteractionItem | undefined,
       label: _getItemLabel(items[index] as InteractionItem | undefined, t),
       result,
     }));
@@ -223,11 +228,11 @@ function InteractionAnswerBubble({ answers, sentAt }: {
       contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2 p-2')}
     >
       {/* One light tile per question, so several answers in one card don't run together. */}
-      {_.map(_.reject(answeredItems, { result: { status: 'untouched' } }), ({ key, item, label, result }) => (
+      {_.map(_.reject(answeredItems, { result: { status: 'untouched' } }), ({ key, label, result }) => (
         <div key={key} data-answeritem={key} className='flex flex-col rounded-xl bg-background/60 px-3 py-2'>
           <span className='pb-1.5 text-sm text-muted-foreground'>{label}</span>
           <span className={cn('pt-1.5 font-medium', _DASHED_DIVIDER_CLASS, result.status === 'aborted' && 'font-normal text-muted-foreground italic')}>
-            {result.status === 'submitted' ? _getSubmittedAnswerText(result, t) : _getSetAsideText(item, t)}
+            {result.status === 'submitted' ? _getSubmittedAnswerText(result, t) : t('chat_answer_dismissed')}
           </span>
         </div>
       ))}
@@ -324,8 +329,9 @@ function AssistantBlock({ block, renderContext }: { block: ContentBlock; renderC
   if (_isTextBlock(block)) {
     return <Markdown className={_AGENT_TEXT_CLASS} options={{ keepsLineBreaks: true }}>{block.text}</Markdown>;
   }
+  // The agent pointing at one of its plan documents: not shown, there's nowhere in the app to open it.
   if (_isToolUseBlock(block) && isShowArtifact(block)) {
-    return <ShowArtifactCard toolUse={block} onOpenArtifact={renderContext.onOpenArtifact} />;
+    return null;
   }
   if (_isNoticeSignalBlock(block)) {
     return <SignalNotice signal={block} />;
@@ -349,7 +355,10 @@ const _groupIntoBubbles = (blocks: ContentBlock[]) => _.reduce(blocks, (groups, 
 // Intentions: a reply that says something (text) or asks something sits in frames, one per text block, its
 // questions last in the last frame, under a dashed line. A message that's only the agent at work (tool rows,
 // notices) stays unframed: those are progress, not a reply.
+// On phones there's no frame: the reply is plain text across the whole width (the screen's too narrow to spare
+// the frame's padding and the bubble's 80% cap), still grouped the same way and still tappable for its time.
 function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage; renderContext: ChatRenderContext }) {
+  const isMobile = useIsMobile();
   const [interactionBlocks, otherBlocks] = _.partition(message.content, _isInteractionBlock);
   const toNodes = (blocks: ContentBlock[]) => _.map(blocks, (block, index) => (
     <AssistantBlock key={_isToolUseBlock(block) ? block.id : index} block={block} renderContext={renderContext} />
@@ -363,10 +372,10 @@ function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage
   return _.map(bubbleGroups, (blocks, groupIndex) => (
     <TimedBubble
       key={groupIndex}
-      variant='muted'
+      variant={isMobile ? 'ghost' : 'muted'}
       sentAt={message.created_at}
       data-component='agent-reply'
-      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-3 py-3')}
+      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-3 py-3', isMobile && 'w-full')}
     >
       {toNodes(blocks)}
       {groupIndex === _.size(bubbleGroups) - 1 && _.map(interactionBlocks, block => (
@@ -382,7 +391,7 @@ function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage
 function hasVisibleContent(message: AiMessage, toolUsesById: Record<string, ToolUseBlock>) {
   return _.some(message.content, block => _isTextBlock(block)
     || (message.role === 'user' && _isAttachmentBlock(block))
-    || (message.role === 'assistant' && (_isToolUseBlock(block) || _isNoticeSignalBlock(block)))
+    || (message.role === 'assistant' && ((_isToolUseBlock(block) && !isShowArtifact(block)) || _isNoticeSignalBlock(block)))
     || (message.role === 'user' && _isToolResultBlock(block) && isUserFacingTool(toolUsesById[block.tool_use_id])));
 }
 
@@ -394,10 +403,11 @@ function hasVisibleContent(message: AiMessage, toolUsesById: Record<string, Tool
 // Intentions: who's talking, beside their messages: the agent's avatar on the left, the user's on the right.
 // Only the first message of a run from the same side shows it (`isShown`), at its top, so it doesn't move
 // when a time is revealed under a bubble; the others keep its room, so the bubbles of a run line up.
+// None on phones: the room is better spent on the messages.
 function ChatAvatar({ role, isShown }: { role: AiMessage['role']; isShown: boolean }) {
   const user = useStore(state => state.user);
   return (
-    <MessageAvatar aria-hidden={!isShown} className={cn('self-start bg-transparent', !isShown && 'invisible')}>
+    <MessageAvatar aria-hidden={!isShown} className={cn('self-start bg-transparent max-sm:hidden', !isShown && 'invisible')}>
       {role === 'user' ? <UserAvatar user={user} className='size-8' /> : <AgentAvatar />}
     </MessageAvatar>
   );
@@ -440,7 +450,6 @@ function StartingBriefMessage({ bootstrapData, hasAvatar = true }: { bootstrapDa
 // Intentions: renders one message. User messages sit on the right in bubbles (text, or their answers);
 // the agent's replies sit on the left in a frame (questions last), with its work in progress as marker
 // lines. Bubbles show their time when tapped (TimedBubble).
-// No avatars: alignment alone already says who's talking.
 // `hasAvatar`: whether this message starts a run from its side, and so shows the avatar (see ChatAvatar).
 export default function ChatMessageItem({ message, renderContext, hasAvatar = true }: {
   message: AiMessage;

@@ -14,6 +14,9 @@ type AppState = {
   // The new-project form is a modal over whatever page you're on (mounted once, in DefaultLayout), so any
   // "New project" button can open it without leaving the page.
   isNewProjectOpen: boolean;
+  // This visit started with an idea typed on the landing site (/projects?idea=..., see NewProjectModal). Those
+  // people came to build something right away, so the first-time welcome (WelcomeShow) leaves them be.
+  hasLandingIdea: boolean;
   set: (partial: Partial<AppState>) => void;
 };
 
@@ -21,6 +24,7 @@ const useStore = create<AppState>((set) => ({
   cookieConsent: readCookieConsent(),
   isCookiePreferencesOpen: false,
   isNewProjectOpen: false,
+  hasLandingIdea: false,
   set,
 }));
 

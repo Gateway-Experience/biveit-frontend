@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeftIcon, ClockIcon, FastForwardIcon, ListChecksIcon, SparklesIcon, UndoIcon, XIcon } from 'lucide-react';
+import { ChevronLeftIcon, FastForwardIcon, ListChecksIcon, SparklesIcon, UndoIcon, XIcon } from 'lucide-react';
 
 import Modal from 'src/components/common/Modal';
 import { Spinner } from 'src/components/common/Spinner';
@@ -52,10 +52,8 @@ function _pickEncouragementKey(answeredCount: number, specDocNames: string[]) {
 }
 
 // Intentions: one action the agent asks the user to decide on. An approval (approve the spec, sign off the
-// site) is two buttons: approve, or keep iterating (the agent just hears it), plus "build later" to set it
-// aside without deciding (`onSkip`: the agent hears they'll decide later), with a line saying nothing is lost.
-// An action we don't know yet can't be done from here, so it only offers a skip — the user mustn't be stuck
-// behind it.
+// site) is two buttons: approve, or keep iterating (the agent just hears it). An action we don't know yet
+// can't be done from here, so it only offers a skip — the user mustn't be stuck behind it.
 // `decision` = the button clicked, kept so it can show the spinner while sending.
 function ActionStep({ action, decision, isSubmitting, hasBack, onBack, onDecide, onSkip }: {
   action: RequestedAction;
@@ -92,25 +90,16 @@ function ActionStep({ action, decision, isSubmitting, hasBack, onBack, onDecide,
         <p className='font-medium'>{t(textKeys.title)}</p>
         <p className='mt-0.5 text-xs text-muted-foreground'>{t(textKeys.hint)}</p>
       </div>
-      <div className='flex flex-wrap items-end justify-between gap-x-4 gap-y-3'>
-        <div className='flex min-w-0 flex-col items-start gap-1'>
-          <Button variant='outline' size='sm' data-action='decide-later' disabled={isSubmitting} onClick={onSkip}>
-            {isSubmitting && !decision ? <Spinner data-icon='inline-start' /> : <ClockIcon data-icon='inline-start' />}
-            {t(textKeys.later)}
-          </Button>
-          <p className='max-w-sm text-xs text-muted-foreground'>{t(textKeys.laterHint)}</p>
-        </div>
-        <div className='ml-auto flex flex-wrap items-center justify-end gap-2'>
-          {backButton}
-          <Button variant='outline' size='sm' disabled={isSubmitting} onClick={() => onDecide('iterate')}>
-            {isSubmitting && decision === 'iterate' && <Spinner data-icon='inline-start' />}
-            {t('chat_action_iterate')}
-          </Button>
-          <Button size='sm' disabled={isSubmitting} onClick={() => onDecide('approved')}>
-            {isSubmitting && decision === 'approved' && <Spinner data-icon='inline-start' />}
-            {t('chat_action_approve')}
-          </Button>
-        </div>
+      <div className='flex flex-wrap items-center justify-end gap-2'>
+        {backButton}
+        <Button variant='outline' size='sm' disabled={isSubmitting} onClick={() => onDecide('iterate')}>
+          {isSubmitting && decision === 'iterate' && <Spinner data-icon='inline-start' />}
+          {t('chat_action_iterate')}
+        </Button>
+        <Button size='sm' disabled={isSubmitting} onClick={() => onDecide('approved')}>
+          {isSubmitting && decision === 'approved' && <Spinner data-icon='inline-start' />}
+          {t('chat_action_approve')}
+        </Button>
       </div>
     </>
   );
@@ -120,7 +109,7 @@ function ActionStep({ action, decision, isSubmitting, hasBack, onBack, onDecide,
 // — one at a time, in place of the chat input (the BE won't take text until they're answered or dismissed).
 // Several pending calls run as one sequence and are submitted together once, at the end (the BE wants
 // everything pending answered in one go). On a question, the X dismisses from the current step on, which hands
-// chat mode back without a reply; an action has no X, its own "build later" does that, saying what it means.
+// chat mode back without a reply. An approval has no X: it's approve or keep iterating.
 // Mount with a key made of the calls' ids, so a new set starts from a clean form.
 // Ways out of questions besides answering: "Previous question" (on the first step of the set, when an
 // earlier question was answered) and "Skip questions & build now" both dismiss from here and then say so in

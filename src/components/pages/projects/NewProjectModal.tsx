@@ -89,7 +89,7 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
       return;
     }
     setValue('description', idea.slice(0, _DESCRIPTION_MAX_LENGTH));
-    set({ isNewProjectOpen: true });
+    set({ isNewProjectOpen: true, hasLandingIdea: true });
     setSearchParams(
       previous => new URLSearchParams(_.filter([...previous], ([key]) => key !== NEW_PROJECT_IDEA_PARAM)),
       { replace: true },

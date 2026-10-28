@@ -1,20 +1,15 @@
-import _ from 'lodash';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
-import { CheckIcon, RocketIcon } from 'lucide-react';
+import { RocketIcon } from 'lucide-react';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
-import PriceTag from 'src/components/common/PriceTag';
+import PlanList from 'src/components/common/PlanList';
 import { Button } from 'src/components/shadui/button';
 import { DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
-import { getPriceLabels } from 'src/services/pricing';
 import { PATHS } from 'src/utils/constants';
 
-// What publishing gets them — the same list as the Pricing page. Keys of i18nMappings; they take the price
-// params (see services/pricing).
 // TODO: there's no payment/deployment API yet. Wire the button once there is.
-const _PLAN_FEATURE_KEYS = ['deploy_feature_live', 'pricing_feature_domain', 'deploy_feature_hosting', 'deploy_feature_changes'];
 
 // The celebration's blocks come in one after another, once the pop-up itself has risen into place.
 // `both` keeps each one hidden during its delay instead of flashing in first.
@@ -37,9 +32,8 @@ export default function DeployPanel({ variant = 'tab', onShowCelebration, classN
   onShowCelebration?: () => void;
   className?: string;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const notify = useNotification();
-  const prices = getPriceLabels(i18n.language);
   const isCelebration = variant === 'celebration';
   // Each block's entrance, only when celebrating.
   const enter = (order: number) => (isCelebration ? { className: _ENTER_CLASS, style: _getEnterStyle(order) } : {});
@@ -72,15 +66,7 @@ export default function DeployPanel({ variant = 'tab', onShowCelebration, classN
 
         <div {...enter(2)}>
           <div className='rounded-2xl border bg-card p-5'>
-            <PriceTag />
-            <ul className='mt-4 flex flex-col gap-2.5 text-sm'>
-              {_.map(_PLAN_FEATURE_KEYS, key => (
-                <li key={key} className='flex items-start gap-2.5'>
-                  <CheckIcon className='mt-0.5 size-4 shrink-0 text-ring' />
-                  {t(key, prices)}
-                </li>
-              ))}
-            </ul>
+            <PlanList />
             {/* TODO: no payment/deployment API yet — this only says so. */}
             <Button size='lg' className='mt-5 w-full' onClick={() => notify('info', t('deploy_coming_soon'))}>
               {t('deploy_cta')}

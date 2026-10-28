@@ -23,23 +23,11 @@ export type InteractionDraft = QuestionDraft | ActionDraft;
 const _EMPTY_QUESTION_DRAFT: QuestionDraft = { selected: [], custom: '' };
 const _EMPTY_ACTION_DRAFT: ActionDraft = { decision: null };
 
-// The approval actions we know how to show (approve / keep iterating / decide later), with their wording. `later`
-// is the way to set it aside without deciding (submitted as aborted: the agent hears the user will decide later),
-// and `laterHint` says what that means for the project. Any other action name is one we don't know yet: the user
-// can only skip it (aborted too).
-const APPROVAL_ACTION_TEXT_KEYS: Record<string, { title: string; hint: string; later: string; laterHint: string }> = {
-  APPROVE_PLAN: {
-    title: 'chat_action_approve_plan_title',
-    hint: 'chat_action_approve_plan_hint',
-    later: 'chat_action_approve_plan_later',
-    laterHint: 'chat_action_approve_plan_later_hint',
-  },
-  APPROVE_BUILD: {
-    title: 'chat_action_approve_build_title',
-    hint: 'chat_action_approve_build_hint',
-    later: 'chat_action_approve_build_later',
-    laterHint: 'chat_action_approve_build_later_hint',
-  },
+// The approval actions we know how to show (approve / keep iterating), with their wording. Any other action
+// name is one we don't know yet: the user can only skip it (submitted as aborted).
+const APPROVAL_ACTION_TEXT_KEYS: Record<string, { title: string; hint: string }> = {
+  APPROVE_PLAN: { title: 'chat_action_approve_plan_title', hint: 'chat_action_approve_plan_hint' },
+  APPROVE_BUILD: { title: 'chat_action_approve_build_title', hint: 'chat_action_approve_build_hint' },
 };
 
 function getEmptyDraft(item: InteractionItem): InteractionDraft {

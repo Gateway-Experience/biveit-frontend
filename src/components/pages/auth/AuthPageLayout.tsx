@@ -108,13 +108,17 @@ export default function AuthPageLayout({
   );
 }
 
-// [Pure] `text` with the name ("Log in to biveit") drawn as the wordmark, wherever the language puts it.
+// [Pure] `text` with the name ("Log in to Biveit") drawn as the wordmark, wherever the language puts it.
+// The heading's tight letter-spacing squeezes a plain space next to the image, so the wordmark gets a little
+// extra room on whichever side the text has one.
 function _renderWithWordmark(text: string) {
   const textParts = _.split(text, APP_NAME);
   return textParts.map((textPart, index) => (
     <Fragment key={index}>
       {textPart}
-      {index < textParts.length - 1 && <BrandWordmark />}
+      {index < textParts.length - 1 && (
+        <BrandWordmark className={cn(/\s$/.test(textPart) && 'ml-[0.15em]', /^\s/.test(textParts[index + 1]) && 'mr-[0.15em]')} />
+      )}
     </Fragment>
   ));
 }
