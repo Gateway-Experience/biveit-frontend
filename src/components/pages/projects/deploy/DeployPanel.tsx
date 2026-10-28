@@ -1,17 +1,18 @@
 import _ from 'lodash';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from 'cn';
 import { RocketIcon } from 'lucide-react';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
 import PlanList from 'src/components/common/PlanList';
 import { Spinner } from 'src/components/common/Spinner';
-import LaunchProgress from 'src/components/pages/projects/launch/LaunchProgress';
+import LaunchProgress, { DnsRecordsTable } from 'src/components/pages/projects/launch/LaunchProgress';
 import { Button } from 'src/components/shadui/button';
 import { DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
-import { LAUNCH_QUERY_KEY, activateLaunchDomain, downloadCode, redeploySite } from 'src/services/launch';
+import { LAUNCH_QUERY_KEY, activateLaunchDomain, checkOwnDomain, downloadCode, redeploySite } from 'src/services/launch';
 import type { LaunchStatus } from 'src/types/launch';
 import { PATHS } from 'src/utils/constants';
 
@@ -130,6 +131,8 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
     onError: () => notify('error', t('launch_error_generic')),
   });
   const queryClient = useQueryClient();
+  // The one domain whose DNS records are showing (opened by hand, or by a switch refused for missing records).
+  const [recordsDomain, setRecordsDomain] = useState<string | null>(null);
   const { mutate: activateDomain, isPending: isActivating, variables: activatingDomain } = useMutation({
     mutationFn: (domain: string) => activateLaunchDomain(projectId, domain),
     onSuccess: (_result, domain) => {
@@ -139,6 +142,9 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
     onError: (error, domain) => {
       const code: string = _.get(error, 'data.detail') || '';
       notify('error', t(`launch_error_${code}`, { domain, defaultValue: t('launch_error_generic') }));
+      if (code === 'DOMAIN_NOT_VERIFIED') {
+        setRecordsDomain(domain);
+      }
     },
   });
   const isGoingLive = _.includes(['registering_domain', 'waiting_dns', 'deploying', 'failed', 'live'], status.stage);
@@ -194,16 +200,32 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
         <div className='flex flex-col gap-2' data-component='launch-domains'>
           <h3 className='text-sm font-medium text-muted-foreground'>{t('launch_domains_title')}</h3>
           {_.map(status.site_domains, row => (
-            <div key={row.domain} className='flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm' data-domain={row.domain} data-active={row.active}>
-              <span className='min-w-0 break-all'>{row.domain}</span>
-              {row.active
-                ? <span className='shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>{t('launch_domain_active')}</span>
-                : (
-                  <Button variant='ghost' size='sm' className='shrink-0' disabled={isActivating} onClick={() => activateDomain(row.domain)} data-action='use-domain'>
-                    {isActivating && activatingDomain === row.domain && <Spinner data-icon='inline-start' />}
-                    {t('launch_domain_use')}
-                  </Button>
-                )}
+            <div key={row.domain} className='flex flex-col gap-2 rounded-xl border px-3 py-2 text-sm' data-domain={row.domain} data-active={row.active}>
+              <div className='flex items-center justify-between gap-3'>
+                <span className='min-w-0 break-all'>{row.domain}</span>
+                {row.active
+                  ? <span className='shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>{t('launch_domain_active')}</span>
+                  : (
+                    <span className='flex shrink-0 items-center gap-1'>
+                      {row.kind === 'external' && (
+                        <Button variant='ghost' size='sm' onClick={() => setRecordsDomain(recordsDomain === row.domain ? null : row.domain)} data-action='toggle-records'>
+                          {t(recordsDomain === row.domain ? 'launch_domain_hide_records' : 'launch_domain_show_records')}
+                        </Button>
+                      )}
+                      <Button variant='ghost' size='sm' disabled={isActivating} onClick={() => activateDomain(row.domain)} data-action='use-domain'>
+                        {isActivating && activatingDomain === row.domain && <Spinner data-icon='inline-start' />}
+                        {t('launch_domain_use')}
+                      </Button>
+                    </span>
+                  )}
+              </div>
+              {recordsDomain === row.domain && !row.active && (
+                <OwnDomainRecords
+                  projectId={projectId}
+                  domain={row.domain}
+                  movesByItself={status.launch?.domain?.kind === 'own' && status.launch.domain.name === row.domain}
+                />
+              )}
             </div>
           ))}
           <Button variant='link' size='sm' className='self-start px-0' onClick={() => onLaunch('domain')} data-action='add-domain'>
@@ -226,6 +248,33 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
           </Button>
         )}
       </div>
+    </div>
+  );
+}
+
+// The DNS records an attached domain of the user's own still needs before the site can move to it, re-checked
+// while they're showing. Original purpose: the Launch tab's domain list, for a domain that isn't the active one.
+// `movesByItself`: it's the domain the launch chose, which the backend switches to once its records are found;
+// any other one waits for "Use this domain".
+const _RECORDS_RECHECK_MS = 30000;
+
+function OwnDomainRecords({ projectId, domain, movesByItself }: { projectId: number; domain: string; movesByItself: boolean }) {
+  const { t } = useTranslation();
+  const { data: check } = useQuery({
+    queryKey: [LAUNCH_QUERY_KEY, projectId, 'own-domain', domain],
+    queryFn: () => checkOwnDomain(projectId, domain),
+    refetchInterval: query => (query.state.data?.verified ? false : _RECORDS_RECHECK_MS),
+  });
+  if (!check) {
+    return <Spinner className='size-4 text-muted-foreground' />;
+  }
+  return (
+    <div className='flex flex-col gap-2' data-component='own-domain-records'>
+      <p className='text-xs text-muted-foreground'>{t('launch_own_records_intro')}</p>
+      <DnsRecordsTable records={check.records} />
+      <p className={cn('text-xs', check.verified ? 'text-primary' : 'text-muted-foreground')}>
+        {t(check.verified ? 'launch_own_ready' : movesByItself ? 'launch_domain_records_pending' : 'launch_domain_records_pending_switch')}
+      </p>
     </div>
   );
 }
