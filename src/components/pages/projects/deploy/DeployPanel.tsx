@@ -118,12 +118,15 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
   const { t, i18n } = useTranslation();
   const notify = useNotification();
   const formatDate = (date: string) => new Date(date).toLocaleDateString(i18n.language);
+  // Dates go into translations unescaped: React escapes what it renders, and i18next's own escaping would show
+  // their slashes as &#x2F;.
+  const unescaped = { interpolation: { escapeValue: false } };
   const { mutate: redeploy, isPending: isRedeploying } = useMutation({
     mutationFn: () => redeploySite(projectId),
     onSuccess: () => notify('success', t('launch_redeploy_started')),
     onError: error => {
       const until = _.get(error, 'data.until');
-      notify('error', until ? t('launch_redeploy_cooldown', { time: new Date(until).toLocaleTimeString(i18n.language) }) : t('launch_error_generic'));
+      notify('error', until ? t('launch_redeploy_cooldown', { time: new Date(until).toLocaleTimeString(i18n.language), ...unescaped }) : t('launch_error_generic'));
     },
   });
   const { mutate: download, isPending: isDownloading } = useMutation({
@@ -183,15 +186,15 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
             <dt className='text-muted-foreground'>{t('launch_review_plan_line', { plan: planName })}</dt>
             <dd>
               {status.plan.ends_at
-                ? t('launch_plan_ends', { plan: planName, date: formatDate(status.plan.ends_at) })
-                : status.plan.renews_at && t('launch_plan_renews', { plan: planName, date: formatDate(status.plan.renews_at) })}
+                ? t('launch_plan_ends', { date: formatDate(status.plan.ends_at), ...unescaped })
+                : status.plan.renews_at && t('launch_plan_renews', { date: formatDate(status.plan.renews_at), ...unescaped })}
             </dd>
           </>
         )}
         {status.access.edit_until && (
           <>
             <dt className='text-muted-foreground'>{t('launch_plan_one_time')}</dt>
-            <dd>{t('launch_edits_until', { date: formatDate(status.access.edit_until) })}</dd>
+            <dd>{t('launch_edits_until', { date: formatDate(status.access.edit_until), ...unescaped })}</dd>
           </>
         )}
       </dl>

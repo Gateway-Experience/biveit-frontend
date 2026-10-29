@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
-import { CheckIcon, CircleIcon, ExternalLinkIcon } from 'lucide-react';
+import { CheckIcon, CircleIcon, ExternalLinkIcon, XIcon } from 'lucide-react';
 
 import { Spinner } from 'src/components/common/Spinner';
 import { Button } from 'src/components/shadui/button';
@@ -9,17 +9,27 @@ import type { DnsRecord, LaunchStatus } from 'src/types/launch';
 
 // Intentions: a launch's way to going live as a checklist -- payment, the domain, building the site, live -- read
 // off the backend's status (and its stage), so the dialog after paying and the Launch tab show the same thing.
-// A step is done, in progress (spinner), or still to come.
+// A step is done, in progress (spinner), failed, or still to come.
 
-type StepState = 'done' | 'active' | 'todo';
+type StepState = 'done' | 'active' | 'failed' | 'todo';
 
 // [Pure] The checklist for a status: [{key, label, state}], in order.
 function getLaunchSteps(status: LaunchStatus, t: (key: string, params?: Record<string, unknown>) => string) {
   const domainName = status.domain?.domain || status.domain_subscription?.domain || status.launch?.domain?.name || '';
   const isOwnDomain = status.domain?.kind === 'external' || status.launch?.domain?.kind === 'own';
   const order = ['registering_domain', 'waiting_dns', 'deploying', 'live'];
-  const reached = _.indexOf(order, status.stage);
-  const stateOf = (index: number): StepState => (reached > index || status.stage === 'live' ? 'done' : reached === index ? 'active' : 'todo');
+  // A failed deployment got as far as deploying: the steps before it are done, that one failed.
+  const isFailed = status.stage === 'failed';
+  const reached = _.indexOf(order, isFailed ? 'deploying' : status.stage);
+  const stateOf = (index: number): StepState => {
+    if (reached > index || status.stage === 'live') {
+      return 'done';
+    }
+    if (reached === index) {
+      return isFailed ? 'failed' : 'active';
+    }
+    return 'todo';
+  };
   const domainStep = isOwnDomain
     ? { key: 'domain', label: stateOf(1) === 'done' ? t('launch_step_domain_connected', { domain: domainName }) : t('launch_step_waiting_dns'), state: stateOf(1) }
     : { key: 'domain', label: t(stateOf(0) === 'done' ? 'launch_step_domain_registered' : 'launch_step_domain_registering', { domain: domainName }), state: stateOf(0) };
@@ -73,6 +83,7 @@ export default function LaunchProgress({ status }: { status: LaunchStatus }) {
           <li key={step.key} className={cn('flex items-center gap-2.5', step.state === 'todo' && 'text-muted-foreground')} data-step={step.key} data-state={step.state}>
             {step.state === 'done' && <CheckIcon className='size-4 shrink-0 text-primary' />}
             {step.state === 'active' && <Spinner className='size-4 shrink-0' />}
+            {step.state === 'failed' && <XIcon className='size-4 shrink-0 text-destructive' />}
             {step.state === 'todo' && <CircleIcon className='size-4 shrink-0' />}
             {step.label}
           </li>

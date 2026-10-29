@@ -90,16 +90,16 @@ export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isFr
       </div>
 
       <div className='text-xs text-muted-foreground'>
-        {plan === 'one_time' && <p>{t('launch_review_one_time_note', { date: formatDateIn(planInfo?.edit_days || 30, i18n.language) })}</p>}
+        {plan === 'one_time' && <p>{t('launch_review_one_time_note', { date: formatDateIn(planInfo?.edit_days || 30, i18n.language), interpolation: { escapeValue: false } })}</p>}
         {plan !== 'one_time' && (
           <>
             <p>{t('launch_review_renews')}</p>
             <ul className='mt-1 list-disc pl-5'>
               {planInfo && (
-                <li>{t('launch_review_renews_plan', { plan: t(`launch_plan_${planInfo.key}`), price: money(planInfo.price_usd), date: formatDateIn(planRenewsInDays, i18n.language) })}</li>
+                <li>{t('launch_review_renews_plan', { plan: t(`launch_plan_${planInfo.key}`), price: money(planInfo.price_usd), date: formatDateIn(planRenewsInDays, i18n.language), interpolation: { escapeValue: false } })}</li>
               )}
               {isBuyingDomain && (
-                <li>{t('launch_review_renews_domain', { domain: domain.name, price: money(domain.price_per_year), date: formatDateIn(365, i18n.language) })}</li>
+                <li>{t('launch_review_renews_domain', { domain: domain.name, price: money(domain.price_per_year), date: formatDateIn(365, i18n.language), interpolation: { escapeValue: false } })}</li>
               )}
             </ul>
             <p className='mt-1'>{t('launch_review_cancel_anytime')}</p>
