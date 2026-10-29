@@ -28,7 +28,8 @@ const _REGISTRANT_FIELDS: { key: RegistrantFieldKey; labelKey: string; required:
   { key: 'zip', labelKey: 'launch_field_zip', required: true },
   { key: 'country', labelKey: 'launch_field_country', required: true, pattern: /^[A-Za-z]{2}$/ },
   { key: 'email', labelKey: 'launch_field_email', required: true, pattern: /^[^@\s]+@[^@\s]+\.[^@\s]+$/ },
-  { key: 'phone', labelKey: 'launch_field_phone', required: true, pattern: /^\+\d{1,3}\.\d{4,14}$/ },
+  // E.164 once spaces, dots, dashes and brackets are dropped -- the backend drops them the same way and stores +84901234567.
+  { key: 'phone', labelKey: 'launch_field_phone', required: true, pattern: /^\+[1-9][\d\s.\-()]{7,20}$/ },
 ];
 
 // [Pure] A date a whole number of days from now, the way the user's language writes it.
