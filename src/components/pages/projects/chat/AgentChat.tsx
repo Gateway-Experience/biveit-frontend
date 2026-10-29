@@ -18,6 +18,8 @@ import BuildProgressPanel from 'src/components/pages/projects/chat/BuildProgress
 import { BuildGlyph } from 'src/components/pages/projects/preview/BuildIndicator';
 import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
 import InteractionPanel from 'src/components/pages/projects/chat/InteractionPanel';
+import DeployTabTrigger from 'src/components/pages/projects/deploy/DeployTabTrigger';
+import LaunchNudge from 'src/components/pages/projects/deploy/LaunchNudge';
 import ChatMessageItem, { hasVisibleContent, StartingBriefMessage, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
 import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import { getArtifacts } from 'src/services/chat';
@@ -172,7 +174,9 @@ type AgentChatTab = 'chat' | 'preview' | 'deploy';
 // given, as a tab of its own — for screens too narrow to show it beside the chat. Deploy = likewise
 // `deploy`, once there's a finished site to publish.
 // The chat's state comes from the parent (`useAgentChat`), which also needs it to lay the page out.
-export default function AgentChat({ projectId, bootstrapData, chat, onRetrySession, isRetryingSession = false, preview, activeBuild = null, deploy, className }: {
+export default function AgentChat({
+  projectId, bootstrapData, chat, onRetrySession, isRetryingSession = false, preview, activeBuild = null, deploy, isLaunchPending = false, onOpenDeploy, className,
+}: {
   projectId: number;
   // The new-project form's answers (project.bootstrap_data): shown as the user's first message.
   bootstrapData: Record<string, unknown>;
@@ -185,6 +189,11 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
   // chat, and a loading bar takes the input's place.
   activeBuild?: DevenvBuild | null;
   deploy?: ReactNode;
+  // Nothing launched yet: the Deploy tab stands out (DeployTabTrigger).
+  isLaunchPending?: boolean;
+  // Shows the Deploy tab when it sits beside the chat rather than in it; left out while that tab is already open
+  // there (nothing to nudge towards then).
+  onOpenDeploy?: () => void;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -205,6 +214,8 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
   // Preview and Deploy can go away while selected (e.g. the window got wider and they moved beside the
   // chat): fall back to chat.
   const activeTab = (selectedTab === 'preview' && !preview) || (selectedTab === 'deploy' && !deploy) ? 'chat' : selectedTab;
+  // Where the launch nudge takes them: our own Deploy tab, or the side panel's.
+  const openDeploy = deploy ? () => setSelectedTab('deploy') : onOpenDeploy;
   // Names of the agent's documents so far: the question panel's encouragement follows the planning progress.
   // Re-read whenever the agent says something new, since that's when a document can appear.
   const [specDocNames, setSpecDocNames] = useState<string[]>([]);
@@ -269,7 +280,7 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
             {isPreviewBuilding && <BuildGlyph className='text-base' />}
           </TabsTrigger>
         )}
-        {deploy && <TabsTrigger value='deploy' className='flex-none px-3'>{t('chat_tab_deploy')}</TabsTrigger>}
+        {deploy && <DeployTabTrigger isLaunchPending={isLaunchPending} />}
       </TabsList>
 
       {/* Kept mounted while hidden so the draft, scroll position and any half-answered question survive a
@@ -370,6 +381,7 @@ export default function AgentChat({ projectId, bootstrapData, chat, onRetrySessi
             {/* Hidden (not unmounted) while building too: the build panel takes its place, and the draft survives. */}
             <div hidden={!_.isEmpty(pendingInteractions) || isPreviewBuilding}>
               {isAgentWorking && <AgentWaitLine isBuilding={false} />}
+              {isLaunchPending && openDeploy && !isAgentWorking && <LaunchNudge onOpenDeploy={openDeploy} />}
               <ChatComposerWithSend
                 sendText={sendText}
                 onUpload={uploadFiles}

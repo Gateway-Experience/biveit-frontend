@@ -2,6 +2,10 @@
 
 export type PlanKey = 'monthly' | 'yearly' | 'one_time';
 
+// Opens the launch dialog: 'new' to buy a plan (`plan`: already picked, so the dialog starts past its plan step),
+// 'domain' to finish / choose a domain on a running plan.
+export type OpenLaunchDialog = (mode: 'new' | 'domain', options?: { plan?: PlanKey }) => void;
+
 export type LaunchPlan = {
   key: PlanKey;
   product: 'plan' | 'one_time';

@@ -5,6 +5,7 @@ import { cn } from 'cn';
 import BrandLogo from 'src/components/common/BrandLogo';
 import LanguageSelector from 'src/components/common/LanguageSelector';
 import LinkButton from 'src/components/common/LinkButton';
+import ThemeSelector from 'src/components/common/ThemeSelector';
 import { APP_NAME, MAIN_CONTENT_WIDTH_CLASS, PATHS } from 'src/utils/constants';
 
 // The header and footer run wider than the app's content column (MAIN_CONTENT_WIDTH_CLASS), like the landing site's.
@@ -23,13 +24,16 @@ function PublicHeader() {
   const { t } = useTranslation();
 
   return (
-    <header className='sticky top-0 z-40 border-b border-foreground/10 bg-brand-light'>
+    // Always light, like the landing site's own bar it copies: lime, with the light logo. The page under it follows
+    // the theme. text-foreground: re-read here, inside force-light; inherited, it'd be the dark page's light text.
+    <header className='force-light sticky top-0 z-40 border-b border-foreground/10 bg-brand-light text-foreground'>
       <div className={cn(_WIDE_WIDTH_CLASS, 'flex h-16 items-center justify-between gap-3')}>
         <Link to='/' className='flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
           <BrandLogo />
         </Link>
         <div className='flex items-center gap-1 sm:gap-2'>
           <LanguageSelector />
+          <ThemeSelector />
           <LinkButton href={_START_PATH} size='sm' className={_BRAND_BUTTON_CLASS}>{t('landing_nav_start')}</LinkButton>
         </div>
       </div>
@@ -60,11 +64,12 @@ function PublicFooter() {
 
 // Original purpose: pricing and the policy pages for visitors who aren't signed in (the people who reach them
 // from the landing site). They get a top bar and footer like the landing site's (biveit-landing's Header and
-// Footer) instead of the app's sidebar, which is only about their account and projects. Light theme only, like
-// the landing site. Signed-in users see the same pages inside DefaultLayout (see routes).
+// Footer) instead of the app's sidebar, which is only about their account and projects. They follow the app's theme
+// (only the top bar stays light, like the landing site's). Signed-in users see the same pages inside DefaultLayout
+// (see routes).
 export default function PublicLayout() {
   return (
-    <div data-layout='public' className='force-light flex min-h-svh flex-col bg-background text-foreground'>
+    <div data-layout='public' className='flex min-h-svh flex-col bg-background text-foreground'>
       <PublicHeader />
       <main className='flex flex-1 flex-col'>
         <div className={cn('mx-auto mt-7 mb-12 w-full p-4', MAIN_CONTENT_WIDTH_CLASS)}>

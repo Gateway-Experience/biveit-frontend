@@ -11,6 +11,7 @@ import ProjectProgress from 'src/components/pages/projects/ProjectProgress';
 import PanelResizeHandle from 'src/components/pages/projects/PanelResizeHandle';
 import { WorkspaceBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import DeployPanel from 'src/components/pages/projects/deploy/DeployPanel';
+import DeployTabTrigger from 'src/components/pages/projects/deploy/DeployTabTrigger';
 import SiteReadyModal from 'src/components/pages/projects/deploy/SiteReadyModal';
 import LaunchDialog from 'src/components/pages/projects/launch/LaunchDialog';
 import useLaunchStatus from 'src/components/pages/projects/launch/useLaunchStatus';
@@ -22,19 +23,18 @@ import useProjectSession from 'src/components/pages/projects/useProjectSession';
 import { Spinner } from 'src/components/common/Spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
 import { getPreviewState } from 'src/services/devenv';
-import { getProjects } from 'src/services/project';
+import { getProjects, getSitePreviewUrl } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
 import { useElementSize, useMediaQuery, usePrevious } from 'src/utils/hooks';
+import type { OpenLaunchDialog, PlanKey } from 'src/types/launch';
 import type { Project } from 'src/types/project';
 
 // Tailwind's `lg`: from here up the preview sits beside the chat; below it, it's a tab in the chat panel.
 const _SIDE_BY_SIDE_QUERY = '(min-width: 1024px)';
 
-// The chat's width beside the preview, in px: by default 26rem (45rem on Tailwind's `xl` screens and up), or
-// whatever the user dragged it to (kept in this browser, see _readStoredChatWidth). Never narrower than the
-// minimum, and never so wide the preview gets squeezed below its own.
-const _WIDE_SCREEN_QUERY = '(min-width: 1280px)';
-const _CHAT_DEFAULT_WIDTH_PX = { normal: 416, wide: 720 };
+// The chat's width beside the preview, in px: by default half the room (the two panels the same size), or whatever
+// the user dragged it to (kept in this browser, see _readStoredChatWidth). Never narrower than the minimum, and never
+// so wide the preview gets squeezed below its own.
 const _CHAT_MIN_WIDTH_PX = 352;
 const _PREVIEW_MIN_WIDTH_PX = 420;
 // The handle between the panels, which also makes the gap between them (its w-4).
@@ -71,7 +71,7 @@ const _CHAT_ONLY_WIDTH_CLASS = 'max-w-5xl';
 // The panels take whatever height the screen has left under the title row (the layout's `isWorkspace` makes
 // the page exactly screen-tall). Below the minimum, the page scrolls instead of squashing the chat.
 // The shadow lifts them off the backdrop.
-const _PANEL_CLASS = 'min-h-[26rem] overflow-hidden rounded-2xl bg-background shadow-xl shadow-foreground/8 ring-1 ring-foreground/10';
+const _PANEL_CLASS = 'min-h-[26rem] overflow-hidden rounded-surface glass-surface';
 
 // Original purpose: a single project's workspace — the agent chat, plus the site preview once the agent
 // has started building (planning is chat only, at the usual page width; building uses the full
@@ -91,19 +91,23 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   // The agent says when it's building in the chat itself (signals), so it's read off the messages.
   const activeBuild = useActiveBuild(chat.messages);
   const isSideBySide = useMediaQuery(_SIDE_BY_SIDE_QUERY);
-  const isWideScreen = useMediaQuery(_WIDE_SCREEN_QUERY);
   // The user's own chat width (null = the default), and the room the two panels share.
   const [chosenChatWidth, setChosenChatWidth] = useState<number | null>(_readStoredChatWidth);
   const [setPanelsElement, panelsSize] = useElementSize<HTMLDivElement>();
-  // Not measured yet on the first render (0): no upper limit until it is, rather than a squashed chat for a frame.
+  const [setChatPanelElement, chatPanelSize] = useElementSize<HTMLDivElement>();
+  // The chat's size is left to CSS -- half the room by default, the limits as min/max-width -- and never computed
+  // from a measurement: feeding the row's measured width back into the chat's width made a loop in Firefox, whose
+  // row grows with its content (wider chat -> wider row -> wider chat), running the chat off the screen. The
+  // measurements below only tell the resize handle where a drag starts and how far it may go.
+  const chatSizeStyle = {
+    width: _.isNull(chosenChatWidth) ? `calc(50% - ${_HANDLE_WIDTH_PX / 2}px)` : chosenChatWidth,
+    minWidth: _CHAT_MIN_WIDTH_PX,
+    maxWidth: `calc(100% - ${_HANDLE_WIDTH_PX + _PREVIEW_MIN_WIDTH_PX}px)`,
+  };
+  // Not measured yet on the first render (0): no upper limit until it is.
   const maxChatWidth = panelsSize.width
     ? Math.max(_CHAT_MIN_WIDTH_PX, panelsSize.width - _HANDLE_WIDTH_PX - _PREVIEW_MIN_WIDTH_PX)
     : Infinity;
-  const chatWidth = _.clamp(
-    chosenChatWidth ?? (isWideScreen ? _CHAT_DEFAULT_WIDTH_PX.wide : _CHAT_DEFAULT_WIDTH_PX.normal),
-    _CHAT_MIN_WIDTH_PX,
-    maxChatWidth,
-  );
   const chooseChatWidth = (width: number | null) => {
     setChosenChatWidth(width);
     _storeChatWidth(width);
@@ -130,19 +134,20 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   const [isSiteReadyModalOpen, setIsSiteReadyModalOpen] = useState(false);
   // The launch: its status (shared by the Deploy tab and the dialog) and the dialog, opened in the mode asked for.
   const { data: launchStatus } = useLaunchStatus(projectId, !!buildApprovedAt);
-  const [launchDialogMode, setLaunchDialogMode] = useState<'new' | 'domain' | null>(null);
-  const openLaunchDialog = (mode: 'new' | 'domain') => {
+  const isLaunchPending = launchStatus?.stage === 'not_paid';
+  // What the dialog was opened for (its mode, and the plan if one was picked already); null = closed.
+  const [launchRequest, setLaunchRequest] = useState<{ mode: 'new' | 'domain'; plan: PlanKey | null } | null>(null);
+  const openLaunchDialog: OpenLaunchDialog = (mode, options = {}) => {
     setIsSiteReadyModalOpen(false);
-    setLaunchDialogMode(mode);
+    setLaunchRequest({ mode, plan: options.plan || null });
   };
-  // TODO: `onShowCelebration` is a testing aid (a button to open the pop-up); drop it once that's signed off.
   const deploy = buildApprovedAt && (
     <DeployPanel
       projectId={projectId}
       projectName={project?.name || ''}
       status={launchStatus}
       onLaunch={openLaunchDialog}
-      onShowCelebration={() => setIsSiteReadyModalOpen(true)}
+      sitePictureUrl={project?.site_preview_at ? getSitePreviewUrl(project) : null}
       className='flex-1'
     />
   );
@@ -186,7 +191,7 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
           stage={devenv?.stage || project.stage}
           buildApprovedAt={devenv?.build_approved_at}
           className='mb-4'
-          style={hasSidePanel ? { width: chatWidth } : undefined}
+          style={hasSidePanel ? chatSizeStyle : undefined}
         />
       )}
       <SiteReadyModal
@@ -201,10 +206,11 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
         <LaunchDialog
           projectId={projectId}
           projectName={project?.name || ''}
-          open={!!launchDialogMode}
-          mode={launchDialogMode || 'new'}
+          open={!!launchRequest}
+          mode={launchRequest?.mode || 'new'}
+          initialPlan={launchRequest?.plan}
           status={launchStatus}
-          onClose={() => setLaunchDialogMode(null)}
+          onClose={() => setLaunchRequest(null)}
         />
       )}
 
@@ -215,11 +221,14 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
       {project && (
         // The chat keeps its place in the tree whatever the layout, so switching layouts (the preview
         // arriving, or the window being resized) never remounts it — the draft and scroll position stay.
-        <div ref={setPanelsElement} className={cn('flex min-h-0 flex-1', !hasSidePanel && 'gap-4')}>
+        // contain-inline-size: the row's width comes from the page, never from what's inside it -- so a chat width
+        // too big for this screen (e.g. one dragged on a bigger monitor) can't stretch the page sideways.
+        <div ref={setPanelsElement} className={cn('flex min-h-0 flex-1 [contain:inline-size]', !hasSidePanel && 'gap-4')}>
           <div
+            ref={setChatPanelElement}
             data-workspace-panel='chat'
             className={cn(_PANEL_CLASS, 'min-w-0', hasSidePanel ? 'flex-none' : 'flex-1')}
-            style={hasSidePanel ? { width: chatWidth } : undefined}
+            style={hasSidePanel ? chatSizeStyle : undefined}
           >
             <AgentChat
               projectId={project.id}
@@ -230,12 +239,14 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
               preview={hasSidePanel ? null : preview}
               activeBuild={activeBuild}
               deploy={hasSidePanel ? null : deploy}
+              isLaunchPending={isLaunchPending}
+              onOpenDeploy={hasSidePanel && deploy && sidePanelTab !== 'deploy' ? () => setSidePanelTab('deploy') : undefined}
               className='h-full'
             />
           </div>
           {hasSidePanel && (
             <PanelResizeHandle
-              width={chatWidth}
+              width={chatPanelSize.width}
               minWidth={_CHAT_MIN_WIDTH_PX}
               maxWidth={maxChatWidth}
               onResize={chooseChatWidth}
@@ -253,7 +264,7 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
               <div className='flex items-center gap-3 border-b pr-4'>
                 <TabsList variant='line' className='min-w-0 flex-1 justify-start px-3'>
                   <TabsTrigger value='preview' className='flex-none px-3'>{t('chat_tab_preview')}</TabsTrigger>
-                  {deploy && <TabsTrigger value='deploy' className='flex-none px-3'>{t('chat_tab_deploy')}</TabsTrigger>}
+                  {deploy && <DeployTabTrigger isLaunchPending={isLaunchPending} />}
                 </TabsList>
               </div>
               {/* Kept mounted so a trip to Deploy doesn't reload the site or lose where it was. */}

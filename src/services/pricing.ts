@@ -45,7 +45,7 @@ function getPriceLabels(language?: string) {
 //   isBestValue highlighted, with a "Best value" badge
 const PLANS = [
   {
-    id: 'code',
+    id: 'one_time',
     nameKey: 'pricing_plan_code_name',
     taglineKey: 'pricing_plan_code_tagline',
     priceParam: 'oneTimePrice',

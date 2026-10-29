@@ -23,7 +23,7 @@ function ProjectGridSkeleton() {
   return (
     <div className={_GRID_CLASS}>
       {_.times(3, index => (
-        <div key={index} className='overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10'>
+        <div key={index} className='overflow-hidden rounded-surface glass-surface'>
           <div className='aspect-[16/10] animate-pulse bg-muted' />
           <div className='flex flex-col gap-2 p-4'>
             <div className='h-4 w-1/2 animate-pulse rounded bg-muted' />
@@ -46,7 +46,7 @@ function TrashTile({ trashCount, className }: { trashCount: number; className?: 
       data-action='open-trash'
       data-trashcount={trashCount}
       className={cn(
-        'group flex h-full min-h-44 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-foreground/15 p-5 text-muted-foreground transition',
+        'group flex h-full min-h-44 flex-col items-center justify-center gap-2 rounded-surface border-2 border-dashed border-foreground/15 p-5 text-muted-foreground transition',
         'outline-none hover:border-primary/60 hover:bg-card/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
         className,
       )}
@@ -68,7 +68,7 @@ function ProjectsEmptyState() {
   return (
     <div
       data-section='projects-empty'
-      className='relative isolate flex flex-col items-center overflow-hidden rounded-3xl border bg-card/60 px-6 py-14 text-center animate-in fade-in-0 duration-500'
+      className='relative isolate flex flex-col items-center overflow-hidden rounded-surface glass-surface px-6 py-14 text-center animate-in fade-in-0 duration-500'
     >
       <DotGridBackdrop />
       <BuildFlowArt className='mb-8 w-full max-w-[340px]' />
@@ -116,7 +116,7 @@ export default function ProjectList() {
           and the line art in between on wide screens (and not when the empty state below already shows it).
           Search and "New project" are always there, even with nothing to search yet: the first-time tour
           (ProjectsIntro) starts by pointing at them. */}
-      <header className='relative isolate mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-2xl border bg-card px-5 py-4 sm:px-6'>
+      <header className='relative isolate mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-surface glass-surface px-5 py-4 sm:px-6'>
         <DotGridBackdrop />
         <span aria-hidden='true' className='pointer-events-none absolute -top-20 right-1/3 -z-10 size-48 rounded-full bg-primary/10 blur-3xl' />
         <div className='min-w-0'>

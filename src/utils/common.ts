@@ -247,6 +247,16 @@ function itemListStrToArray(str: string) {
  * End of formatting section.
  */
 
+// For a pick-one menu (radio items) that just opened: put focus -- and so the highlight -- on the item that's
+// ticked, rather than wherever the menu put it. Opened by a screen reader's (or emulated) tap, the menu focuses its
+// first item, which then looks chosen. Next frame, once the items are in the page.
+// `menuName`: the menu content's `data-menu`.
+function focusCheckedMenuItem(menuName: string) {
+  requestAnimationFrame(() => {
+    document.querySelector<HTMLElement>(`[data-menu="${menuName}"] [aria-checked="true"]`)?.focus();
+  });
+}
+
 export {
   pruneVietnameseAccentMarks,
   itemListStrToArray,
@@ -263,4 +273,5 @@ export {
   formatFileSize,
   formatNumber,
   handleShare,
+  focusCheckedMenuItem,
 };

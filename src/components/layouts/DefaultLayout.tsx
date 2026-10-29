@@ -24,7 +24,9 @@ export default function DefaultLayout({ isWorkspace = false }: { isWorkspace?: b
   const set = useStore(state => state.set);
 
   return (
-    <SidebarProvider style={{ '--sidebar-width': `${SIDEBAR_WIDTH_PX}px` } as React.CSSProperties}>
+    // app-sidebar-wash: faint glows behind the glass sidebar, for pages with no artwork of their own to show through
+    // it (the page area covers the rest of it).
+    <SidebarProvider className='app-sidebar-wash' style={{ '--sidebar-width': `${SIDEBAR_WIDTH_PX}px` } as React.CSSProperties}>
       <AppSidebar />
       <NewProjectModal open={isNewProjectOpen} onClose={() => set({ isNewProjectOpen: false })} />
       <SidebarInset className={cn('isolate', isWorkspace ? 'h-svh overflow-hidden' : 'min-h-svh')}>

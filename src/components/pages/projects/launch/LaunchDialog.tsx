@@ -18,6 +18,8 @@ import type { DomainChoice, LaunchCheckout, LaunchStatus, PlanKey, Registrant } 
 // Intentions: taking a site live, in one dialog (docs/plans/launch-flow.md in the backend repo): the plan, the
 // domain (plans only), review, paying, then watching it go live. `mode`:
 //   'new'     a first purchase (or a code-only buyer coming back for a plan): plan -> domain -> review
+//             `initialPlan`, when the plan was picked before opening (the Deploy tab's choice), skips the plan step;
+//             going back from the domain still shows it, to change.
 //   'domain'  the plan already runs and only a domain is missing: domain -> review. It finishes the plan's launch
 //             when that one meant to buy a domain (abandoned or failed), which keeps its free first year.
 // Paying opens the provider's checkout in a new tab -- one per thing bought, the plan then the domain (no cart) --
@@ -30,11 +32,24 @@ type Step = 'plan' | 'domain' | 'review' | 'paying' | 'progress';
 const _STATUS_POLL_MS = 3000;
 const _WAITING_DNS_POLL_MS = 30000;
 
-export default function LaunchDialog({ projectId, projectName, open, mode, status, onClose }: {
+// [Pure] Where the dialog opens: past the plan when one's picked already -- the code goes straight to review
+// (no domain), the hosted plans on to the domain.
+function _getFirstStep(mode: 'new' | 'domain', pickedPlan: PlanKey | null): Step {
+  if (mode === 'domain') {
+    return 'domain';
+  }
+  if (!pickedPlan) {
+    return 'plan';
+  }
+  return pickedPlan === 'one_time' ? 'review' : 'domain';
+}
+
+export default function LaunchDialog({ projectId, projectName, open, mode, initialPlan = null, status, onClose }: {
   projectId: number;
   projectName: string;
   open: boolean;
   mode: 'new' | 'domain';
+  initialPlan?: PlanKey | null;
   status: LaunchStatus;
   onClose: () => void;
 }) {
@@ -42,20 +57,22 @@ export default function LaunchDialog({ projectId, projectName, open, mode, statu
   const notify = useNotification();
   const setStore = useStore(state => state.set);
   const user = useStore(state => state.user);
-  const [step, setStep] = useState<Step>(mode === 'domain' ? 'domain' : 'plan');
-  const [plan, setPlan] = useState<PlanKey | null>(null);
+  // The code can't be bought twice: a picked one-time plan then counts as not picked.
+  const startPlan = mode === 'new' && !(initialPlan === 'one_time' && status.access.can_download) ? initialPlan : null;
+  const [step, setStep] = useState<Step>(_getFirstStep(mode, startPlan));
+  const [plan, setPlan] = useState<PlanKey | null>(startPlan);
   const [domain, setDomain] = useState<DomainChoice | null>(null);
   const [checkout, setCheckout] = useState<LaunchCheckout | null>(null);
 
   // A fresh start each time it opens (in the mode it's opened with).
   useEffect(() => {
     if (open) {
-      setStep(mode === 'domain' ? 'domain' : 'plan');
-      setPlan(null);
+      setStep(_getFirstStep(mode, startPlan));
+      setPlan(startPlan);
       setDomain(null);
       setCheckout(null);
     }
-  }, [open, mode]);
+  }, [open, mode, startPlan]);
 
   // While paying and going live, follow the status (it also moves the launch along on the server).
   const isFollowing = open && (step === 'paying' || step === 'progress');

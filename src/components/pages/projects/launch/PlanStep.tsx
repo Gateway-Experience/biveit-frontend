@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { CheckIcon, MinusIcon } from 'lucide-react';
 
-import { Badge } from 'src/components/shadui/badge';
+import PriceTagBadge from 'src/components/common/PriceTagBadge';
 import { Button } from 'src/components/shadui/button';
 import { formatUsd } from 'src/services/pricing';
 import type { LaunchPlan, PlanKey } from 'src/types/launch';
@@ -67,11 +67,17 @@ export default function PlanStep({ plans, hideOneTime, onChoose }: {
             <div
               key={key}
               data-plan={key}
-              className={cn('flex flex-col gap-3 rounded-2xl border bg-card p-4', isYearly && 'border-primary ring-1 ring-primary')}
+              // Best value gets a soft lime glow to draw the eye -- lime, not the lavender of a selection, and the
+              // same outlined button as the rest: a lavender card or a filled button reads as "already picked", and
+              // nothing's picked until they press Choose.
+              className={cn(
+                'flex flex-col gap-3 rounded-2xl border bg-card p-4',
+                isYearly && 'border-brand-light shadow-[0_0_0_1px_var(--brand-light),0_0_16px_2px_color-mix(in_oklab,var(--brand-light)_55%,transparent)]',
+              )}
             >
-              <div className='flex items-center justify-between gap-2'>
+              <div className='flex flex-wrap items-center justify-between gap-2'>
                 <span className='font-heading font-bold'>{t(`launch_plan_${key}`)}</span>
-                {isYearly && <Badge>{t('launch_best_value')}</Badge>}
+                {isYearly && <PriceTagBadge>{t('launch_best_value')}</PriceTagBadge>}
               </div>
               <div>
                 <div className='text-xl font-bold'>{priceLine(plan)}</div>
@@ -89,7 +95,7 @@ export default function PlanStep({ plans, hideOneTime, onChoose }: {
                   </li>
                 ))}
               </ul>
-              <Button variant={isYearly ? 'default' : 'outline'} onClick={() => onChoose(key)} data-action='choose-plan'>
+              <Button variant='outline' onClick={() => onChoose(key)} data-action='choose-plan'>
                 {t('launch_plan_choose')}
               </Button>
             </div>

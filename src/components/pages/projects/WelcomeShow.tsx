@@ -140,7 +140,9 @@ export default function WelcomeShow() {
 }
 
 // The stage: a light, full-window layer over everything, washed with the brand's lavender and lime.
-const _STAGE_CLASS = 'fixed inset-0 z-[70] flex cursor-default flex-col overflow-x-hidden overflow-y-auto bg-[#FAFBF6] text-brand-ink select-none';
+// In the dark theme the stage goes dark, and the brand ink (its text and lines: text-brand-ink/65 and the like) turns
+// light for it. The few places that use the ink as a dark fill (label chips, cursor tags) name its colour outright.
+const _STAGE_CLASS = 'fixed inset-0 z-[70] flex cursor-default flex-col overflow-x-hidden overflow-y-auto bg-[#FAFBF6] text-brand-ink select-none dark:bg-background dark:[--brand-ink:var(--foreground)]';
 
 // The stage's two glows: lavender from above, lime from below. Shared by the stage and the cover before it, so
 // one turns into the other without a seam.
@@ -318,7 +320,7 @@ function WelcomeShowBody({ onLeave }: { onLeave: (experience: string | null) => 
                     data-experience={option.value}
                     onClick={() => onLeave(option.value)}
                     // pb-0.5: Commissioner keeps more room above its letters than below, so centred text sits a hair low.
-                    className='h-12 min-w-52 rounded-xl bg-white/80 pb-0.5 text-base font-semibold'
+                    className='h-12 min-w-52 rounded-xl bg-white/80 pb-0.5 text-base font-semibold dark:bg-card/80'
                   >
                     {t(option.labelKey)}
                   </Button>

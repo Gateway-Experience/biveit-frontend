@@ -59,7 +59,7 @@ export default function CookieConsent() {
         <div
           role='region'
           aria-label={t('cookie_policy_title')}
-          className='fixed bottom-4 left-4 z-50 w-[calc(100%-2rem)] max-w-xs rounded-2xl border bg-popover p-5 text-sm text-popover-foreground shadow-xl'
+          className='fixed bottom-4 left-4 z-50 w-[calc(100%-2rem)] max-w-xs rounded-surface glass-surface p-5 text-sm text-popover-foreground'
         >
           <p className='leading-relaxed'>
             {t('cookie_banner_text')}{' '}

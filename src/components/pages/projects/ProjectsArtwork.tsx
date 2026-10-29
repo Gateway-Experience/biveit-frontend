@@ -118,10 +118,11 @@ function useRabbitUnderPointer(meadowRef: React.RefObject<HTMLDivElement | null>
 // the window, with the tree pinned to the bottom right and its root on the bottom edge; only the sky and the
 // meadow strips stretch. The pieces move on their own with CSS animations inside them, which they stop
 // themselves for reduced motion.
-// Light theme only: it's a daytime scene. The dark theme keeps its night-sky gradient underneath, without the
-// picture.
-// Fills its nearest positioned ancestor, behind everything else in it (`-z-10`), so that ancestor needs its own
-// stacking context (`isolate`).
+// The dark theme gets the same meadow at night (`daydream-backdrop-night`: the pieces recoloured by
+// scripts/make-night-backdrop.mjs): a deep blue sky with moonlight and stars, the meadow and tree in the dark, pale
+// rabbits.
+// Fills the whole window (fixed), so it also runs behind the floating glass sidebar and shows through it; it stays
+// behind everything else in the page area (`-z-10`), which needs its own stacking context for that (`isolate`).
 function WorkspaceBackdrop({ className }: { className?: string }) {
   const meadowRef = useRef<HTMLDivElement>(null);
   const pausedRabbitId = useRabbitUnderPointer(meadowRef);
@@ -131,14 +132,14 @@ function WorkspaceBackdrop({ className }: { className?: string }) {
       aria-hidden='true'
       data-component='workspace-backdrop'
       className={cn(
-        'pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-linear-to-b from-backdrop-top to-backdrop-bottom',
+        'pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-linear-to-b from-backdrop-top to-backdrop-bottom',
         className,
       )}
     >
-      <div className='daydream-backdrop absolute inset-0 dark:hidden' />
+      <div className='daydream-backdrop absolute inset-0 dark:daydream-backdrop-night' />
       {/* The meadow band the rabbits cross, at grass level. Gone for reduced motion: rabbits standing still
           wherever the loop left them would look odd. */}
-      <div ref={meadowRef} data-section='rabbits' className='@container absolute inset-x-0 bottom-14 h-10 motion-reduce:hidden dark:hidden'>
+      <div ref={meadowRef} data-section='rabbits' className='@container absolute inset-x-0 bottom-14 h-10 motion-reduce:hidden'>
         {_.map(_RABBITS, (rabbit) => {
           // Stopped: both its run and its hop freeze where they are, and pick up from there.
           const playState = pausedRabbitId === rabbit.id ? 'paused' : 'running';
@@ -159,7 +160,7 @@ function WorkspaceBackdrop({ className }: { className?: string }) {
               }}
             >
               <div
-                className='daydream-rabbit'
+                className='daydream-rabbit dark:daydream-rabbit-night'
                 style={{
                   width: rabbit.width,
                   aspectRatio: '3 / 2',
@@ -183,21 +184,23 @@ function WorkspaceBackdrop({ className }: { className?: string }) {
 // The art is drawn at a fixed size whatever the window, each corner's pinned to its corner (`dashboard-washes`
 // and `dashboard-outlines` in index.css; the outlines are public/dashboard-outline-*.svg, which move gently on
 // their own with CSS animations inside them and stop themselves for reduced motion).
-// Light theme only: drawn for warm white, it'd glare on the dark theme, which keeps its own background. Needs a
-// stacking context on the page area to sit in (DefaultLayout's `isolate`).
+// In the dark theme the washes glow softly on the dark page and the outlines are their recoloured copies
+// (`dashboard-outlines-night`, scripts/make-night-backdrop.mjs); only the grain stays light-only. Needs a stacking
+// context on the page area to sit in (DefaultLayout's `isolate`). Fills the whole window (fixed), so it also runs
+// behind the floating glass sidebar, and its corners stay put as the list scrolls.
 function DashboardBackdrop({ className }: { className?: string }) {
   return (
     <div
       aria-hidden='true'
       data-component='dashboard-backdrop'
-      className={cn('pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-dashboard-backdrop', className)}
+      className={cn('pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-dashboard-backdrop', className)}
     >
-      <div className='dashboard-washes absolute inset-0 dark:hidden' />
+      <div className='dashboard-washes absolute inset-0' />
       {/* A faint grain over the washes (a static tile), so the gradients' steps can't line up into rings in
           browsers that don't smooth them themselves. Only where the washes are: it fades out above them, so the
           plain top of the page stays clean. */}
       <div className='absolute inset-0 bg-[url(/backdrop-grain.png)] bg-size-[128px] mask-[linear-gradient(to_top,black_520px,transparent_660px)] dark:hidden' />
-      <div className='dashboard-outlines absolute inset-0 dark:hidden' />
+      <div className='dashboard-outlines absolute inset-0 dark:dashboard-outlines-night' />
     </div>
   );
 }

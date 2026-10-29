@@ -161,7 +161,7 @@ export default function ProjectCard({ project, onRename, onTrash }: {
         to={`${PATHS.projects}/${project.id}`}
         data-projectid={project.id}
         className={cn(
-          'group flex flex-col overflow-hidden rounded-2xl bg-card text-card-foreground ring-1 ring-foreground/10',
+          'group flex flex-col overflow-hidden rounded-surface glass-surface text-card-foreground',
           'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary',
           'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
         )}

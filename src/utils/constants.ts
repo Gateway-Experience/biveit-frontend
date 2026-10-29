@@ -22,8 +22,9 @@ const SUPPORTED_LANGUAGES = [
 
 const MAIN_CONTENT_WIDTH_CLASS = 'max-w-4xl';
 
-// The desktop sidebar's width, in px, when it's open. Fixed: it can't be dragged wider or narrower.
-const SIDEBAR_WIDTH_PX = 240;
+// The desktop sidebar's width, in px, when it's open, counting the 8px margin round the floating panel (so the panel
+// itself is 240px). Fixed: it can't be dragged wider or narrower.
+const SIDEBAR_WIDTH_PX = 256;
 
 // What biveit costs, in USD — the one place prices live in the app (formatted for display by services/pricing).
 // Every screen that mentions a price reads it from here: the Pricing page, the Deploy tab, Help. The landing site

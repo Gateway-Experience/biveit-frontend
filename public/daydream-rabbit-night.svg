@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40" fill="none">
+<title>A rabbit, mid-hop</title>
+<!-- A flat white silhouette facing right, one colour, no shading and no face, so it stays flat scenery. The page
+     moves it (hopping across the meadow); nothing animates in here. -->
+<g fill="#B9C4DE">
+ <ellipse cx="40.5" cy="8" rx="2.6" ry="8.5" transform="rotate(-18 40.5 8)"/>
+ <ellipse cx="25" cy="26" rx="15.5" ry="9.5"/>
+ <circle cx="17" cy="27.5" r="9"/>
+ <ellipse cx="41.5" cy="19.5" rx="8.2" ry="7"/>
+ <ellipse cx="19.5" cy="36" rx="7.5" ry="2.6"/>
+ <ellipse cx="38.5" cy="34.5" rx="4" ry="2.2"/>
+</g>
+<ellipse cx="45" cy="8.5" rx="2.4" ry="8" transform="rotate(8 45 8.5)" fill="#B9C4DE"/>
+<circle cx="8.5" cy="22.5" r="4.2" fill="#B9C4DE"/>
+</svg>

@@ -7,9 +7,11 @@ import { useUpdateUser } from 'src/utils/hooks';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from 'src/components/shadui/dropdown-menu';
+import { focusCheckedMenuItem } from 'src/utils/common';
 import { SUPPORTED_LANGUAGES } from 'src/utils/constants';
 
 
@@ -20,6 +22,8 @@ import { SUPPORTED_LANGUAGES } from 'src/utils/constants';
 // `options.label`: what goes next to the flag: the language's code ("EN", the default), its own name
 // ("English", for roomier spots like the sidebar), or nothing (a tight spot like the collapsed sidebar).
 // `options.side`: which side of the button the menu opens on.
+// The menu's items are radio items: the language in use carries a tick (the focus highlight alone sits on the first
+// item when the menu opens, which made English look chosen whatever the language).
 export default function LanguageSelector({ className, options = {} }: {
   className?: string;
   options?: { label?: 'code' | 'name' | 'none'; side?: 'top' | 'bottom' | 'right' };
@@ -41,7 +45,8 @@ export default function LanguageSelector({ className, options = {} }: {
   const currentLanguage = SUPPORTED_LANGUAGES.find(lang => lang.code === i18n.resolvedLanguage) || SUPPORTED_LANGUAGES[0];
 
   return (
-    <DropdownMenu>
+    // The highlight starts on the choice in use (focusCheckedMenuItem).
+    <DropdownMenu onOpenChange={isOpen => isOpen && focusCheckedMenuItem('language')}>
       <DropdownMenuTrigger
         aria-label={t('language_select')}
         data-language={currentLanguage.code}
@@ -53,18 +58,16 @@ export default function LanguageSelector({ className, options = {} }: {
         {/* Fixed width so the button (and whatever sits next to it) doesn't shift when the code changes. */}
         {label === 'code' && <span className='inline-block w-6 text-center'>{currentLanguage.code.toUpperCase()}</span>}
       </DropdownMenuTrigger>
-      <DropdownMenuContent side={side} align='end' className='max-h-[70svh] min-w-[180px] overflow-y-auto'>
-        {SUPPORTED_LANGUAGES.map(language => (
-          <DropdownMenuItem
-            key={language.code}
-            onClick={() => selectLanguage(language.code)}
-            className='flex items-center gap-2'
-            data-selected={currentLanguage.code === language.code || undefined}
-          >
-            <language.Flag aria-hidden='true' className='h-4 w-auto rounded-[2px] shadow-[0_0_0_1px_var(--border)]' />
-            {language.name}
-          </DropdownMenuItem>
-        ))}
+      <DropdownMenuContent data-menu='language' side={side} align='end' className='max-h-[70svh] min-w-[180px] overflow-y-auto'>
+        <DropdownMenuRadioGroup value={currentLanguage.code} onValueChange={code => selectLanguage(code)}>
+          {SUPPORTED_LANGUAGES.map(language => (
+            // closeOnClick: radio items stay open after a pick by default; this is a pick-and-go menu.
+            <DropdownMenuRadioItem key={language.code} value={language.code} closeOnClick data-language-option={language.code}>
+              <language.Flag aria-hidden='true' className='h-4 w-auto rounded-[2px] shadow-[0_0_0_1px_var(--border)]' />
+              {language.name}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

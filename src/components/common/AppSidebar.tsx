@@ -12,6 +12,7 @@ import {
 import BrandLogo from 'src/components/common/BrandLogo';
 import HelpChat from 'src/components/common/HelpChat';
 import LanguageSelector from 'src/components/common/LanguageSelector';
+import ThemeSelector from 'src/components/common/ThemeSelector';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import UserAvatar from 'src/components/common/UserAvatar';
 import {
@@ -432,15 +433,18 @@ export default function AppSidebar() {
   };
 
   return (
+    // Floating: a rounded glass panel inset from the window's edges (its look is `app-sidebar` in index.css).
     <Sidebar
       collapsible='icon'
+      variant='floating'
       data-component='app-sidebar'
       onClick={expandOnEmptyClick}
       className={cn(isCollapsed && 'cursor-e-resize')}
     >
-      <SidebarHeader className='flex-row items-center justify-between gap-2 px-3 py-4 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:px-2'>
+      <SidebarHeader className='mx-2 flex-row items-center justify-between gap-2 border-b border-foreground/10 px-1 py-4 group-data-[collapsible=icon]:mx-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:px-0'>
         <Link to='/' onClick={closeIfMobile} className='rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
-          <BrandLogo hasWordmark={!isCollapsed} markClassName='h-8' />
+          {/* A smaller mark on the collapsed rail, so it sits inside it with room to spare. */}
+          <BrandLogo hasWordmark={!isCollapsed} markClassName={isCollapsed ? 'h-6' : 'h-8'} />
         </Link>
         {/* Collapsed, the whole rail is the "open" button, so this would just be in the way. */}
         {!isMobile && !isCollapsed && <SidebarTrigger className='text-muted-foreground' />}
@@ -507,12 +511,18 @@ export default function AppSidebar() {
         {isSignedIn && !isCollapsed && <SidebarProjects onNavigate={closeIfMobile} />}
       </SidebarContent>
 
-      <SidebarFooter className='gap-1 pb-3'>
+      <SidebarFooter className='mx-2 gap-1 border-t border-foreground/10 px-0 pt-3 pb-3 group-data-[collapsible=icon]:mx-1'>
         <SidebarMenu>
           <SidebarMenuItem>
             <LanguageSelector
               options={{ label: isCollapsed ? 'none' : 'name', side: isMobile ? 'top' : 'right' }}
-              className={cn('h-8 w-full justify-start gap-2 px-2 font-normal', isCollapsed && 'justify-center px-0')}
+              className={cn('h-8 w-full justify-start gap-2 rounded-full px-2 font-normal', isCollapsed && 'justify-center px-0')}
+            />
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <ThemeSelector
+              options={{ label: isCollapsed ? 'none' : 'name', side: isMobile ? 'top' : 'right' }}
+              className={cn('h-8 w-full justify-start gap-2 rounded-full px-2 font-normal', isCollapsed && 'justify-center px-0')}
             />
           </SidebarMenuItem>
           <SidebarMenuItem data-tour='help'>
@@ -529,9 +539,11 @@ export default function AppSidebar() {
                   <DropdownMenuTrigger
                     aria-label={t('nav_account_menu')}
                     render={(
+                      // mx-auto on the rail: the menu trigger swaps out the button's data-slot, so the rail's
+                      // centring rule (index.css) doesn't reach this one.
                       <SidebarMenuButton
                         size='lg'
-                        className='data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground'
+                        className='data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:mx-auto'
                       />
                     )}
                   >

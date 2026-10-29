@@ -4,6 +4,7 @@ import { cn } from 'cn';
 import { CheckIcon, ChevronDownIcon, GlobeIcon } from 'lucide-react';
 
 import LinkButton from 'src/components/common/LinkButton';
+import PriceTagBadge from 'src/components/common/PriceTagBadge';
 import { getPriceLabels, PLANS } from 'src/services/pricing';
 import { PATHS, SUPPORT_EMAIL } from 'src/utils/constants';
 
@@ -14,6 +15,11 @@ const _FAQS = [
   { id: 'own-domain', questionKey: 'pricing_faq_own_domain_q', answerKey: 'pricing_faq_own_domain_a' },
   { id: 'human', questionKey: 'pricing_faq_human_q', answerKey: 'pricing_faq_human_a' },
 ];
+
+// Left to right: the two subscriptions either side of the best value, so it sits in the middle; just the code last.
+// Only here -- elsewhere (the Deploy tab's list) the plans keep PLANS' order.
+const _CARD_ORDER = ['monthly', 'yearly', 'one_time'];
+const _PLANS_IN_CARD_ORDER = _.sortBy(PLANS, plan => _.indexOf(_CARD_ORDER, plan.id));
 
 // Original purpose: the public /pricing page, linked from the landing page, the app's footer, the
 // signed-out sidebar and the Deploy tab.
@@ -40,21 +46,21 @@ export default function Pricing() {
           across the cards, however much text one of them wraps onto. No row gap: the spacing is each part's own
           margin, so the rows a card leaves empty (no note, no domain) stay flush. */}
       <div className='grid grid-cols-1 gap-x-4 md:grid-cols-3'>
-        {_.map(PLANS, plan => (
+        {_.map(_PLANS_IN_CARD_ORDER, plan => (
           <div
             key={plan.id}
             data-plan={plan.id}
             className={cn(
-              'relative row-span-6 grid grid-rows-subgrid overflow-hidden rounded-3xl border bg-card p-6 shadow-sm max-md:mb-4',
-              plan.isBestValue && 'border-primary ring-1 ring-primary',
+              'relative row-span-6 grid grid-rows-subgrid overflow-hidden rounded-surface glass-surface p-6 max-md:mb-4',
+              // Best value glows lime (the brand's highlight) rather than lavender, which reads as "selected".
+              // `!`: over glass-surface's own edge and shadow.
+              plan.isBestValue && 'shadow-[inset_0_0_0_2px_var(--brand-light),0_0_22px_3px_color-mix(in_oklab,var(--brand-light)_50%,transparent)]!',
             )}
           >
             {plan.isBestValue && (
               <>
-                <span aria-hidden='true' className='pointer-events-none absolute -top-20 -right-16 size-56 rounded-full bg-primary/10 blur-3xl' />
-                <span className='absolute top-5 right-5 rounded-full bg-primary px-2.5 py-0.5 text-[0.6875rem] font-bold tracking-[0.06em] text-primary-foreground uppercase'>
-                  {t('pricing_best_value')}
-                </span>
+                <span aria-hidden='true' className='pointer-events-none absolute -top-20 -right-16 size-56 rounded-full bg-brand-light/15 blur-3xl' />
+                <PriceTagBadge className='absolute top-5 right-5'>{t('pricing_best_value')}</PriceTagBadge>
               </>
             )}
             <p className='relative font-heading text-lg font-semibold'>{t(plan.nameKey)}</p>

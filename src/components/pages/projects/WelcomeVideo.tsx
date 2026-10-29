@@ -135,7 +135,7 @@ export default function WelcomeVideo({ className }: { className?: string }) {
               <span
                 key={kindKey}
                 className={cn('rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-500', index === 0
-                  ? 'bg-brand-lavender/25 text-[#5B3FB0] ring-1 ring-brand-lavender/60'
+                  ? 'bg-brand-lavender/25 text-[#5B3FB0] ring-1 ring-brand-lavender/60 dark:text-brand-lavender'
                   : 'bg-brand-ink/5 text-brand-ink/60')}
               >
                 {t(kindKey)}
@@ -217,7 +217,7 @@ function CanvasNode({ kind, label, isShown, isStep, isPicture, isPicked, isFinal
       data-node={kind}
       className={cn(
         'absolute flex flex-col gap-2 rounded-xl border p-2.5 transition-all duration-300 ease-out',
-        isStep ? 'border-brand-ink/12 bg-white shadow-md shadow-brand-ink/5' : 'border-brand-ink/10 bg-white/75 shadow-sm shadow-brand-ink/5 backdrop-blur-sm',
+        isStep ? 'border-brand-ink/12 bg-white shadow-md shadow-brand-ink/5 dark:bg-card' : 'border-brand-ink/10 bg-white/75 shadow-sm shadow-brand-ink/5 backdrop-blur-sm dark:bg-card/75',
         isPicture && 'p-1.5',
         isPicked && 'border-brand-lavender ring-2 ring-brand-lavender/60',
         isFinal && 'shadow-[0_0_60px_-6px] shadow-brand-light',
@@ -227,7 +227,8 @@ function CanvasNode({ kind, label, isShown, isStep, isPicture, isPicked, isFinal
     >
       <span
         className={cn(
-          'z-10 inline-flex w-fit items-center gap-1.5 rounded-md bg-brand-ink px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand-light uppercase',
+          // The ink named outright: a dark chip in both themes (the stage turns --brand-ink light when dark).
+          'z-10 inline-flex w-fit items-center gap-1.5 rounded-md bg-[#0F1E2A] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand-light uppercase',
           isPicture && 'absolute top-2.5 left-2.5',
           isStep && 'self-center bg-transparent text-brand-ink',
         )}
@@ -284,7 +285,7 @@ function Cursor({ stop, label, tone }: { stop: CursorStop | null; label: string;
         <path d='M1 1 L17 8 L9.5 10.5 L6.5 18.5 Z' fill={toneColor} stroke='var(--brand-ink)' strokeWidth='1.2' strokeLinejoin='round' />
       </svg>
       <span
-        className='mt-0.5 ml-3 inline-block rounded-md px-2 py-0.5 text-[11px] font-bold text-brand-ink shadow-md'
+        className='mt-0.5 ml-3 inline-block rounded-md px-2 py-0.5 text-[11px] font-bold text-[#0F1E2A] shadow-md'
         style={{ backgroundColor: toneColor }}
       >
         {label}

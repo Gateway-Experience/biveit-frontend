@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
-import { CoffeeIcon } from 'lucide-react';
 
 import { useInterval } from 'src/utils/hooks';
 
@@ -37,6 +36,30 @@ function ThinkingSpark() {
   );
 }
 
+// Where each wisp of steam rises from (x over the cup), and how far into the loop it starts, so they take turns.
+const _STEAM_WISPS = [{ x: 6, delay: '0s' }, { x: 10, delay: '-0.9s' }, { x: 14, delay: '-1.8s' }];
+
+// Intentions: the mark beside the "go take a break" lines while the site's being built -- a cup of coffee with steam
+// curling up off it: three wisps that wave as they rise and fade, one after another. The cup is the lucide coffee
+// cup's outline (same weight as the app's other icons), without its static steam lines. With reduced motion the
+// wisps stand still.
+function SteamingCoffee() {
+  return (
+    <svg viewBox='0 0 24 24' aria-hidden='true' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='size-5 shrink-0 overflow-visible text-primary'>
+      {_STEAM_WISPS.map(wisp => (
+        <path
+          key={wisp.x}
+          d={`M${wisp.x} 6.5 q-1.2 -1.3 0 -2.6 q1.2 -1.3 0 -2.6`}
+          strokeWidth='1.6'
+          className='animate-[wait-steam_2.7s_ease-out_infinite] opacity-60 motion-reduce:animate-none'
+          style={{ animationDelay: wisp.delay, transformBox: 'fill-box', transformOrigin: 'bottom center' }}
+        />
+      ))}
+      <path d='M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1' />
+    </svg>
+  );
+}
+
 // Intentions: a calm line above the chat input while the agent is busy, so the wait feels looked after
 // rather than stuck. Short, "thinking" lines while it's replying; longer "go take a break" ones while it's
 // building the site, which takes minutes. A new line every few seconds, fading in.
@@ -56,7 +79,7 @@ export default function AgentWaitLine({ isBuilding, className }: { isBuilding: b
       data-waitline={`${kind}_${shownIndex + 1}`}
       className={cn('mb-2 flex items-center justify-start gap-2 text-left text-sm text-muted-foreground animate-in fade-in-0 duration-700', className)}
     >
-      {isBuilding ? <CoffeeIcon className='size-4 shrink-0 text-primary' /> : <ThinkingSpark />}
+      {isBuilding ? <SteamingCoffee /> : <ThinkingSpark />}
       {t(`chat_wait_${kind}_${shownIndex + 1}`)}
     </p>
   );

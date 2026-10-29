@@ -8,6 +8,7 @@ import _ from 'lodash';
 import BrandLogo, { BrandWordmark } from 'src/components/common/BrandLogo';
 import GoogleSignInButton from 'src/components/common/GoogleSignInButton';
 import LanguageSelector from 'src/components/common/LanguageSelector';
+import ThemeSelector from 'src/components/common/ThemeSelector';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
 import { APP_NAME, EXAMPLE_IDEA_KEYS, PATHS } from 'src/utils/constants';
@@ -58,7 +59,10 @@ export default function AuthPageLayout({
           <Link to='/' className='inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40'>
             <BrandLogo markClassName='h-9' />
           </Link>
-          <LanguageSelector />
+          <div className='flex items-center gap-1'>
+            <LanguageSelector />
+            <ThemeSelector />
+          </div>
         </header>
 
         <main className='flex flex-1 items-center justify-center py-12'>

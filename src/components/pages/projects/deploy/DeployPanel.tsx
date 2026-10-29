@@ -9,16 +9,21 @@ import { RocketIcon } from 'lucide-react';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import PlanList from 'src/components/common/PlanList';
 import { Spinner } from 'src/components/common/Spinner';
+import LaunchSteps from 'src/components/pages/projects/deploy/LaunchSteps';
+import SiteShowcase from 'src/components/pages/projects/deploy/SiteShowcase';
 import LaunchProgress, { DnsRecordsTable } from 'src/components/pages/projects/launch/LaunchProgress';
 import { Button } from 'src/components/shadui/button';
 import { DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
 import { LAUNCH_QUERY_KEY, activateLaunchDomain, checkOwnDomain, downloadCode, redeploySite } from 'src/services/launch';
-import type { LaunchStatus } from 'src/types/launch';
+import { PLANS } from 'src/services/pricing';
+import type { LaunchStatus, OpenLaunchDialog, PlanKey } from 'src/types/launch';
 import { PATHS } from 'src/utils/constants';
 
 // The celebration's blocks come in one after another, once the pop-up itself has risen into place.
 // `both` keeps each one hidden during its delay instead of flashing in first.
 const _ENTER_CLASS = 'animate-in fade-in-0 slide-in-from-bottom-3 duration-500 ease-out [animation-fill-mode:both]';
+
+const _BEST_VALUE_PLAN: PlanKey = _.find(PLANS, 'isBestValue')?.id || 'yearly';
 
 // [Pure]
 function _getEnterStyle(order: number) {
@@ -31,41 +36,59 @@ function _getEnterStyle(order: number) {
 // `variant`: 'tab' is the steady tab. 'celebration' is the pop-up at the moment of sign-off: only the offer, roomier,
 // headlined "Your site is ready!", and animated in -- and it must sit inside a dialog, since its headline and pitch
 // become the dialog's title and description.
-// `onLaunch` opens the launch dialog: 'new' to buy a plan, 'domain' to finish / choose a domain on a running plan.
-// Fills whatever box it's given; scrolls when it's taller.
-export default function DeployPanel({ variant = 'tab', projectId, projectName, status, onLaunch, onShowCelebration, className }: {
+// In the tab, the offer fills the pane: their site in a browser window going live (SiteShowcase), the plans, and what
+// happens next (LaunchSteps). The pop-up's plan list is as wide as the tab's (its frame is sized for that,
+// SiteReadyModal), so the two read the same, row for row. Fills whatever box it's given; scrolls when it's taller.
+export default function DeployPanel({ variant = 'tab', projectId, projectName, sitePictureUrl = null, status, onLaunch, className }: {
   variant?: 'tab' | 'celebration';
   projectId: number;
   projectName: string;
+  // The site's latest snapshot, for the tab's showcase; null before there is one.
+  sitePictureUrl?: string | null;
   // Undefined while loading.
   status?: LaunchStatus;
-  onLaunch: (mode: 'new' | 'domain') => void;
-  // TODO: testing aid — opens the "your site is ready" pop-up on demand. Remove once it's been signed off.
-  onShowCelebration?: () => void;
+  onLaunch: OpenLaunchDialog;
   className?: string;
 }) {
-  const { t } = useTranslation();
   const isCelebration = variant === 'celebration';
   const showsOffer = isCelebration || status?.stage === 'not_paid';
 
   return (
-    <div data-component='deploy-panel' data-variant={variant} data-stage={status?.stage} className={cn('min-h-0 overflow-y-auto', className)}>
-      <div className={cn('mx-auto flex w-full max-w-md flex-col', isCelebration ? 'gap-7 px-6 pt-12 pb-10 sm:px-10' : 'gap-5 px-4 py-8')}>
+    // A column, so the content can grow to the pane's full height (and still scroll once it's taller).
+    <div data-component='deploy-panel' data-variant={variant} data-stage={status?.stage} className={cn('flex min-h-0 flex-col overflow-y-auto', className)}>
+      <div className={cn('mx-auto flex w-full shrink-0 grow flex-col', isCelebration ? 'max-w-xl gap-7 px-6 pt-12 pb-10 sm:px-8' : 'max-w-xl gap-5 px-5 py-6')}>
         {!isCelebration && !status && <div className='flex justify-center py-10'><Spinner className='size-5 text-muted-foreground' /></div>}
-        {showsOffer && <LaunchOffer isCelebration={isCelebration} onLaunch={() => onLaunch('new')} />}
-        {!showsOffer && status && <LaunchState projectId={projectId} projectName={projectName} status={status} onLaunch={onLaunch} />}
-        {onShowCelebration && (
-          <Button variant='link' size='sm' className='self-center text-muted-foreground' onClick={onShowCelebration}>
-            {t('deploy_test_show_popup')}
-          </Button>
+        {showsOffer && isCelebration && <LaunchOffer isCelebration canBuyCode={!status?.access.can_download} onLaunch={plan => onLaunch('new', { plan })} />}
+        {/* The tab's offer: the showcase and plans together, what happens next pushed to the bottom. */}
+        {showsOffer && !isCelebration && (
+          <div className='flex grow flex-col justify-between gap-8'>
+            <LaunchOffer
+              isCelebration={false}
+              showcase={<SiteShowcase projectName={projectName} pictureUrl={sitePictureUrl} className='mx-auto max-w-[16rem] sm:mx-0 sm:w-56 sm:shrink-0' />}
+              canBuyCode={!status?.access.can_download}
+              onLaunch={plan => onLaunch('new', { plan })}
+            />
+            <LaunchSteps />
+          </div>
         )}
+        {!showsOffer && status && <LaunchState projectId={projectId} projectName={projectName} status={status} onLaunch={onLaunch} />}
       </div>
     </div>
   );
 }
 
-function LaunchOffer({ isCelebration, onLaunch }: { isCelebration: boolean; onLaunch: () => void }) {
+// The plans are a choice here, best value picked to start with; launching carries the pick into the dialog.
+// `canBuyCode`: false once the code's been bought, which leaves just the plans that put the site online.
+// `showcase` (the tab only): the picture of their site going live, beside the headline where there's room, above it
+// otherwise.
+function LaunchOffer({ isCelebration, showcase, canBuyCode, onLaunch }: {
+  isCelebration: boolean;
+  showcase?: React.ReactNode;
+  canBuyCode: boolean;
+  onLaunch: (plan: PlanKey) => void;
+}) {
   const { t } = useTranslation();
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey>(_BEST_VALUE_PLAN);
   // Each block's entrance, only when celebrating.
   const enter = (order: number) => (isCelebration ? { className: _ENTER_CLASS, style: _getEnterStyle(order) } : {});
   const Title = isCelebration ? DialogTitle : 'h2';
@@ -73,17 +96,14 @@ function LaunchOffer({ isCelebration, onLaunch }: { isCelebration: boolean; onLa
 
   return (
     <>
-      <div className='text-center'>
-        <div
-          className={cn(
-            'mx-auto flex items-center justify-center bg-primary text-primary-foreground',
-            isCelebration
-              ? 'mb-5 size-16 rounded-3xl shadow-lg animate-in fade-in-0 zoom-in-50 spin-in-12 duration-500 ease-out [animation-fill-mode:both] [animation-delay:150ms]'
-              : 'mb-4 size-12 rounded-2xl',
-          )}
-        >
-          <RocketIcon className={isCelebration ? 'size-8' : 'size-6'} />
-        </div>
+      <div className={cn('text-center', showcase && 'flex flex-col items-center gap-4 sm:flex-row sm:gap-6 sm:text-left')}>
+        {showcase}
+        {/* The pop-up's rocket; in the tab, the showcase does that job. */}
+        {isCelebration && (
+          <div className='mx-auto mb-5 flex size-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg animate-in fade-in-0 zoom-in-50 spin-in-12 duration-500 ease-out [animation-fill-mode:both] [animation-delay:150ms]'>
+            <RocketIcon className='size-8' />
+          </div>
+        )}
         <div {...enter(1)}>
           <Title className={cn('font-heading font-bold tracking-[-0.02em]', isCelebration ? 'text-3xl' : 'text-xl')}>
             {t(isCelebration ? 'deploy_ready_title' : 'deploy_title')}
@@ -95,8 +115,8 @@ function LaunchOffer({ isCelebration, onLaunch }: { isCelebration: boolean; onLa
       </div>
       <div {...enter(2)}>
         <div className='rounded-2xl border bg-card p-5'>
-          <PlanList />
-          <Button size='lg' className='mt-5 w-full' onClick={onLaunch} data-action='launch'>
+          <PlanList selectedPlanId={selectedPlan} onSelect={setSelectedPlan} hiddenPlanIds={canBuyCode ? [] : ['one_time']} />
+          <Button size='lg' className='mt-5 w-full' onClick={() => onLaunch(selectedPlan)} data-action='launch' data-plan={selectedPlan}>
             {t('launch_cta')}
           </Button>
           {/* A new tab: this sits in the project workspace (or its celebration pop-up), which shouldn't be left. */}
@@ -113,7 +133,7 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
   projectId: number;
   projectName: string;
   status: LaunchStatus;
-  onLaunch: (mode: 'new' | 'domain') => void;
+  onLaunch: OpenLaunchDialog;
 }) {
   const { t, i18n } = useTranslation();
   const notify = useNotification();

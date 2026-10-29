@@ -42,6 +42,9 @@ export type ChatRenderContext = {
 const _USER_BUBBLE_CONTENT_CLASS = cn('rounded-2xl px-4 py-2.5', CHAT_TEXT_SIZE_CLASS);
 // A dashed line above a part of a bubble, setting it apart from what comes before it.
 const _DASHED_DIVIDER_CLASS = 'border-t border-dashed border-foreground/35';
+// The same line between the agent's pieces on phones, where it's all that tells them apart (no frames there):
+// thicker and darker, so it can't be missed.
+const _PIECE_DIVIDER_CLASS = 'border-t-[1.5px] border-dashed border-foreground/60';
 // The agent writes markdown; Markdown's prose spacing is in em, so it scales along with the bigger size.
 const _AGENT_TEXT_CLASS = cn('w-full', CHAT_TEXT_SIZE_CLASS);
 
@@ -344,8 +347,10 @@ const _groupIntoBubbles = (blocks: ContentBlock[]) => _.reduce(blocks, (groups, 
 // questions last in the last frame, under a dashed line. A message that's only the agent at work (tool rows,
 // notices) stays unframed: those are progress, not a reply.
 // On phones there's no frame: the reply is plain text across the whole width (the screen's too narrow to spare
-// the frame's padding and the bubble's 80% cap), still grouped the same way and still tappable for its time.
-function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage; renderContext: ChatRenderContext }) {
+// the frame's padding and the bubble's 80% cap), still grouped the same way and still tappable for its time. With
+// no frames to tell the pieces apart, each one after the first of a run from the agent gets a dashed line above it.
+// `isRunStart`: this message starts a run of agent messages (so its first piece needs no line above it).
+function AssistantMessageBlocks({ message, renderContext, isRunStart }: { message: AiMessage; renderContext: ChatRenderContext; isRunStart: boolean }) {
   const isMobile = useIsMobile();
   const [interactionBlocks, otherBlocks] = _.partition(message.content, _isInteractionBlock);
   const toNodes = (blocks: ContentBlock[]) => _.map(blocks, (block, index) => (
@@ -363,7 +368,15 @@ function AssistantMessageBlocks({ message, renderContext }: { message: AiMessage
       variant={isMobile ? 'ghost' : 'muted'}
       sentAt={message.created_at}
       data-component='agent-reply'
-      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-3 py-3', isMobile && 'w-full')}
+      contentClassName={cn(
+        _USER_BUBBLE_CONTENT_CLASS,
+        'flex flex-col gap-3 py-3',
+        isMobile && 'w-full',
+        // border-0 first: the frameless bubble keeps a border on every side, which the dashed colour would show.
+        // pt-2!: room under the line to match the gap above it (the pieces' own gap); `!` since the frameless
+        // bubble zeroes its content's padding from the parent.
+        isMobile && (groupIndex > 0 || !isRunStart) && cn('rounded-none border-0 pt-2!', _PIECE_DIVIDER_CLASS),
+      )}
     >
       {toNodes(blocks)}
       {groupIndex === _.size(bubbleGroups) - 1 && _.map(interactionBlocks, block => (
@@ -455,7 +468,7 @@ export default function ChatMessageItem({ message, renderContext, hasAvatar = tr
       <MessageContent className={cn(!isRunEnd && '**:data-[slot=bubble-content]:cursor-auto! [&_[data-component=chat-message-time]]:hidden')}>
         {isUser
           ? <UserMessageBlocks message={message} renderContext={renderContext} />
-          : <AssistantMessageBlocks message={message} renderContext={renderContext} />}
+          : <AssistantMessageBlocks message={message} renderContext={renderContext} isRunStart={hasAvatar} />}
       </MessageContent>
     </Message>
   );

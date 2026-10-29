@@ -5,10 +5,10 @@ import { XIcon } from 'lucide-react';
 import DeployPanel from 'src/components/pages/projects/deploy/DeployPanel';
 import { Button } from 'src/components/shadui/button';
 import { Dialog, DialogOverlay, DialogPortal } from 'src/components/shadui/dialog';
-import type { LaunchStatus } from 'src/types/launch';
+import type { LaunchStatus, OpenLaunchDialog } from 'src/types/launch';
 
 // The card rises and grows into place, a touch slower than a plain dialog so the moment registers.
-const _POPUP_CLASS = 'fixed top-1/2 left-1/2 z-50 max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10 outline-none duration-500 ease-out data-open:animate-in data-open:fade-in-0 data-open:zoom-in-90 data-open:slide-in-from-bottom-8 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:duration-200';
+const _POPUP_CLASS = 'fixed top-1/2 left-1/2 z-50 max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-surface glass-surface text-popover-foreground outline-none duration-500 ease-out data-open:animate-in data-open:fade-in-0 data-open:zoom-in-90 data-open:slide-in-from-bottom-8 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:duration-200';
 
 // Intentions: the "just now" moment — the user signed off their site while this tab was open, so the offer
 // to publish pops up right then. Same offer as the Deploy tab (which stays there once this is closed),
@@ -22,7 +22,7 @@ export default function SiteReadyModal({ open, onClose, projectId, projectName, 
   projectName: string;
   status?: LaunchStatus;
   // Opens the launch dialog (and closes this).
-  onLaunch: (mode: 'new' | 'domain') => void;
+  onLaunch: OpenLaunchDialog;
 }) {
   const { t } = useTranslation();
 
