@@ -61,6 +61,19 @@ function getSitePreviewUrl(project: Project): string {
   return `${import.meta.env.VITE_API_BASE_URL}/projects/${project.id}/site-preview?v=${takenAt}`;
 }
 
+// The steps a project goes through, in order (i18n keys). The first is the new-project form, so every project is
+// past it.
+const PROJECT_STEP_KEYS = ['project_step_describe', 'project_step_plan', 'project_step_build', 'project_step_launch'];
+
+// [Pure] Which step the project is at (index into PROJECT_STEP_KEYS), read off its stage and sign-off: nothing
+// extra is stored for it. Signed off = publishing is on offer, whatever the stage.
+function getProjectStepIndex(stage: Project['stage'], buildApprovedAt: string | null | undefined): number {
+  if (buildApprovedAt) {
+    return 3;
+  }
+  return stage === 'building' ? 2 : 1;
+}
+
 // Whether the user has ever made a project, counting ones since trashed or deleted for good.
 async function getProjectHistory(): Promise<{ has_created_project: boolean }> {
   return callBe('/projects/history');
@@ -88,12 +101,14 @@ async function deleteProject(projectId: number): Promise<void> {
 }
 
 export {
+  PROJECT_STEP_KEYS,
   createProject,
   createProjectFolder,
   deleteProject,
   deleteProjectFolder,
   getProjectFolders,
   getProjectHistory,
+  getProjectStepIndex,
   getProjects,
   getSitePreviewUrl,
   getTrashedProjects,

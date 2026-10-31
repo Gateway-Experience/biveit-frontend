@@ -4103,6 +4103,14 @@ export default {
     ru: 'Пишите нам на {{email}} в любое время — вам ответит живой человек из нашей команды.',
     ko: '언제든 {{email}}로 연락 주세요. 저희 팀의 실제 담당자가 답변해 드려요.',
   },
+  projects_step_label: {
+    en: 'Step {{step}} of {{total}}: {{name}}',
+    vi: 'Bước {{step}}/{{total}}: {{name}}',
+    zh: '第 {{step}} 步，共 {{total}} 步：{{name}}',
+    ja: 'ステップ {{step}}/{{total}}：{{name}}',
+    ru: 'Шаг {{step}} из {{total}}: {{name}}',
+    ko: '{{total}}단계 중 {{step}}단계: {{name}}',
+  },
   project_step_describe: {
     en: 'Describe',
     vi: 'Mô tả',

@@ -4,19 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { CheckIcon } from 'lucide-react';
 
+import { PROJECT_STEP_KEYS, getProjectStepIndex } from 'src/services/project';
 import type { Project } from 'src/types/project';
-
-// The steps a project goes through, in order. The first is the new-project form, so every project is past it.
-const _STEP_KEYS = ['project_step_describe', 'project_step_plan', 'project_step_build', 'project_step_launch'];
-
-// [Pure] Which step the project is at (index into _STEP_KEYS), read off its stage and sign-off — nothing
-// extra is stored for it. Signed off = publishing is on offer, whatever the stage.
-function _getCurrentStepIndex(stage: Project['stage'], buildApprovedAt: string | null | undefined) {
-  if (buildApprovedAt) {
-    return 3;
-  }
-  return stage === 'building' ? 2 : 1;
-}
 
 // Intentions: a slim step bar above the workspace, so the user always knows where they are in the journey
 // (describe -> plan -> build -> launch) and what comes next. Done steps get a check, the current one is
@@ -28,14 +17,14 @@ export default function ProjectProgress({ stage, buildApprovedAt, className, sty
   style?: CSSProperties;
 }) {
   const { t } = useTranslation();
-  const currentStepIndex = _getCurrentStepIndex(stage, buildApprovedAt);
+  const currentStepIndex = getProjectStepIndex(stage, buildApprovedAt);
 
   return (
     <ol data-component='project-progress' data-step={currentStepIndex + 1} className={cn('flex items-center gap-2', className)} style={style}>
-      {_.map(_STEP_KEYS, (stepKey, index) => {
+      {_.map(PROJECT_STEP_KEYS, (stepKey, index) => {
         const isDone = index < currentStepIndex;
         const isCurrent = index === currentStepIndex;
-        const isLast = index === _.size(_STEP_KEYS) - 1;
+        const isLast = index === _.size(PROJECT_STEP_KEYS) - 1;
         return (
           // The last step only takes its own room (it has no line after it), so the bar ends flush with the frame below.
           <li key={stepKey} aria-current={isCurrent ? 'step' : undefined} className={cn('flex min-w-0 items-center gap-2', isLast ? 'flex-none' : 'flex-1')}>

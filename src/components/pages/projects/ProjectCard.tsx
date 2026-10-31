@@ -9,7 +9,7 @@ import { Button } from 'src/components/shadui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from 'src/components/shadui/dropdown-menu';
-import { getSitePreviewUrl } from 'src/services/project';
+import { PROJECT_STEP_KEYS, getProjectStepIndex, getSitePreviewUrl } from 'src/services/project';
 import { choose, formatRelativeTime } from 'src/utils/common';
 import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
@@ -146,6 +146,31 @@ function ProjectCardMenu({ project, onRename, onTrash }: {
   );
 }
 
+// Intentions: where the project is in its journey (describe -> plan -> build -> launch), at a glance: the current
+// step's name over a bar of one segment per step, filled up to and including the current one. The project page's
+// ProjectProgress is the full-size version.
+function ProjectStepBar({ project }: { project: Project }) {
+  const { t } = useTranslation();
+  const currentStepIndex = getProjectStepIndex(project.stage, project.build_approved_at);
+  const stepName = t(PROJECT_STEP_KEYS[currentStepIndex]);
+
+  return (
+    <div
+      data-section='project-step'
+      data-step={currentStepIndex + 1}
+      role='img'
+      aria-label={t('projects_step_label', { step: currentStepIndex + 1, total: _.size(PROJECT_STEP_KEYS), name: stepName })}
+    >
+      <p className='text-xs font-semibold text-foreground'>{stepName}</p>
+      <div className='mt-1.5 flex gap-1'>
+        {_.map(PROJECT_STEP_KEYS, (stepKey, index) => (
+          <span key={stepKey} className={cn('h-1 flex-1 rounded-full', index <= currentStepIndex ? 'bg-primary' : 'bg-foreground/10')} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // `onRename` / `onTrash`: the card's menu asks; the list owns the dialogs (see ProjectActionDialogs).
 export default function ProjectCard({ project, onRename, onTrash }: {
   project: Project;
@@ -175,9 +200,12 @@ export default function ProjectCard({ project, onRename, onTrash }: {
           <p className='line-clamp-2 min-h-10 text-sm text-muted-foreground'>
             {project.description || t('projects_no_description')}
           </p>
-          <p className='mt-auto pt-2 text-xs text-muted-foreground'>
-            {t('projects_edited', { time: formatRelativeTime(project.updated_at, i18n.language) })}
-          </p>
+          <div className='mt-auto flex flex-col gap-3 pt-2'>
+            <ProjectStepBar project={project} />
+            <p className='text-xs text-muted-foreground'>
+              {t('projects_edited', { time: formatRelativeTime(project.updated_at, i18n.language) })}
+            </p>
+          </div>
         </div>
       </Link>
       <ProjectCardMenu project={project} onRename={onRename} onTrash={onTrash} />
