@@ -8,7 +8,7 @@ import { PlusIcon, Trash2Icon } from 'lucide-react';
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
 import { RenameProjectModal, TrashProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
 import ProjectSearchBox from 'src/components/pages/projects/ProjectSearchBox';
-import { BuildFlowArt, DashboardBackdrop, DotGridBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
+import { BuildFlowArt, DotGridBackdrop, WorkspaceBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import { useProjectListUpdaters, useProjects, useTrashedProjects } from 'src/components/pages/projects/useProjectLists';
 import useProjectSearch from 'src/components/pages/projects/useProjectSearch';
 import WelcomeShow from 'src/components/pages/projects/WelcomeShow';
@@ -107,7 +107,7 @@ export default function ProjectList() {
 
   return (
     <div data-page='project-list'>
-      <DashboardBackdrop />
+      <WorkspaceBackdrop />
       {/* A rename counts as an edit (fresh updated_at), so the sort moves the project to the top. */}
       <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
       <TrashProjectModal project={trashingProject} onClose={() => setTrashingProject(null)} onTrashed={moveProjectToTrash} />

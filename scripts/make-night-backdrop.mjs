@@ -6,7 +6,7 @@
 //   node scripts/make-night-backdrop.mjs
 //
 // A colour that isn't in the map stops it with an error, so new art can't slip through half recoloured.
-// References: `daydream-backdrop` / `dashboard-outlines` and their `-night` twins in src/styles/index.css.
+// References: `daydream-backdrop` and its `-night` twin in src/styles/index.css.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,8 +22,6 @@ const _FILES = [
   'daydream-tree.svg',
   'daydream-grass-left.svg',
   'daydream-grass-right.svg',
-  'dashboard-outline-left.svg',
-  'dashboard-outline-right.svg',
 ];
 
 // Day colour -> night colour. The sky's pale blues and creams turn deep blue (lighter towards the horizon, like the

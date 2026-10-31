@@ -109,8 +109,8 @@ function useRabbitUnderPointer(meadowRef: React.RefObject<HTMLDivElement | null>
   return rabbitId;
 }
 
-// Original purpose: the project page's backdrop, the space around the chat (never inside it). A calm daydream to
-// wait in while the agent works: a daytime meadow under a soft sky, clouds drifting, faint sparkles, and a tree on
+// Intentions: the backdrop of the projects page and of a project's page (around the chat, never inside it). A calm
+// daydream to wait in while the agent works: a daytime meadow under a soft sky, clouds drifting, faint sparkles, and a tree on
 // the right whose leaves drift down, and rabbits chasing each other across the meadow from left to right now and
 // then (pointing at one makes it stop and wait until the pointer moves off). Mostly seen in the margins beside the
 // chat; the panels sit on top of it.
@@ -179,35 +179,8 @@ function WorkspaceBackdrop({ className }: { className?: string }) {
   );
 }
 
-// Intentions: the projects page's backdrop, behind the whole page area: warm white with soft lime and lavender
-// washes and cropped website outlines in the bottom corners, leaving the middle clear for the project cards.
-// The art is drawn at a fixed size whatever the window, each corner's pinned to its corner (`dashboard-washes`
-// and `dashboard-outlines` in index.css; the outlines are public/dashboard-outline-*.svg, which move gently on
-// their own with CSS animations inside them and stop themselves for reduced motion).
-// In the dark theme the washes glow softly on the dark page and the outlines are their recoloured copies
-// (`dashboard-outlines-night`, scripts/make-night-backdrop.mjs); only the grain stays light-only. Needs a stacking
-// context on the page area to sit in (DefaultLayout's `isolate`). Fills the whole window (fixed), so it also runs
-// behind the floating glass sidebar, and its corners stay put as the list scrolls.
-function DashboardBackdrop({ className }: { className?: string }) {
-  return (
-    <div
-      aria-hidden='true'
-      data-component='dashboard-backdrop'
-      className={cn('pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-dashboard-backdrop', className)}
-    >
-      <div className='dashboard-washes absolute inset-0' />
-      {/* A faint grain over the washes (a static tile), so the gradients' steps can't line up into rings in
-          browsers that don't smooth them themselves. Only where the washes are: it fades out above them, so the
-          plain top of the page stays clean. */}
-      <div className='absolute inset-0 bg-[url(/backdrop-grain.png)] bg-size-[128px] mask-[linear-gradient(to_top,black_520px,transparent_660px)] dark:hidden' />
-      <div className='dashboard-outlines absolute inset-0 dark:dashboard-outlines-night' />
-    </div>
-  );
-}
-
 export {
   BuildFlowArt,
-  DashboardBackdrop,
   DotGridBackdrop,
   WorkspaceBackdrop,
 };

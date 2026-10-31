@@ -27,7 +27,6 @@
   --color-brand-lavender: var(--brand-lavender);
   --color-backdrop-top: var(--backdrop-top);
   --color-backdrop-bottom: var(--backdrop-bottom);
-  --color-dashboard-backdrop: var(--dashboard-backdrop);
   /* One font for everything: Commissioner, a Myriad-like humanist sans, for headings and body alike (the
      heading token stays so headings can move to their own font again with a one-line change). It covers
      Latin, Vietnamese and Cyrillic. Pick fonts that ship a Vietnamese subset, otherwise accented letters get
@@ -131,6 +130,10 @@
   --brand-ink: #0F1E2A;
   /* Light text on --brand-ink (e.g. the build console). */
   --brand-ink-foreground: #EEF2F5;
+  /* A picked or pointed-at item, flat (no shadow): the sidebar's current page, a menu's highlighted item. Lavender
+     here; the dark theme's is lime, toned down to the lavender's saturation so neither shouts louder. */
+  --selection: color-mix(in oklab, var(--primary) 40%, transparent);
+  --selection-foreground: var(--foreground);
   /* The brand colour for things read on the page: links, icons, labels, the wordmark's capitals. The lime
      itself is too pale to read on white, so here it's a deep lime-green from the same hue (5.6:1 on the
      page). Dark theme: the lime itself, which reads fine on navy. */
@@ -142,9 +145,6 @@
      pale lime haze. Only seen in the dark theme (its night sky, below) or before the picture has loaded. */
   --backdrop-top: #E5DEF5;
   --backdrop-bottom: #EDF4DD;
-  /* The projects page's backdrop: the warm white its artwork (`dashboard-washes`, `dashboard-outlines`) is
-     drawn on. The art is light-only: the dark theme shows just this. */
-  --dashboard-backdrop: #F8FAF3;
   /* The project page's daytime sky (the `daydream-backdrop`): pale blue up top, through a misty green to warm
      cream at the horizon. Light theme only: the dark one keeps its night sky (--backdrop-top/bottom). */
   --daydream-sky-top: #DCECF1;
@@ -197,12 +197,13 @@
   --brand-deep: #93CC2E;
   --brand-ink: #0F1E2A;
   --brand-ink-foreground: #EEF2F5;
+  --selection: #D3EEA5;
+  --selection-foreground: var(--brand-ink);
   --brand-strong: #C9F56A;
   --brand-lavender: #B29BE5;
   /* A night sky: deep indigo fading to the darkest navy, below the panels' own navy. */
   --backdrop-top: #1A1C38;
   --backdrop-bottom: #09131A;
-  --dashboard-backdrop: var(--background);
 }
 
 /* Rendered markdown (`prose`, from @tailwindcss/typography) takes its colours from the theme instead of
@@ -244,19 +245,19 @@
     @apply font-sans;
     scrollbar-gutter: stable;
   }
-  /* ...except on pages with a full-bleed backdrop, where the kept room would show as a bare strip down its right
-     edge: a project's workspace (WorkspaceBackdrop; it's exactly screen-tall and never scrolls the page anyway)
-     and the projects page (DashboardBackdrop; there the strip's the worse deal than a one-off shift once the
-     list outgrows the screen, with scrollbars that take up space). */
-  html:has([data-component='workspace-backdrop']),
-  html:has([data-component='dashboard-backdrop']) {
+  /* ...except on pages with the full-bleed backdrop (WorkspaceBackdrop), where the kept room would show as a bare
+     strip down its right edge: a project's workspace (exactly screen-tall, it never scrolls the page anyway) and
+     the projects page (there the strip's the worse deal than a one-off shift once the list outgrows the screen,
+     with scrollbars that take up space). */
+  html:has([data-component='workspace-backdrop']) {
     scrollbar-gutter: auto;
   }
-  /* Intentions: and since it never scrolls the page, lock the page for real. On phones, a drag that starts
-     on something that can't scroll itself (like the gap between two cards) otherwise falls through to the
-     page and drags the whole screen (or rubber-bands it on iOS), instead of just the chat or Site plan. */
-  html:has([data-component='workspace-backdrop']),
-  html:has([data-component='workspace-backdrop']) body {
+  /* Intentions: and since a project's workspace never scrolls the page, lock the page for real there (not on the
+     projects page, whose list does scroll it). On phones, a drag that starts on something that can't scroll
+     itself (like the gap between two cards) otherwise falls through to the page and drags the whole screen (or
+     rubber-bands it on iOS), instead of just the chat or Site plan. */
+  html:has([data-page='project-detail']),
+  html:has([data-page='project-detail']) body {
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -280,35 +281,9 @@
   }
 }
 
-/* Intentions: the two backdrops' art, as layers of fixed-size pieces (made by cutting the designers' pictures
-   apart): each piece is drawn at its natural size and pinned where it belongs, so the art looks the same on a
-   laptop and on a huge screen. Only plain fills stretch with the window: the sky, and the meadow strips (their
-   gentle hills don't mind being stretched sideways). Layers are listed top first.
-   The ?v= on each piece's URL is bumped whenever the piece changes: browsers (Firefox especially) otherwise keep
-   showing a cached old piece next to new ones. */
-
-/* The projects page (DashboardBackdrop): a lime glow off the bottom-left corner and a lavender one off the
-   bottom-right, behind a website outline in each corner (the right one with a small chat bubble). The glows are
-   CSS gradients, not SVG ones: browsers smooth these, while Firefox draws faint gradients in an SVG background as
-   visible rings. */
-@utility dashboard-washes {
-  background-image:
-    radial-gradient(620px 460px at calc(100% - 20px) calc(100% - 60px), color-mix(in srgb, var(--primary) 18%, transparent), transparent),
-    radial-gradient(580px 430px at 65px calc(100% - 30px), color-mix(in srgb, var(--brand-light) 20%, transparent), transparent);
-}
-@utility dashboard-outlines {
-  background-image: url(/dashboard-outline-left.svg?v=2), url(/dashboard-outline-right.svg?v=2);
-  background-position: left bottom, right bottom;
-  background-repeat: no-repeat;
-}
-/* The dark theme's outlines: the same pictures recoloured (scripts/make-night-backdrop.mjs). */
-@utility dashboard-outlines-night {
-  background-image: url(/dashboard-outline-left-night.svg?v=1), url(/dashboard-outline-right-night.svg?v=1);
-}
-
 /* Intentions: one look for every frame that floats over the page -- the sidebar, dialogs, menus and popovers, cards,
    the project page's chat and preview frames: the same rounding (rounded-surface) and the same frosted glass
-   (glass-surface): half see-through (50%, both themes), so what's behind shows through, blurred, with a hairline of light on its edge
+   (glass-surface): 60% see-through (40% solid, both themes), so what's behind shows through, blurred, with a hairline of light on its edge
    and a soft lavender glow under it. Change the look here and every frame follows. Boxes inside a frame keep their
    own smaller corners and solid fills. */
 :root {
@@ -318,7 +293,7 @@
   border-radius: var(--surface-radius);
 }
 @utility glass-surface {
-  background-color: color-mix(in oklab, var(--card) 50%, transparent);
+  background-color: color-mix(in oklab, var(--card) 40%, transparent);
   -webkit-backdrop-filter: blur(22px) saturate(1.5);
   backdrop-filter: blur(22px) saturate(1.5);
   box-shadow:
@@ -326,7 +301,7 @@
     0 24px 60px -24px color-mix(in oklab, var(--primary) 45%, transparent),
     0 2px 8px rgb(15 30 42 / 0.05);
   @variant dark {
-    background-color: color-mix(in oklab, var(--card) 50%, transparent);
+    background-color: color-mix(in oklab, var(--card) 40%, transparent);
     box-shadow:
       inset 0 0 0 1px rgb(255 255 255 / 0.09),
       0 24px 60px -24px color-mix(in oklab, var(--primary) 30%, transparent),
@@ -334,9 +309,22 @@
   }
 }
 
+/* Intentions: the highlight on a menu's or a select's item (hovered, or reached with the keyboard): the selection
+   colour (lavender, or a soft lime with dark text in the dark theme), rather than the theme's neutral accent. Destructive items
+   ("Delete") keep their own red. Plain CSS, outside the layers, so it wins over the items' own focus classes; their
+   contents (icons, the tick) take the item's colour. */
+:is([data-slot='dropdown-menu-item'], [data-slot='dropdown-menu-sub-trigger'], [data-slot='dropdown-menu-checkbox-item'],
+    [data-slot='dropdown-menu-radio-item'], [data-slot='select-item']):not([data-variant='destructive']):is(:focus, [data-highlighted]) {
+  background-color: var(--selection);
+  color: var(--selection-foreground);
+  & * {
+    color: inherit;
+  }
+}
+
 /* The app's sidebar (AppSidebar) on that look: the floating panel on desktop, the drawer on phones (there's one
-   sidebar, so `data-sidebar='sidebar'` is it). Inside, its buttons are pills, the current page a filled lavender
-   one. Plain CSS, outside the layers, so it wins over the sidebar component's own utility classes. */
+   sidebar, so `data-sidebar='sidebar'` is it). Inside, its buttons are pills, the current page a flat one in
+   the selection colour (like a menu's highlighted item). Plain CSS, outside the layers, so it wins over the sidebar component's own utility classes. */
 [data-sidebar='sidebar'] {
   @apply glass-surface;
 }
@@ -350,14 +338,15 @@
 [data-sidebar='sidebar'] [data-slot='sidebar-menu-button'] {
   border-radius: 9999px;
 }
-[data-sidebar='sidebar'] [data-slot='sidebar-menu-button']:hover:not([data-active]) {
+/* The language and theme switches are menu triggers, not menu buttons: same hover as their neighbours (Help). */
+:is([data-sidebar='sidebar'] [data-slot='sidebar-menu-button'], [data-sidebar='sidebar'] [data-slot='dropdown-menu-trigger']):hover:not([data-active]) {
   background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  color: var(--sidebar-accent-foreground);
 }
 [data-sidebar='sidebar'] [data-slot='sidebar-menu-button'][data-active] {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--selection);
+  color: var(--selection-foreground);
   font-weight: 600;
-  box-shadow: 0 6px 16px -8px color-mix(in oklab, var(--primary) 90%, transparent);
 }
 /* Behind the sidebar on pages without artwork: a lavender glow up top and a lime one lower down, so the glass has
    something to show. Only seen there -- the page area covers the rest. */
@@ -368,7 +357,14 @@
   background-attachment: fixed;
 }
 
-/* The project page (WorkspaceBackdrop): a daytime meadow. Grass and flowers in the bottom corners, over the front
+/* Intentions: the backdrop's art, as layers of fixed-size pieces (made by cutting the designers' pictures
+   apart): each piece is drawn at its natural size and pinned where it belongs, so the art looks the same on a
+   laptop and on a huge screen. Only plain fills stretch with the window: the sky, and the meadow strips (their
+   gentle hills don't mind being stretched sideways). Layers are listed top first.
+   The ?v= on each piece's URL is bumped whenever the piece changes: browsers (Firefox especially) otherwise keep
+   showing a cached old piece next to new ones. */
+
+/* The projects page and a project's page (WorkspaceBackdrop): a daytime meadow. Grass and flowers in the bottom corners, over the front
    meadow strip, over the tree pinned bottom-right (its trunk's base hides behind that strip, so its root is always
    on the bottom edge), over the back meadow strip, over the clouds and sparkles at the top (with the sun and one
    cloud pinned to the top-left corner, since they hang off the picture's edge), over the sky. */

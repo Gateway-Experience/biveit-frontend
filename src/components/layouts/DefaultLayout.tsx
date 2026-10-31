@@ -16,7 +16,7 @@ import { MAIN_CONTENT_WIDTH_CLASS, SIDEBAR_WIDTH_PX } from 'src/utils/constants'
 // goes wide once there's a preview). Regular pages get the usual centred column and the footer, pushed to
 // the bottom of the screen when the page is short; the workspace skips the footer since it fills the screen.
 // The page area is its own stacking context (`isolate`), so a page can lay a backdrop behind itself
-// (ProjectDetail's WorkspaceBackdrop, ProjectList's DashboardBackdrop) without it slipping under the area's
+// (WorkspaceBackdrop, on the projects page and a project's page) without it slipping under the area's
 // own background.
 // The new-project form lives here too, so it can open over any page (see `isNewProjectOpen` in the store).
 export default function DefaultLayout({ isWorkspace = false }: { isWorkspace?: boolean }) {
