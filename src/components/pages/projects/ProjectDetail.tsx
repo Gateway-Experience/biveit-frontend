@@ -3,15 +3,15 @@ import _ from 'lodash';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
-import { ChevronLeftIcon } from 'lucide-react';
+import { AppWindowIcon, ChevronLeftIcon, RocketIcon } from 'lucide-react';
 
 import LinkButton from 'src/components/common/LinkButton';
+import PillTabsList from 'src/components/common/PillTabsList';
 import AgentChat from 'src/components/pages/projects/chat/AgentChat';
 import ProjectProgress from 'src/components/pages/projects/ProjectProgress';
 import PanelResizeHandle from 'src/components/pages/projects/PanelResizeHandle';
 import { WorkspaceBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
 import DeployPanel from 'src/components/pages/projects/deploy/DeployPanel';
-import DeployTabTrigger from 'src/components/pages/projects/deploy/DeployTabTrigger';
 import SiteReadyModal from 'src/components/pages/projects/deploy/SiteReadyModal';
 import LaunchDialog from 'src/components/pages/projects/launch/LaunchDialog';
 import useLaunchStatus from 'src/components/pages/projects/launch/useLaunchStatus';
@@ -21,7 +21,7 @@ import useActiveBuild from 'src/components/pages/projects/preview/useActiveBuild
 import useDevenvStatus from 'src/components/pages/projects/preview/useDevenvStatus';
 import useProjectSession from 'src/components/pages/projects/useProjectSession';
 import { Spinner } from 'src/components/common/Spinner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
+import { Tabs, TabsContent } from 'src/components/shadui/tabs';
 import { getPreviewState } from 'src/services/devenv';
 import { getProjects, getSitePreviewUrl } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
@@ -261,11 +261,15 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
               data-workspace-panel='side'
               className={cn(_PANEL_CLASS, 'min-w-0 flex-1 gap-0')}
             >
-              <div className='flex items-center gap-3 border-b pr-4'>
-                <TabsList variant='line' className='min-w-0 flex-1 justify-start px-3'>
-                  <TabsTrigger value='preview' className='flex-none px-3'>{t('chat_tab_preview')}</TabsTrigger>
-                  {deploy && <DeployTabTrigger isLaunchPending={isLaunchPending} />}
-                </TabsList>
+              {/* As tall as the chat's header beside it (AgentChat's tab row), so the two lines up. */}
+              <div className='flex h-14 shrink-0 items-center gap-3 border-b pr-4'>
+                <PillTabsList
+                  tabs={_.compact([
+                    { value: 'preview', label: t('chat_tab_preview'), Icon: AppWindowIcon },
+                    deploy && { value: 'deploy', label: t('chat_tab_deploy'), Icon: RocketIcon },
+                  ])}
+                  className='ml-3'
+                />
               </div>
               {/* Kept mounted so a trip to Deploy doesn't reload the site or lose where it was. */}
               <TabsContent value='preview' keepMounted className='flex min-h-0 flex-col'>{preview}</TabsContent>

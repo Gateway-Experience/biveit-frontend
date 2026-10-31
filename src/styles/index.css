@@ -20,6 +20,8 @@
   --color-scrim-foreground: var(--scrim-foreground);
   --color-highlight: var(--highlight);
   --color-brand-light: var(--brand-light);
+  --color-selection: var(--selection);
+  --color-selection-foreground: var(--selection-foreground);
   --color-brand-deep: var(--brand-deep);
   --color-brand-ink: var(--brand-ink);
   --color-brand-ink-foreground: var(--brand-ink-foreground);
@@ -136,10 +138,10 @@
   --selection-foreground: var(--foreground);
   /* The brand colour for things read on the page: links, icons, labels, the wordmark's capitals. The lime
      itself is too pale to read on white, so here it's a deep lime-green from the same hue (5.6:1 on the
-     page). Dark theme: the lime itself, which reads fine on navy. */
+     page). Dark theme: the lavender (the brand's colours flip there), which reads fine on navy. */
   --brand-strong: #4A7012;
-  /* The lavender of the logo's "it" (sampled from the wordmark): a touch deeper than --primary. The same in both
-     themes, like the wordmark. */
+  /* The lavender of the logo's "it" (sampled from the wordmark): a touch deeper than --primary. Lime in the dark
+     theme, where the brand's colours flip. */
   --brand-lavender: #B29BE5;
   /* The project workspace's backdrop under its picture (WorkspaceBackdrop): lavender mist at the top fading to a
      pale lime haze. Only seen in the dark theme (its night sky, below) or before the picture has loaded. */
@@ -162,6 +164,10 @@
   --sidebar-ring: var(--ring);
 }
 
+/* The dark theme flips the brand's two colours: what's lavender in the light theme (buttons, rings, the selection,
+   the glass glow) is lime here, and what's lime there (glows, badges, washes, the brand text) is lavender. The
+   tokens keep their light-theme names (--brand-light is lavender here, --brand-lavender lime), so every component
+   follows without its own `dark:` colours. Logos and wordmarks are pictures and don't swap. */
 .dark {
   --background: #0E1A23;
   --foreground: #EEF2F5;
@@ -169,38 +175,38 @@
   --card-foreground: #EEF2F5;
   --popover: #15232E;
   --popover-foreground: #EEF2F5;
-  --primary: #B8A4E8;
+  --primary: #C9F56A;
   --primary-foreground: #172B3A;
-  --secondary: #2C3F17;
+  --secondary: #2E2748;
   --secondary-foreground: #EEF2F5;
   --muted: #1C2B37;
   --muted-foreground: #9AA8B3;
-  --accent: #22321A;
-  --accent-foreground: #D6F290;
+  --accent: #2A2442;
+  --accent-foreground: #DDD3F6;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: #B8A4E8;
-  --chart-1: #C9F56A;
-  --chart-2: #6E9A26;
-  --chart-3: #B8A4E8;
-  --chart-4: #7C64C4;
-  --chart-5: #3A5218;
+  --ring: #C9F56A;
+  --chart-1: #B8A4E8;
+  --chart-2: #7C64C4;
+  --chart-3: #C9F56A;
+  --chart-4: #6E9A26;
+  --chart-5: #3A2D66;
   --success: oklch(0.70 0.14 150);
   --success-foreground: oklch(0.205 0 0);
   --warning: oklch(0.80 0.15 75);
   --warning-foreground: oklch(0.205 0 0);
   --info: oklch(0.70 0.14 250);
   --info-foreground: oklch(0.205 0 0);
-  --highlight: rgb(201 245 106 / 18%);
-  --brand-light: #C9F56A;
-  --brand-deep: #93CC2E;
+  --highlight: rgb(184 164 232 / 18%);
+  --brand-light: #B8A4E8;
+  --brand-deep: #7C64C4;
   --brand-ink: #0F1E2A;
   --brand-ink-foreground: #EEF2F5;
   --selection: #D3EEA5;
   --selection-foreground: var(--brand-ink);
-  --brand-strong: #C9F56A;
-  --brand-lavender: #B29BE5;
+  --brand-strong: #B8A4E8;
+  --brand-lavender: #C9F56A;
   /* A night sky: deep indigo fading to the darkest navy, below the panels' own navy. */
   --backdrop-top: #1A1C38;
   --backdrop-bottom: #09131A;
@@ -309,6 +315,20 @@
   }
 }
 
+/* The search window (ProjectSearchDialog) is glass too, but more solid than the other frames: 30% see-through
+   (70% solid), so its results read clearly over a busy page. Plain CSS, outside the layers, so it wins over
+   glass-surface's own fill. */
+[data-component='project-search'] {
+  background-color: color-mix(in oklab, var(--card) 70%, transparent);
+}
+
+/* The selected pill tab (PillTabsList) in the selection colour, like the sidebar's current page. Laid over the card's
+   solid colour, since the light theme's selection is see-through and the pills overlap: this way the pill tucked
+   underneath doesn't show through. Plain CSS, outside the layers, so it wins over the tab's own active fill. */
+[data-component='pill-tabs'] [data-slot='tabs-trigger'][data-active] {
+  background: linear-gradient(var(--selection), var(--selection)), var(--card);
+}
+
 /* Intentions: the highlight on a menu's or a select's item (hovered, or reached with the keyboard): the selection
    colour (lavender, or a soft lime with dark text in the dark theme), rather than the theme's neutral accent. Destructive items
    ("Delete") keep their own red. Plain CSS, outside the layers, so it wins over the items' own focus classes; their
@@ -337,6 +357,11 @@
 }
 [data-sidebar='sidebar'] [data-slot='sidebar-menu-button'] {
   border-radius: 9999px;
+}
+/* The selected row's "⋯" sits on the selection colour too, so it takes the selection's text colour (in the dark
+   theme the sidebar's own light grey would vanish on the lime). It's a menu trigger, which takes over the slot name. */
+[data-sidebar='sidebar'] [data-slot='sidebar-menu-button'][data-active] ~ :is([data-slot='sidebar-menu-action'], [data-slot='dropdown-menu-trigger']) {
+  color: var(--selection-foreground);
 }
 /* The language and theme switches are menu triggers, not menu buttons: same hover as their neighbours (Help). */
 :is([data-sidebar='sidebar'] [data-slot='sidebar-menu-button'], [data-sidebar='sidebar'] [data-slot='dropdown-menu-trigger']):hover:not([data-active]) {
@@ -469,18 +494,22 @@
   100% { transform: translate(-0.6px, -4px) scaleY(1.15); opacity: 0; }
 }
 
-/* The Deploy tab's pulse (DeployTabTrigger): a copy of the rocket shape behind the button, swelling out and fading,
-   then a rest. It grows more in height than width so the gap round the shape stays about even. Only the copy moves;
-   people who prefer less motion don't get it. */
-.deploy-tab-echo {
-  animation: deploy-tab-echo 2.2s ease-out infinite;
+/* The segmented tab bar's dot (SegmentedTabsList): centred under the selected tab, its two ends kept apart by left
+   and right. On a switch the leading end sets off first and the trailing one follows, so the dot stretches into a
+   line on the way and closes back up when it arrives. Which end leads comes from the tabs' data-activation-direction. */
+.segmented-tabs-dot {
+  left: calc(var(--active-tab-left) + var(--active-tab-width) / 2 - 2.5px);
+  right: calc(var(--active-tab-right) + var(--active-tab-width) / 2 - 2.5px);
+  transition: left 220ms cubic-bezier(0.2, 0.9, 0.3, 1), right 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
-@keyframes deploy-tab-echo {
-  0% { transform: scale(1); opacity: 0.7; }
-  70%, 100% { transform: scale(1.14, 1.5); opacity: 0; }
+.segmented-tabs-dot[data-activation-direction='right'] {
+  transition-delay: 80ms, 0ms;
+}
+.segmented-tabs-dot[data-activation-direction='left'] {
+  transition-delay: 0ms, 80ms;
 }
 @media (prefers-reduced-motion: reduce) {
-  .deploy-tab-echo { display: none; }
+  .segmented-tabs-dot { transition: none; }
 }
 
 /* The chat box, just after text was handed to it from elsewhere (ChatComposer's hand-over cue): three lavender rings

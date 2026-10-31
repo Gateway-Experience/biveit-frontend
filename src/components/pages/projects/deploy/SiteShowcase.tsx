@@ -74,8 +74,8 @@ export default function SiteShowcase({ projectName, pictureUrl, className }: { p
       </div>
       <span className='absolute -top-1 -right-1 inline-flex rotate-6 items-center gap-1.5 rounded-full bg-brand-light px-2.5 py-1 text-[0.6875rem] font-bold tracking-[0.08em] text-brand-ink uppercase shadow-[0_0_14px_2px_color-mix(in_oklab,var(--brand-light)_60%,transparent)]'>
         <span aria-hidden='true' className='relative flex size-1.5'>
-          <span className='absolute inline-flex size-full animate-ping rounded-full bg-brand-strong opacity-70 motion-reduce:animate-none' />
-          <span className='relative inline-flex size-1.5 rounded-full bg-brand-strong' />
+          <span className='absolute inline-flex size-full animate-ping rounded-full bg-brand-strong opacity-70 motion-reduce:animate-none dark:bg-brand-ink' />
+          <span className='relative inline-flex size-1.5 rounded-full bg-brand-strong dark:bg-brand-ink' />
         </span>
         {t('deploy_showcase_live')}
       </span>

@@ -8,7 +8,7 @@ import { Button } from 'src/components/shadui/button';
 // "go live" because the Deploy tab sat unnoticed above a long conversation; this sits right above the chat box,
 // where they're looking, and takes them there.
 // Shown by the chat while nothing's launched yet (and the agent isn't mid-reply). Dismissing hides it until the
-// page is opened again -- the Deploy tab itself keeps standing out (DeployTabTrigger).
+// page is opened again.
 // `onOpenDeploy` switches to the Deploy tab, wherever it is (the chat's own tabs, or the side panel).
 export default function LaunchNudge({ onOpenDeploy }: { onOpenDeploy: () => void }) {
   const { t } = useTranslation();

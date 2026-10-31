@@ -97,12 +97,13 @@ export default function ProjectSearchDialog({ open, onClose }: { open: boolean; 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={isOpen => !isOpen && close()}>
       <DialogPrimitive.Portal>
-        {/* No backdrop on purpose: the page stays as it is underneath. */}
+        {/* No backdrop on purpose: the page stays as it is underneath, seen through the frosted glass like the other
+            frames (glass-surface). */}
         <DialogPrimitive.Popup
           data-component='project-search'
           className={cn(
             'fixed top-1/2 left-1/2 z-50 flex h-[min(460px,76vh)] w-[min(720px,calc(100%-2rem))] -translate-1/2 flex-col',
-            'overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-2xl outline-none',
+            'overflow-hidden rounded-surface glass-surface text-popover-foreground outline-none',
             'duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-98 data-closed:animate-out data-closed:fade-out-0',
           )}
         >

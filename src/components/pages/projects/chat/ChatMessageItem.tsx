@@ -40,6 +40,10 @@ export type ChatRenderContext = {
 // The registry's bubbles are sized for dense UIs (text-xs); chat reads better a notch above the UI's
 // usual text-sm. Same size on both sides of the conversation (see CHAT_TEXT_SIZE_CLASS).
 const _USER_BUBBLE_CONTENT_CLASS = cn('rounded-2xl px-4 py-2.5', CHAT_TEXT_SIZE_CLASS);
+// The user's own bubbles are in the selection colour, like the sidebar's current page (soft lavender, soft lime in
+// the dark theme), rather than the `secondary` variant's: forced (!), since the variant sets its colour from the
+// bubble around it.
+const _USER_BUBBLE_TONE_CLASS = 'bg-selection! text-selection-foreground!';
 // A dashed line above a part of a bubble, setting it apart from what comes before it.
 const _DASHED_DIVIDER_CLASS = 'border-t border-dashed border-foreground/35';
 // The same line between the agent's pieces on phones, where it's all that tells them apart (no frames there):
@@ -216,13 +220,14 @@ function InteractionAnswerBubble({ answers, sentAt }: {
       align='end'
       sentAt={sentAt}
       data-toolresultfor={_.map(answers, 'toolResult.tool_use_id').join(',')}
-      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2 p-2')}
+      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, _USER_BUBBLE_TONE_CLASS, 'flex flex-col gap-2 p-2')}
     >
-      {/* One light tile per question, so several answers in one card don't run together. */}
+      {/* One light tile per question, so several answers in one card don't run together. In the dark theme the bubble
+          is light (the selection lime), so the tile is a pale wash with dark text rather than the page's navy. */}
       {_.map(_.reject(answeredItems, { result: { status: 'untouched' } }), ({ key, label, result }) => (
-        <div key={key} data-answeritem={key} className='flex flex-col rounded-xl bg-background/60 px-3 py-2'>
-          <span className='pb-1.5 text-sm text-muted-foreground'>{label}</span>
-          <span className={cn('pt-1.5 font-medium', _DASHED_DIVIDER_CLASS, result.status === 'aborted' && 'font-normal text-muted-foreground italic')}>
+        <div key={key} data-answeritem={key} className='flex flex-col rounded-xl bg-background/60 px-3 py-2 dark:bg-brand-ink-foreground/55'>
+          <span className='pb-1.5 text-sm text-muted-foreground dark:text-brand-ink/60'>{label}</span>
+          <span className={cn('pt-1.5 font-medium', _DASHED_DIVIDER_CLASS, 'dark:border-brand-ink/30', result.status === 'aborted' && 'font-normal text-muted-foreground italic dark:text-brand-ink/60')}>
             {result.status === 'submitted' ? _getSubmittedAnswerText(result, t) : t('chat_answer_dismissed')}
           </span>
         </div>
@@ -305,7 +310,7 @@ function UserMessageBlocks({ message, renderContext }: { message: AiMessage; ren
       variant='secondary'
       align='end'
       sentAt={message.created_at}
-      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, 'whitespace-pre-wrap')}
+      contentClassName={cn(_USER_BUBBLE_CONTENT_CLASS, _USER_BUBBLE_TONE_CLASS, 'whitespace-pre-wrap')}
     >
       {block.text}
     </TimedBubble>
@@ -434,7 +439,7 @@ function StartingBriefMessage({ bootstrapData, hasAvatar = true }: { bootstrapDa
       <ChatAvatar role='user' isShown={hasAvatar} />
       <MessageContent>
         <Bubble variant='secondary' align='end'>
-          <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, 'flex flex-col gap-2.5 py-3')}>
+          <BubbleContent className={cn(_USER_BUBBLE_CONTENT_CLASS, _USER_BUBBLE_TONE_CLASS, 'flex flex-col gap-2.5 py-3')}>
             {_.map(fields, ({ key, question, answer }) => (
               <div key={key} className='flex flex-col gap-0.5'>
                 <span className='text-xs text-muted-foreground'>{question}</span>

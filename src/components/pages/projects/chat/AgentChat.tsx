@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } fro
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
-import { TriangleAlertIcon } from 'lucide-react';
+import { AppWindowIcon, MessageSquareIcon, RocketIcon, TriangleAlertIcon } from 'lucide-react';
 
 import { Marker, MarkerContent, MarkerIcon } from 'src/components/shadui/marker';
 import {
@@ -11,14 +11,15 @@ import {
 } from 'src/components/shadui/message-scroller';
 import { Button } from 'src/components/shadui/button';
 import HumanContact from 'src/components/common/HumanContact';
+import PillTabsList from 'src/components/common/PillTabsList';
+import SegmentedTabsList from 'src/components/common/SegmentedTabsList';
 import { Spinner } from 'src/components/common/Spinner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
+import { Tabs, TabsContent } from 'src/components/shadui/tabs';
 import AgentWaitLine from 'src/components/pages/projects/chat/AgentWaitLine';
 import BuildProgressPanel from 'src/components/pages/projects/chat/BuildProgressPanel';
 import { BuildGlyph } from 'src/components/pages/projects/preview/BuildIndicator';
 import ChatComposer from 'src/components/pages/projects/chat/ChatComposer';
 import InteractionPanel from 'src/components/pages/projects/chat/InteractionPanel';
-import DeployTabTrigger from 'src/components/pages/projects/deploy/DeployTabTrigger';
 import LaunchNudge from 'src/components/pages/projects/deploy/LaunchNudge';
 import ChatMessageItem, { hasVisibleContent, StartingBriefMessage, type ChatRenderContext } from 'src/components/pages/projects/chat/ChatMessageItem';
 import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
@@ -27,6 +28,7 @@ import { useStore } from 'src/state-store';
 import { getAnsweredQuestions, getSuggestedReply, indexToolResults, indexToolUses } from 'src/services/chatLog';
 import type { ChatIntroState } from 'src/types/chat';
 import type { DevenvBuild } from 'src/types/preview';
+import { useIsMobile } from 'src/utils/hooks';
 
 // Readable column inside a box of any width. Shared by the transcript and the composer so they line up.
 const _COLUMN_CLASS = 'mx-auto w-full max-w-4xl px-4';
@@ -189,7 +191,7 @@ export default function AgentChat({
   // chat, and a loading bar takes the input's place.
   activeBuild?: DevenvBuild | null;
   deploy?: ReactNode;
-  // Nothing launched yet: the Deploy tab stands out (DeployTabTrigger).
+  // Nothing launched yet: the chat nudges towards the Deploy tab (LaunchNudge).
   isLaunchPending?: boolean;
   // Shows the Deploy tab when it sits beside the chat rather than in it; left out while that tab is already open
   // there (nothing to nudge towards then).
@@ -197,6 +199,7 @@ export default function AgentChat({
   className?: string;
 }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const isPreviewBuilding = !!activeBuild;
   const {
     conversationId, latestAssistantSeq, messages, introState, hasLoadFailed, pendingInteractions, isAgentWorking, isPosting,
@@ -272,16 +275,40 @@ export default function AgentChat({
       data-agentworking={isAgentWorking}
       className={cn('min-h-0 w-full gap-0', className)}
     >
-      <TabsList variant='line' className='w-full justify-start border-b px-3'>
-        <TabsTrigger value='chat' className='flex-none px-3'>{t('chat_tab_chat')}</TabsTrigger>
-        {preview && (
-          <TabsTrigger value='preview' className='flex-none px-3' data-building={isPreviewBuilding || undefined}>
-            {t('chat_tab_preview')}
-            {isPreviewBuilding && <BuildGlyph className='text-base' />}
-          </TabsTrigger>
+      {/* On phones a segmented bar (a pill that slides, a dot that stretches as it goes); otherwise overlapping pills. */}
+      {isMobile
+        ? (
+          <div className='flex justify-center border-b px-3 pt-2.5 pb-1'>
+            <SegmentedTabsList
+              tabs={_.compact([
+                { value: 'chat', label: t('chat_tab_chat') },
+                preview && {
+                  value: 'preview',
+                  label: <>{t('chat_tab_preview')}{isPreviewBuilding && <BuildGlyph className='text-base' />}</>,
+                  dataProps: { 'data-building': isPreviewBuilding || undefined },
+                },
+                deploy && { value: 'deploy', label: t('chat_tab_deploy') },
+              ])}
+            />
+          </div>
+        )
+        : (
+          // Pills like the side panel's (PillTabsList), and as tall as its header, so the two line up.
+          <div className='flex h-14 shrink-0 items-center border-b px-3'>
+            <PillTabsList
+              tabs={_.compact([
+                { value: 'chat', label: t('chat_tab_chat'), Icon: MessageSquareIcon },
+                preview && {
+                  value: 'preview',
+                  label: <>{t('chat_tab_preview')}{isPreviewBuilding && <BuildGlyph className='text-base' />}</>,
+                  Icon: AppWindowIcon,
+                  dataProps: { 'data-building': isPreviewBuilding || undefined },
+                },
+                deploy && { value: 'deploy', label: t('chat_tab_deploy'), Icon: RocketIcon },
+              ])}
+            />
+          </div>
         )}
-        {deploy && <DeployTabTrigger isLaunchPending={isLaunchPending} />}
-      </TabsList>
 
       {/* Kept mounted while hidden so the draft, scroll position and any half-answered question survive a
           trip to another tab. */}
@@ -332,12 +359,13 @@ export default function AgentChat({
                 {isWaitingForUser && (
                   <MessageScrollerItem className={_SCROLLER_ITEM_CLASS}>
                     <div data-component='chat-waiting-for-user' className='mt-1 pl-[2.625rem] max-sm:pl-0'>
-                      <span className='inline-flex items-center gap-2.5 rounded-full bg-brand-light px-4 py-2 text-sm font-semibold text-brand-ink shadow-md shadow-brand-light/40 animate-in fade-in-0 slide-in-from-bottom-1 duration-500'>
-                        {/* A pinging dot: the "it's your turn" cue that catches the eye without moving the layout. In
-                            the logo's lavender, on the lime pill. */}
+                      <span className='inline-flex items-center gap-2.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/40 animate-in fade-in-0 slide-in-from-bottom-1 duration-500'>
+                        {/* A pinging dot: the "it's your turn" cue that catches the eye without moving the layout. The
+                            brand's two colours swapped between pill and dot: lime on the buttons' lavender (like the user's
+                            bubbles) in light; the dark theme flips them to lavender on lime. */}
                         <span className='relative flex size-2.5'>
-                          <span className='absolute inline-flex size-full animate-ping rounded-full bg-brand-lavender opacity-75' />
-                          <span className='relative inline-flex size-2.5 rounded-full bg-brand-lavender' />
+                          <span className='absolute inline-flex size-full animate-ping rounded-full bg-brand-light opacity-75' />
+                          <span className='relative inline-flex size-2.5 rounded-full bg-brand-light' />
                         </span>
                         {t('chat_waiting_for_answer')}
                       </span>
