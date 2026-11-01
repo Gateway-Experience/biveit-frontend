@@ -37,12 +37,12 @@ function formatDateIn(days: number, language: string) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toLocaleDateString(language);
 }
 
-export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isFreeFirstYear, defaultEmail, isPaying, onPay, onBack }: {
+export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isDiscounted, defaultEmail, isPaying, onPay, onBack }: {
   plan: PlanKey | null;
   plans: LaunchPlan[];
   domain: DomainChoice | null;
   ownDomainRecords: DnsRecord[] | null;
-  isFreeFirstYear: boolean;
+  isDiscounted: boolean;
   defaultEmail: string;
   isPaying: boolean;
   onPay: (registrant: Registrant | null) => void;
@@ -56,7 +56,7 @@ export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isFr
   });
   const money = (amount: number) => formatUsd(amount, i18n.language);
   const planInfo = _.find(plans, { key: plan || undefined });
-  const domainToday = isBuyingDomain && !isFreeFirstYear ? domain.price_per_year : 0;
+  const domainToday = isBuyingDomain && !isDiscounted ? domain.price_per_year : 0;
   const dueToday = (planInfo?.price_usd || 0) + domainToday;
   const planRenewsInDays = plan === 'yearly' ? 365 : 30;
   const lines = _.compact([
@@ -65,7 +65,7 @@ export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isFr
       key: 'domain',
       label: t('launch_review_domain_line', { domain: domain.name }),
       today: domainToday,
-      regular: isFreeFirstYear ? domain.price_per_year : null,
+      regular: isDiscounted ? domain.price_per_year : null,
     },
     domain?.kind === 'own' && { key: 'domain', label: `${t('launch_review_domain_line', { domain: domain.name })}: ${t('launch_review_own_domain')}`, today: 0, regular: null },
   ]);

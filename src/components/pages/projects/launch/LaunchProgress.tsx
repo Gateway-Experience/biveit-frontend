@@ -15,8 +15,13 @@ type StepState = 'done' | 'active' | 'failed' | 'todo';
 
 // [Pure] The checklist for a status: [{key, label, state}], in order.
 function getLaunchSteps(status: LaunchStatus, t: (key: string, params?: Record<string, unknown>) => string) {
-  const domainName = status.domain?.domain || status.domain_subscription?.domain || status.launch?.domain?.name || '';
-  const isOwnDomain = status.domain?.kind === 'external' || status.launch?.domain?.kind === 'own';
+  // The domain on its way to live: the active one, else the one being set up (or that just failed to be), else the
+  // newest attached -- what fulfilment picks.
+  const pendingDomain = status.domain
+    || _.find(status.site_domains, { domain: status.setting_up || status.setup_failure?.domain || '' })
+    || _.last(status.site_domains);
+  const domainName = pendingDomain?.domain || status.domain_subscription?.domain || '';
+  const isOwnDomain = pendingDomain?.kind === 'external';
   const order = ['registering_domain', 'waiting_dns', 'deploying', 'live'];
   // A failed deployment got as far as deploying: the steps before it are done, that one failed.
   const isFailed = status.stage === 'failed';

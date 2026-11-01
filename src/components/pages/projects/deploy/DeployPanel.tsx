@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from 'cn';
 import { RocketIcon } from 'lucide-react';
@@ -14,7 +14,7 @@ import SiteShowcase from 'src/components/pages/projects/deploy/SiteShowcase';
 import LaunchProgress, { DnsRecordsTable } from 'src/components/pages/projects/launch/LaunchProgress';
 import { Button } from 'src/components/shadui/button';
 import { DialogDescription, DialogTitle } from 'src/components/shadui/dialog';
-import { LAUNCH_QUERY_KEY, activateLaunchDomain, checkOwnDomain, downloadCode, redeploySite } from 'src/services/launch';
+import { LAUNCH_QUERY_KEY, activateLaunchDomain, checkOwnDomain, downloadCode, getDomainSwitch, redeploySite, upgradePlan } from 'src/services/launch';
 import { PLANS } from 'src/services/pricing';
 import type { LaunchStatus, OpenLaunchDialog, PlanKey } from 'src/types/launch';
 import { PATHS } from 'src/utils/constants';
@@ -25,6 +25,16 @@ const _ENTER_CLASS = 'animate-in fade-in-0 slide-in-from-bottom-3 duration-500 e
 
 const _BEST_VALUE_PLAN: PlanKey = _.find(PLANS, 'isBestValue')?.id || 'yearly';
 
+// How often a domain switch in progress is asked about.
+const _SWITCH_POLL_MS = 3000;
+
+// What to tell the user about a domain whose setup failed, by what failed.
+const _SETUP_FAILURE_MESSAGES = {
+  dns: 'launch_setup_failed_dns',
+  certificate: 'launch_setup_failed',
+  release: 'launch_setup_failed_release',
+} as const;
+
 // [Pure]
 function _getEnterStyle(order: number) {
   return { animationDelay: `${200 + order * 90}ms` };
@@ -32,7 +42,8 @@ function _getEnterStyle(order: number) {
 
 // Original purpose: the project's Launch tab, once the user has signed off the built site (build_approved_at) --
 // the offer to launch until something's bought, then where the launch stands (services/launch's status): going
-// live, the plan, the domain, redeploying, downloading the code, finishing a missing domain.
+// live, the plan (and moving monthly to yearly), the domains (switching, one that broke), redeploying, downloading
+// the code.
 // `variant`: 'tab' is the steady tab. 'celebration' is the pop-up at the moment of sign-off: only the offer, roomier,
 // headlined "Your site is ready!", and animated in -- and it must sit inside a dialog, since its headline and pitch
 // become the dialog's title and description.
@@ -156,10 +167,13 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
   const queryClient = useQueryClient();
   // The one domain whose DNS records are showing (opened by hand, or by a switch refused for missing records).
   const [recordsDomain, setRecordsDomain] = useState<string | null>(null);
+  // The switch the user started from here (its operation id), followed until it's done -- only to tell them how it went.
+  const [switchOperationId, setSwitchOperationId] = useState<string | null>(null);
   const { mutate: activateDomain, isPending: isActivating, variables: activatingDomain } = useMutation({
     mutationFn: (domain: string) => activateLaunchDomain(projectId, domain),
-    onSuccess: (_result, domain) => {
+    onSuccess: (result, domain) => {
       notify('success', t('launch_domain_switching', { domain }));
+      setSwitchOperationId(result.operation_id);
       queryClient.invalidateQueries({ queryKey: [LAUNCH_QUERY_KEY, projectId] });
     },
     onError: (error, domain) => {
@@ -170,27 +184,86 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
       }
     },
   });
+  const { data: domainSwitch } = useQuery({
+    queryKey: [LAUNCH_QUERY_KEY, projectId, 'switch', switchOperationId],
+    queryFn: () => getDomainSwitch(projectId, switchOperationId as string),
+    enabled: !!switchOperationId,
+    refetchInterval: query => (query.state.data && query.state.data.state !== 'running' ? false : _SWITCH_POLL_MS),
+  });
+  // Done: the status shows the new active domain (or still the old one).
+  useEffect(() => {
+    if (domainSwitch && domainSwitch.state !== 'running') {
+      queryClient.invalidateQueries({ queryKey: [LAUNCH_QUERY_KEY, projectId, 'status'] });
+      if (domainSwitch.state === 'succeeded') {
+        notify('success', t('launch_domain_switched', { domain: domainSwitch.domain }));
+      }
+    }
+  }, [domainSwitch?.state]); // eslint-disable-line react-hooks/exhaustive-deps -- once per outcome
+  const failedSwitch = domainSwitch && (domainSwitch.state === 'failed' || domainSwitch.state === 'interrupted') ? domainSwitch : null;
+  const [isConfirmingUpgrade, setIsConfirmingUpgrade] = useState(false);
+  const { mutate: upgrade, isPending: isUpgrading } = useMutation({
+    mutationFn: () => upgradePlan(projectId),
+    onSuccess: () => {
+      notify('success', t('launch_upgraded'));
+      setIsConfirmingUpgrade(false);
+      queryClient.invalidateQueries({ queryKey: [LAUNCH_QUERY_KEY, projectId] });
+    },
+    onError: error => {
+      const code: string = _.get(error, 'data.detail') || '';
+      notify('error', t(`launch_error_${code}`, { defaultValue: t('launch_error_generic') }));
+    },
+  });
   const isGoingLive = _.includes(['registering_domain', 'waiting_dns', 'deploying', 'failed', 'live'], status.stage);
-  const canRedeploy = status.access.can_host && !!status.domain?.servable && !status.deployment.deploying;
+  const canRedeploy = status.access.can_host && !!status.domain && !status.deployment.deploying;
   const planName = status.plan ? t(`launch_plan_${status.plan.plan}`) : '';
+  // A running monthly plan that isn't cancelled can move to yearly.
+  const canUpgrade = status.plan?.plan === 'monthly' && !status.plan.ends_at;
+  const yearlyPrice = _.find(status.plans, { key: 'yearly' })?.price_usd;
+  // Offer another domain only when there's none to switch to (docs/launchflow.txt: "no servable domains").
+  const hasServableDomain = _.some(status.site_domains, 'servable');
+  const setupFailure = status.setup_failure;
 
   return (
     <div className='flex flex-col gap-5' data-component='launch-state'>
       {isGoingLive && <LaunchProgress status={status} />}
-      {status.stage === 'finish_domain' && (
-        <div className='flex flex-col gap-3'>
-          <p className='text-sm'>{t('launch_finish_domain_body')}</p>
-          <Button className='self-start' onClick={() => onLaunch('domain')} data-action='finish-domain'>{t('launch_finish_domain')}</Button>
-        </div>
-      )}
       {status.stage === 'choose_domain' && (
         <div className='flex flex-col gap-3'>
           <p className='text-sm'>
-            {status.launch?.domain_failure
-              ? t('launch_domain_failed', { domain: status.launch.domain_failure.domain })
+            {status.registration_failure
+              ? t('launch_domain_failed', { domain: status.registration_failure.domain })
               : t('launch_choose_domain_body')}
           </p>
           <Button className='self-start' onClick={() => onLaunch('domain')} data-action='choose-domain'>{t('launch_choose_domain')}</Button>
+        </div>
+      )}
+      {status.stage === 'not_servable' && status.domain && (
+        <div className='flex flex-col gap-3 rounded-xl border border-destructive/40 p-3' data-component='domain-not-servable'>
+          <p className='text-sm text-destructive'>{t('launch_domain_not_servable', { domain: status.domain.domain })}</p>
+          {status.domain.check && <DnsRecordsTable records={status.domain.check.records} />}
+        </div>
+      )}
+      {setupFailure && !status.setting_up && (
+        <div className='flex flex-col gap-2' data-component='setup-failure' data-cause={setupFailure.cause}>
+          <p className='text-sm text-destructive'>{t(_SETUP_FAILURE_MESSAGES[setupFailure.cause], { domain: setupFailure.domain })}</p>
+          {/* Only an automatic first attempt happens: from here on, trying again is the user's (refused while a user's
+              own domain still lacks its records). */}
+          <Button variant='outline' size='sm' className='self-start' disabled={isActivating} onClick={() => activateDomain(setupFailure.domain)} data-action='retry-setup'>
+            {isActivating && <Spinner data-icon='inline-start' />}
+            {t('launch_setup_retry')}
+          </Button>
+        </div>
+      )}
+      {failedSwitch && (
+        <div className='flex flex-col gap-2' data-component='switch-failure' data-cause={failedSwitch.cause}>
+          <p className='text-sm text-destructive'>
+            {failedSwitch.cause
+              ? t(_SETUP_FAILURE_MESSAGES[failedSwitch.cause], { domain: failedSwitch.domain })
+              : t('launch_error_generic')}
+          </p>
+          <Button variant='outline' size='sm' className='self-start' disabled={isActivating} onClick={() => activateDomain(failedSwitch.domain)} data-action='retry-switch'>
+            {isActivating && <Spinner data-icon='inline-start' />}
+            {t('launch_setup_retry')}
+          </Button>
         </div>
       )}
       {(status.stage === 'code_only' || status.stage === 'ended') && (
@@ -208,6 +281,11 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
               {status.plan.ends_at
                 ? t('launch_plan_ends', { date: formatDate(status.plan.ends_at), ...unescaped })
                 : status.plan.renews_at && t('launch_plan_renews', { date: formatDate(status.plan.renews_at), ...unescaped })}
+              {canUpgrade && !isConfirmingUpgrade && (
+                <Button variant='link' size='sm' className='ml-2 h-auto px-0' onClick={() => setIsConfirmingUpgrade(true)} data-action='upgrade-plan'>
+                  {t('launch_upgrade_yearly')}
+                </Button>
+              )}
             </dd>
           </>
         )}
@@ -218,6 +296,18 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
           </>
         )}
       </dl>
+      {isConfirmingUpgrade && (
+        <div className='flex flex-col gap-2 rounded-xl border p-3 text-sm' data-component='upgrade-confirm'>
+          <p>{t('launch_upgrade_confirm_body', { price: yearlyPrice })}</p>
+          <div className='flex gap-2'>
+            <Button size='sm' disabled={isUpgrading} onClick={() => upgrade()} data-action='confirm-upgrade'>
+              {isUpgrading && <Spinner data-icon='inline-start' />}
+              {t('launch_upgrade_confirm')}
+            </Button>
+            <Button size='sm' variant='ghost' disabled={isUpgrading} onClick={() => setIsConfirmingUpgrade(false)}>{t('project_action_cancel')}</Button>
+          </div>
+        </div>
+      )}
 
       {status.access.can_host && !_.isEmpty(status.site_domains) && (
         <div className='flex flex-col gap-2' data-component='launch-domains'>
@@ -226,34 +316,37 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
             <div key={row.domain} className='flex flex-col gap-2 rounded-xl border px-3 py-2 text-sm' data-domain={row.domain} data-active={row.active}>
               <div className='flex items-center justify-between gap-3'>
                 <span className='min-w-0 break-all'>{row.domain}</span>
-                {row.active
-                  ? <span className='shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>{t('launch_domain_active')}</span>
-                  : (
-                    <span className='flex shrink-0 items-center gap-1'>
-                      {row.kind === 'external' && (
-                        <Button variant='ghost' size='sm' onClick={() => setRecordsDomain(recordsDomain === row.domain ? null : row.domain)} data-action='toggle-records'>
-                          {t(recordsDomain === row.domain ? 'launch_domain_hide_records' : 'launch_domain_show_records')}
-                        </Button>
-                      )}
-                      <Button variant='ghost' size='sm' disabled={isActivating} onClick={() => activateDomain(row.domain)} data-action='use-domain'>
+                {row.active && <span className='shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>{t('launch_domain_active')}</span>}
+                {!row.active && status.setting_up === row.domain && (
+                  <span className='flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground'><Spinner className='size-3.5' />{t('launch_domain_setting_up')}</span>
+                )}
+                {!row.active && status.setting_up !== row.domain && (
+                  <span className='flex shrink-0 items-center gap-1'>
+                    {row.kind === 'external' && !row.servable && <span className='text-xs text-muted-foreground'>{t('launch_domain_records_missing')}</span>}
+                    {row.kind === 'external' && (
+                      <Button variant='ghost' size='sm' onClick={() => setRecordsDomain(recordsDomain === row.domain ? null : row.domain)} data-action='toggle-records'>
+                        {t(recordsDomain === row.domain ? 'launch_domain_hide_records' : 'launch_domain_show_records')}
+                      </Button>
+                    )}
+                    {row.servable && (
+                      <Button variant='ghost' size='sm' disabled={isActivating || !!status.setting_up} onClick={() => activateDomain(row.domain)} data-action='use-domain'>
                         {isActivating && activatingDomain === row.domain && <Spinner data-icon='inline-start' />}
                         {t('launch_domain_use')}
                       </Button>
-                    </span>
-                  )}
+                    )}
+                  </span>
+                )}
               </div>
               {recordsDomain === row.domain && !row.active && (
-                <OwnDomainRecords
-                  projectId={projectId}
-                  domain={row.domain}
-                  movesByItself={status.launch?.domain?.kind === 'own' && status.launch.domain.name === row.domain}
-                />
+                <OwnDomainRecords projectId={projectId} domain={row.domain} />
               )}
             </div>
           ))}
-          <Button variant='link' size='sm' className='self-start px-0' onClick={() => onLaunch('domain')} data-action='add-domain'>
-            {t('launch_domain_add')}
-          </Button>
+          {!hasServableDomain && (
+            <Button variant='link' size='sm' className='self-start px-0' onClick={() => onLaunch('domain')} data-action='add-domain'>
+              {t('launch_domain_add')}
+            </Button>
+          )}
         </div>
       )}
 
@@ -276,12 +369,11 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
 }
 
 // The DNS records an attached domain of the user's own still needs before the site can move to it, re-checked
-// while they're showing. Original purpose: the Launch tab's domain list, for a domain that isn't the active one.
-// `movesByItself`: it's the domain the launch chose, which the backend switches to once its records are found;
-// any other one waits for "Use this domain".
+// while they're showing. Original purpose: the Launch tab's domain list, for a domain that isn't the active one --
+// the site moves to it with "Use this domain" once they're found.
 const _RECORDS_RECHECK_MS = 30000;
 
-function OwnDomainRecords({ projectId, domain, movesByItself }: { projectId: number; domain: string; movesByItself: boolean }) {
+function OwnDomainRecords({ projectId, domain }: { projectId: number; domain: string }) {
   const { t } = useTranslation();
   const { data: check } = useQuery({
     queryKey: [LAUNCH_QUERY_KEY, projectId, 'own-domain', domain],
@@ -296,7 +388,7 @@ function OwnDomainRecords({ projectId, domain, movesByItself }: { projectId: num
       <p className='text-xs text-muted-foreground'>{t('launch_own_records_intro')}</p>
       <DnsRecordsTable records={check.records} />
       <p className={cn('text-xs', check.verified ? 'text-primary' : 'text-muted-foreground')}>
-        {t(check.verified ? 'launch_own_ready' : movesByItself ? 'launch_domain_records_pending' : 'launch_domain_records_pending_switch')}
+        {t(check.verified ? 'launch_own_ready' : 'launch_domain_records_pending_switch')}
       </p>
     </div>
   );

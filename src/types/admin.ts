@@ -54,7 +54,7 @@ export type DeploymentStatus = {
   deploying: boolean;
   has_undeployed_changes: boolean | null; // null = can't tell (the dev container is stopped)
   can_deploy: boolean;
-  domains: string[];
+  active_domain: string | null;
   urls: string[];
   last_deployment: Deployment | null;
 };

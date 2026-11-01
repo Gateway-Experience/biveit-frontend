@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import { callBe } from 'src/utils/request';
-import type { DomainOffer, LaunchCheckout, LaunchStatus, MockCheckout, OwnDomainCheck, PlanKey, Registrant } from 'src/types/launch';
+import type { DomainOffer, DomainSwitch, LaunchCheckout, LaunchStatus, MockCheckout, OwnDomainCheck, PlanKey, Registrant } from 'src/types/launch';
 
 // Intentions: the launch flow's calls (biveit-backend controllers/launch + controllers/payments): where a project's
 // launch stands, finding a domain, paying, and the stand-in checkout used before the real payment provider exists.
@@ -24,24 +24,35 @@ async function checkOwnDomain(projectId: number, domain: string): Promise<OwnDom
   return callBe({ url: `/projects/${projectId}/launch/domains/check`, method: 'POST', data: { domain } });
 }
 
-// Refusals come back as { detail: CODE, ...extra } (e.g. PRICE_CHANGED with the new price_per_year).
-async function startLaunchCheckout(projectId: number, choice: {
-  plan: PlanKey | null;
-  domain: { kind: 'buy' | 'own'; name: string; price_per_year?: number } | null;
-  registrant: Registrant | null;
-  launchId?: string | null;
+// One thing per checkout: a plan, or (with a plan running) a domain to buy. Refusals come back as
+// { detail: CODE, ...extra } (e.g. PRICE_CHANGED with the new price_per_year).
+async function startLaunchCheckout(projectId: number, choice: { plan: PlanKey } | {
+  domain: { name: string; price_per_year: number };
+  registrant: Registrant;
 }): Promise<LaunchCheckout> {
-  return callBe({
-    url: `/projects/${projectId}/launch/checkout`,
-    method: 'POST',
-    data: { plan: choice.plan, domain: choice.domain, registrant: choice.registrant, launch_id: choice.launchId || null },
-  });
+  return callBe({ url: `/projects/${projectId}/launch/checkout`, method: 'POST', data: choice });
 }
 
-// Switch the site to another of its attached domains. Refused (DOMAIN_NOT_VERIFIED) for the user's own domain
-// until its DNS records are found, so a live site never moves somewhere it can't be served.
-async function activateLaunchDomain(projectId: number, domain: string): Promise<{ domain: string }> {
+// Add the user's own domain to the project -- no plan needed, nothing to pay. Answers like checkOwnDomain.
+async function addOwnDomain(projectId: number, domain: string): Promise<OwnDomainCheck> {
+  return callBe({ url: `/projects/${projectId}/launch/domains`, method: 'POST', data: { domain } });
+}
+
+// Switch the site to another of its attached domains: it's set up in the background, the current one serving until
+// it's done. operation_id: the switch, to poll with getDomainSwitch (null when there's no site yet -- the first
+// deployment happens instead, followed by the status). Refused (DOMAIN_NOT_VERIFIED) for the user's own domain until
+// its DNS records are found, BUSY while a deployment or another switch runs.
+async function activateLaunchDomain(projectId: number, domain: string): Promise<{ domain: string; operation_id: string | null }> {
   return callBe({ url: `/projects/${projectId}/launch/domains/activate`, method: 'POST', data: { domain } });
+}
+
+async function getDomainSwitch(projectId: number, operationId: string): Promise<DomainSwitch> {
+  return callBe(`/projects/${projectId}/launch/domains/switches/${operationId}`);
+}
+
+// Move the running monthly plan to yearly: the same subscription, the difference charged now (no checkout page).
+async function upgradePlan(projectId: number): Promise<{ plan: 'yearly' }> {
+  return callBe({ url: `/projects/${projectId}/launch/plan/upgrade`, method: 'POST' });
 }
 
 async function redeploySite(projectId: number): Promise<{ run_id: string; commit: string }> {
@@ -73,7 +84,10 @@ export {
   searchLaunchDomains,
   checkOwnDomain,
   startLaunchCheckout,
+  addOwnDomain,
   activateLaunchDomain,
+  getDomainSwitch,
+  upgradePlan,
   redeploySite,
   downloadCode,
   getMockCheckout,

@@ -51,7 +51,7 @@ export default function AdminDeployments({ projectId }: { projectId: number }) {
   }
 
   const { status, history, default_domain: defaultDomain } = deployments;
-  const shownDomainsText = domainsText ?? _.join(status.domains, ', ');
+  const shownDomainsText = domainsText ?? (status.active_domain || '');
   const domains = _.compact(_.map(_.split(shownDomainsText, ','), _.trim));
 
   return (

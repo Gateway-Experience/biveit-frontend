@@ -19,15 +19,16 @@ import type { DomainChoice, DomainOffer } from 'src/types/launch';
 // user's own. Buying: with nothing typed, ideas around the project's name; typing, search results. Each shows its
 // price, struck through to free for the first year when the plan is yearly. Own: the two DNS records to add and
 // whether they're found yet (re-checked every few seconds) -- not ready yet is a warning, not a stop.
-// `freeFirstYear`: whether eligible domains are free this time (yearly plan); `onSwitchToYearly` offers that switch
+// `hasDiscount`: whether discountable domains get the domain discount this time (yearly plan; today, the first year
+// free); `onSwitchToYearly` offers that switch
 // from the monthly plan (absent when it doesn't apply).
 
 const _SEARCH_DEBOUNCE_MS = 400;
 const _OWN_RECHECK_MS = 30000;
 
-export default function DomainStep({ projectId, freeFirstYear, onSwitchToYearly, onAskAgent, onChoose, onBack }: {
+export default function DomainStep({ projectId, hasDiscount, onSwitchToYearly, onAskAgent, onChoose, onBack }: {
   projectId: number;
-  freeFirstYear: boolean;
+  hasDiscount: boolean;
   onSwitchToYearly?: () => void;
   onAskAgent: () => void;
   onChoose: (domain: DomainChoice) => void;
@@ -44,7 +45,7 @@ export default function DomainStep({ projectId, freeFirstYear, onSwitchToYearly,
           <TabsTrigger value='own' className='flex-1'>{t('launch_domain_tab_own')}</TabsTrigger>
         </TabsList>
         <TabsContent value='buy' className='pt-3'>
-          <BuyDomain projectId={projectId} freeFirstYear={freeFirstYear} onSwitchToYearly={onSwitchToYearly} onChoose={onChoose} />
+          <BuyDomain projectId={projectId} hasDiscount={hasDiscount} onSwitchToYearly={onSwitchToYearly} onChoose={onChoose} />
         </TabsContent>
         <TabsContent value='own' className='pt-3'>
           <OwnDomain projectId={projectId} onChoose={onChoose} />
@@ -61,9 +62,9 @@ export default function DomainStep({ projectId, freeFirstYear, onSwitchToYearly,
   );
 }
 
-function BuyDomain({ projectId, freeFirstYear, onSwitchToYearly, onChoose }: {
+function BuyDomain({ projectId, hasDiscount, onSwitchToYearly, onChoose }: {
   projectId: number;
-  freeFirstYear: boolean;
+  hasDiscount: boolean;
   onSwitchToYearly?: () => void;
   onChoose: (domain: DomainChoice) => void;
 }) {
@@ -94,7 +95,7 @@ function BuyDomain({ projectId, freeFirstYear, onSwitchToYearly, onChoose }: {
       {offers && _.isEmpty(offers) && <p className='text-sm text-muted-foreground'>{t('launch_domain_none_found')}</p>}
       <div className={cn('flex max-h-72 flex-col gap-1.5 overflow-y-auto', isFetching && 'opacity-60')}>
         {_.map(offers, offer => {
-          const isFree = freeFirstYear && offer.free_first_year_eligible;
+          const isFree = hasDiscount && offer.discountable;
           const isSelected = selected?.domain === offer.domain;
           return (
             <button
@@ -125,7 +126,7 @@ function BuyDomain({ projectId, freeFirstYear, onSwitchToYearly, onChoose }: {
                     </span>
                   )
                   : <strong>{t('launch_domain_per_year', { price: money(offer.price_per_year) })}</strong>)}
-                {offer.sold && !freeFirstYear && offer.free_first_year_eligible && onSwitchToYearly && (
+                {offer.sold && !hasDiscount && offer.discountable && onSwitchToYearly && (
                   <span className='block text-muted-foreground'>{t('launch_domain_free_with_yearly')}</span>
                 )}
               </span>
@@ -133,7 +134,7 @@ function BuyDomain({ projectId, freeFirstYear, onSwitchToYearly, onChoose }: {
           );
         })}
       </div>
-      {selected && !freeFirstYear && selected.free_first_year_eligible && onSwitchToYearly && (
+      {selected && !hasDiscount && selected.discountable && onSwitchToYearly && (
         <Button variant='outline' size='sm' className='self-start' onClick={onSwitchToYearly} data-action='switch-yearly'>
           {t('launch_domain_switch_yearly')}
         </Button>
@@ -141,7 +142,7 @@ function BuyDomain({ projectId, freeFirstYear, onSwitchToYearly, onChoose }: {
       <Button
         disabled={!selected}
         onClick={() => selected && selected.price_per_year !== null && onChoose({
-          kind: 'buy', name: selected.domain, price_per_year: selected.price_per_year, free_first_year_eligible: selected.free_first_year_eligible,
+          kind: 'buy', name: selected.domain, price_per_year: selected.price_per_year, discountable: selected.discountable,
         })}
         data-action='choose-domain'
       >

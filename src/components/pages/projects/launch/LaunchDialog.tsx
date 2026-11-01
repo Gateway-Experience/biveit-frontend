@@ -11,20 +11,22 @@ import LaunchProgress from 'src/components/pages/projects/launch/LaunchProgress'
 import PlanStep from 'src/components/pages/projects/launch/PlanStep';
 import ReviewStep from 'src/components/pages/projects/launch/ReviewStep';
 import { Button } from 'src/components/shadui/button';
-import { LAUNCH_QUERY_KEY, downloadCode, getLaunchStatus, startLaunchCheckout } from 'src/services/launch';
+import { LAUNCH_QUERY_KEY, addOwnDomain, downloadCode, getLaunchStatus, startLaunchCheckout } from 'src/services/launch';
 import { useStore } from 'src/state-store';
-import type { DomainChoice, LaunchCheckout, LaunchStatus, PlanKey, Registrant } from 'src/types/launch';
+import type { DomainChoice, LaunchStatus, PlanKey, Registrant } from 'src/types/launch';
 
 // Intentions: taking a site live, in one dialog (docs/plans/launch-flow.md in the backend repo): the plan, the
 // domain (plans only), review, paying, then watching it go live. `mode`:
-//   'new'     a first purchase (or a code-only buyer coming back for a plan): plan -> domain -> review
+//   'new'     a first purchase (or coming back for a plan): plan -> domain -> review. The domain step only when the
+//             site has no active or servable domain (one it already has gets used; the user switches later)
 //             `initialPlan`, when the plan was picked before opening (the Deploy tab's choice), skips the plan step;
 //             going back from the domain still shows it, to change.
-//   'domain'  the plan already runs and only a domain is missing: domain -> review. It finishes the plan's launch
-//             when that one meant to buy a domain (abandoned or failed), which keeps its free first year.
-// Paying opens the provider's checkout in a new tab -- one per thing bought, the plan then the domain (no cart) --
-// and the dialog follows along by polling the launch status. The choices live here only, until paid: closing the
-// dialog loses nothing on the server.
+//   'domain'  a domain for a running plan (none yet, a failed one replaced, or another one): domain -> review.
+// Plan and domain are separate purchases on the backend; this dialog just asks for both in one go. Paying opens the
+// provider's checkout for the plan in a new tab, and the dialog follows along by polling the launch status. The
+// user's own domain is added right away (nothing to pay). A domain to buy gets its checkout once the plan is paid --
+// that's when its free year (yearly) is real -- so it's "step 2 of 2". The choices live here only until then:
+// closing the dialog loses the domain choice, and the status then asks for a domain again.
 
 type Step = 'plan' | 'domain' | 'review' | 'paying' | 'progress';
 
@@ -32,16 +34,24 @@ type Step = 'plan' | 'domain' | 'review' | 'paying' | 'progress';
 const _STATUS_POLL_MS = 3000;
 const _WAITING_DNS_POLL_MS = 30000;
 
-// [Pure] Where the dialog opens: past the plan when one's picked already -- the code goes straight to review
-// (no domain), the hosted plans on to the domain.
-function _getFirstStep(mode: 'new' | 'domain', pickedPlan: PlanKey | null): Step {
+// [Pure] Whether a plan bought now needs a domain picked with it: not when the site already has one it can use (the
+// active one, or a servable one fulfilment will set up).
+function _needsDomain(status: LaunchStatus): boolean {
+  return !status.domain && !_.some(status.site_domains, 'servable');
+}
+
+// [Pure] The step after the plan: the code goes straight to review (no domain), the hosted plans to the domain when
+// one's needed.
+function _getStepAfterPlan(plan: PlanKey, needsDomain: boolean): Step {
+  return plan !== 'one_time' && needsDomain ? 'domain' : 'review';
+}
+
+// [Pure] Where the dialog opens: past the plan when one's picked already.
+function _getFirstStep(mode: 'new' | 'domain', pickedPlan: PlanKey | null, needsDomain: boolean): Step {
   if (mode === 'domain') {
     return 'domain';
   }
-  if (!pickedPlan) {
-    return 'plan';
-  }
-  return pickedPlan === 'one_time' ? 'review' : 'domain';
+  return pickedPlan ? _getStepAfterPlan(pickedPlan, needsDomain) : 'plan';
 }
 
 export default function LaunchDialog({ projectId, projectName, open, mode, initialPlan = null, status, onClose }: {
@@ -59,19 +69,26 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
   const user = useStore(state => state.user);
   // The code can't be bought twice: a picked one-time plan then counts as not picked.
   const startPlan = mode === 'new' && !(initialPlan === 'one_time' && status.access.can_download) ? initialPlan : null;
-  const [step, setStep] = useState<Step>(_getFirstStep(mode, startPlan));
+  // Read when the dialog opens, not live: a status refresh mid-way (a domain turning servable) mustn't restart it.
+  const [needsDomain, setNeedsDomain] = useState(() => _needsDomain(status));
+  const [step, setStep] = useState<Step>(_getFirstStep(mode, startPlan, needsDomain));
   const [plan, setPlan] = useState<PlanKey | null>(startPlan);
   const [domain, setDomain] = useState<DomainChoice | null>(null);
-  const [checkout, setCheckout] = useState<LaunchCheckout | null>(null);
+  // The checkouts opened so far, to open again (the plan's, then the domain's).
+  const [checkoutUrls, setCheckoutUrls] = useState<{ plan?: string; domain?: string }>({});
 
   // A fresh start each time it opens (in the mode it's opened with).
   useEffect(() => {
     if (open) {
-      setStep(_getFirstStep(mode, startPlan));
+      const needsDomainNow = _needsDomain(status);
+      setNeedsDomain(needsDomainNow);
+      setStep(_getFirstStep(mode, startPlan, needsDomainNow));
       setPlan(startPlan);
       setDomain(null);
-      setCheckout(null);
+      setCheckoutUrls({});
     }
+    // Only on opening: `status` is read then, not followed (see needsDomain).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, startPlan]);
 
   // While paying and going live, follow the status (it also moves the launch along on the server).
@@ -84,28 +101,36 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
   });
   const currentStatus = liveStatus || status;
 
-  // The launch this finishes, in 'domain' mode: the plan's, if it set out to buy a domain.
-  const finishingLaunchId = mode === 'domain' && currentStatus.launch?.domain?.kind === 'buy' ? currentStatus.launch.launch_id : null;
-  const launchPlan = mode === 'domain' ? (finishingLaunchId ? currentStatus.launch?.plan : null) : plan;
-  const isFreeFirstYear = launchPlan === 'yearly' && domain?.kind === 'buy' && domain.free_first_year_eligible;
+  // In 'domain' mode the plan was paid before.
+  const hasPaidPlan = mode === 'domain' || (plan === 'one_time' ? !!currentStatus.one_time : !!currentStatus.plan);
+  // A yearly plan's first domain is free; with the plan running, the backend says whether one still is.
+  const hasDomainDiscount = hasPaidPlan ? currentStatus.has_domain_discount : plan === 'yearly';
+  const isDiscounted = hasDomainDiscount && domain?.kind === 'buy' && domain.discountable;
+  const isDomainToPay = domain?.kind === 'buy' && !currentStatus.domain_subscription;
 
-  const { mutate: pay, isPending: isStartingCheckout } = useMutation({
-    mutationFn: (registrant: Registrant | null) => startLaunchCheckout(projectId, {
-      plan: mode === 'domain' ? null : plan,
-      domain: domain && (domain.kind === 'buy' ? { kind: 'buy', name: domain.name, price_per_year: domain.price_per_year } : { kind: 'own', name: domain.name }),
-      registrant,
-      launchId: finishingLaunchId,
-    }),
-    onSuccess: result => {
-      setCheckout(result);
-      const first = _.first(result.checkouts);
-      if (first) {
-        window.open(first.url, '_blank');
-        setStep('paying');
-      } else {
-        // Switching to the user's own domain on a running plan: nothing to pay.
-        setStep('progress');
+  // Paying for what's next: the plan if it isn't paid yet (adding the user's own domain on the way), else the domain
+  // to buy. Resolves to the checkout opened, or null when there was nothing to pay (just the user's own domain).
+  const { mutate: pay, isPending: isStartingCheckout, variables: registrant } = useMutation({
+    mutationFn: async (chosenRegistrant: Registrant | null) => {
+      if (domain?.kind === 'own') {
+        await addOwnDomain(projectId, domain.name);
       }
+      if (!hasPaidPlan && plan) {
+        return startLaunchCheckout(projectId, { plan });
+      }
+      if (domain?.kind === 'buy' && chosenRegistrant) {
+        return startLaunchCheckout(projectId, { domain: { name: domain.name, price_per_year: domain.price_per_year }, registrant: chosenRegistrant });
+      }
+      return null;
+    },
+    onSuccess: checkout => {
+      if (!checkout) {
+        setStep('progress');
+        return;
+      }
+      setCheckoutUrls(urls => ({ ...urls, [checkout.product]: checkout.url }));
+      window.open(checkout.url, '_blank');
+      setStep('paying');
     },
     onError: error => {
       const code: string = _.get(error, 'data.detail') || '';
@@ -113,7 +138,7 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
       if (code === 'PRICE_CHANGED' && domain?.kind === 'buy' && pricePerYear) {
         setDomain({ ...domain, price_per_year: pricePerYear });
       }
-      if (code === 'DOMAIN_UNAVAILABLE' || code === 'DOMAIN_TAKEN') {
+      if (_.includes(['DOMAIN_UNAVAILABLE', 'DOMAIN_TAKEN', 'DOMAIN_NOT_SOLD', 'DOMAIN_OURS', 'DOMAIN_INVALID'], code)) {
         setStep('domain');
       }
       // A refusal with its own message, else the generic one.
@@ -121,16 +146,12 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
     },
   });
 
-  // In 'domain' mode the plan was paid before.
-  const hasPaidPlan = mode === 'domain' || (plan === 'one_time' ? !!currentStatus.one_time : !!currentStatus.plan);
-  const domainCheckout = _.find(checkout?.checkouts, { product: 'domain' });
-  const isDomainCheckoutPending = !!domainCheckout && !currentStatus.domain_subscription;
   // Everything's paid for: on to watching it go live.
   useEffect(() => {
-    if (step === 'paying' && hasPaidPlan && !isDomainCheckoutPending) {
+    if (step === 'paying' && hasPaidPlan && !isDomainToPay) {
       setStep('progress');
     }
-  }, [step, hasPaidPlan, isDomainCheckoutPending]);
+  }, [step, hasPaidPlan, isDomainToPay]);
 
   const askAgent = () => {
     setStore({ chatPrefill: t('launch_domain_agent_prompt') });
@@ -158,14 +179,14 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
             hideOneTime={currentStatus.access.can_download}
             onChoose={chosen => {
               setPlan(chosen);
-              setStep(chosen === 'one_time' ? 'review' : 'domain');
+              setStep(_getStepAfterPlan(chosen, needsDomain));
             }}
           />
         )}
         {step === 'domain' && (
           <DomainStep
             projectId={projectId}
-            freeFirstYear={launchPlan === 'yearly'}
+            hasDiscount={hasDomainDiscount}
             onSwitchToYearly={mode === 'new' && plan === 'monthly' ? () => setPlan('yearly') : undefined}
             onAskAgent={askAgent}
             onChoose={chooseDomain}
@@ -178,11 +199,11 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
             plans={currentStatus.plans}
             domain={domain}
             ownDomainRecords={domain?.kind === 'own' ? domain.records : null}
-            isFreeFirstYear={!!isFreeFirstYear}
+            isDiscounted={!!isDiscounted}
             defaultEmail={user?.username || ''}
             isPaying={isStartingCheckout}
             onPay={pay}
-            onBack={() => setStep(plan === 'one_time' ? 'plan' : 'domain')}
+            onBack={() => setStep(domain ? 'domain' : 'plan')}
           />
         )}
         {step === 'paying' && (
@@ -191,18 +212,30 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
               <>
                 <p>{t('launch_paying_body')}</p>
                 <div className='flex items-center gap-2 text-muted-foreground'><Spinner className='size-4' />{t('launch_confirming_payment')}</div>
-                <Button variant='outline' className='self-start' onClick={() => window.open(_.first(checkout?.checkouts)?.url, '_blank')}>
+                <Button variant='outline' className='self-start' onClick={() => window.open(checkoutUrls.plan, '_blank')}>
                   {t('launch_pay_open_again')}
                 </Button>
               </>
             )}
-            {hasPaidPlan && isDomainCheckoutPending && domainCheckout && (
+            {hasPaidPlan && isDomainToPay && (
               <>
-                <p className='font-medium'>{t('launch_step_payment')} ✓</p>
+                {mode === 'new' && <p className='font-medium'>{t('launch_step_payment')} ✓</p>}
                 <p className='font-heading font-bold'>{t('launch_pay_domain_step')}</p>
-                <Button className='self-start' onClick={() => window.open(domainCheckout.url, '_blank')} data-action='pay-domain'>
-                  {t('launch_pay_domain_cta')}
-                </Button>
+                {checkoutUrls.domain
+                  ? (
+                    <>
+                      <div className='flex items-center gap-2 text-muted-foreground'><Spinner className='size-4' />{t('launch_confirming_payment')}</div>
+                      <Button variant='outline' className='self-start' onClick={() => window.open(checkoutUrls.domain, '_blank')}>
+                        {t('launch_pay_open_again')}
+                      </Button>
+                    </>
+                  )
+                  : (
+                    <Button className='self-start' disabled={isStartingCheckout} onClick={() => pay(registrant ?? null)} data-action='pay-domain'>
+                      {isStartingCheckout && <Spinner data-icon='inline-start' />}
+                      {t('launch_pay_domain_cta')}
+                    </Button>
+                  )}
               </>
             )}
           </div>
