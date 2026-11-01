@@ -21,7 +21,8 @@ function getLaunchSteps(status: LaunchStatus, t: (key: string, params?: Record<s
     || _.find(status.site_domains, { domain: status.setting_up || status.setup_failure?.domain || '' })
     || _.last(status.site_domains);
   const domainName = pendingDomain?.domain || status.domain_subscription?.domain || '';
-  const isOwnDomain = pendingDomain?.kind === 'external';
+  // Only a domain we bought gets "registered"; the user's own (and an admin-set one) gets "connected".
+  const isBoughtDomain = pendingDomain ? pendingDomain.kind === 'purchased' : !!status.domain_subscription;
   const order = ['registering_domain', 'waiting_dns', 'deploying', 'live'];
   // A failed deployment got as far as deploying: the steps before it are done, that one failed.
   const isFailed = status.stage === 'failed';
@@ -35,9 +36,9 @@ function getLaunchSteps(status: LaunchStatus, t: (key: string, params?: Record<s
     }
     return 'todo';
   };
-  const domainStep = isOwnDomain
-    ? { key: 'domain', label: stateOf(1) === 'done' ? t('launch_step_domain_connected', { domain: domainName }) : t('launch_step_waiting_dns'), state: stateOf(1) }
-    : { key: 'domain', label: t(stateOf(0) === 'done' ? 'launch_step_domain_registered' : 'launch_step_domain_registering', { domain: domainName }), state: stateOf(0) };
+  const domainStep = isBoughtDomain
+    ? { key: 'domain', label: t(stateOf(0) === 'done' ? 'launch_step_domain_registered' : 'launch_step_domain_registering', { domain: domainName }), state: stateOf(0) }
+    : { key: 'domain', label: stateOf(1) === 'done' ? t('launch_step_domain_connected', { domain: domainName }) : t('launch_step_waiting_dns'), state: stateOf(1) };
   return [
     { key: 'payment', label: t('launch_step_payment'), state: 'done' as StepState },
     domainStep,
