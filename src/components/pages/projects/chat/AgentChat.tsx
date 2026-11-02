@@ -255,8 +255,10 @@ export default function AgentChat({
     [messages, renderContext],
   );
 
-  const isWaitingForUser = introState === 'started' && !isAgentWorking && !isPosting && _.isEmpty(pendingInteractions)
-    && _.last(visibleMessages)?.role === 'assistant';
+  // Not while a build runs (e.g. right after they approve the plan): the agent's handed off to the build, and the
+  // build panel already says there's nothing for them to do yet.
+  const isWaitingForUser = introState === 'started' && !isAgentWorking && !isPosting && !isPreviewBuilding
+    && _.isEmpty(pendingInteractions) && _.last(visibleMessages)?.role === 'assistant';
 
   if (hasLoadFailed) {
     return (
