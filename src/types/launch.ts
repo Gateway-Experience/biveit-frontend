@@ -70,6 +70,8 @@ export type LaunchStatus = {
   registration_failure: { domain: string; reason: string; at: string } | null;
   deployment: LaunchDeployment;
   server_ip: string;
+  // Where this user's checkouts go. polar_sandbox: test cards, no real money (an admin testing, or a dev box).
+  payment_provider: 'polar' | 'polar_sandbox';
 };
 
 // Who a bought domain is registered to (the user -- its legal owner).
@@ -103,12 +105,3 @@ export type DomainSwitch = {
 };
 
 export type LaunchCheckout = { product: 'plan' | 'domain'; url: string };
-
-export type MockCheckout = {
-  id: string;
-  email: string;
-  item: { product: 'plan' | 'domain' | 'one_time'; plan?: PlanKey; price_per_year?: number; discounted?: boolean } | null;
-  price_usd: number | null;
-  project_id: number;
-  domain: string | null;
-};

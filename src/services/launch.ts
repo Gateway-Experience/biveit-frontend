@@ -1,10 +1,10 @@
 import _ from 'lodash';
 
 import { callBe } from 'src/utils/request';
-import type { DomainOffer, DomainSwitch, LaunchCheckout, LaunchStatus, MockCheckout, OwnDomainCheck, PlanKey, Registrant } from 'src/types/launch';
+import type { DomainOffer, DomainSwitch, LaunchCheckout, LaunchStatus, OwnDomainCheck, PlanKey, Registrant } from 'src/types/launch';
 
-// Intentions: the launch flow's calls (biveit-backend controllers/launch + controllers/payments): where a project's
-// launch stands, finding a domain, paying, and the stand-in checkout used before the real payment provider exists.
+// Intentions: the launch flow's calls (biveit-backend controllers/launch): where a project's launch stands, finding a
+// domain, paying (checkouts open at Polar, in a new tab).
 // Queries using these are keyed under LAUNCH_QUERY_KEY, which main.tsx keeps out of the persisted cache: what's
 // been paid must always be read fresh.
 
@@ -70,14 +70,6 @@ async function downloadCode(projectId: number, projectName: string): Promise<voi
   URL.revokeObjectURL(link.href);
 }
 
-async function getMockCheckout(checkoutId: string): Promise<MockCheckout> {
-  return callBe(`/payments/mock-checkout/${checkoutId}`);
-}
-
-async function payMockCheckout(checkoutId: string): Promise<unknown> {
-  return callBe({ url: `/payments/mock-checkout/${checkoutId}/pay`, method: 'POST' });
-}
-
 export {
   LAUNCH_QUERY_KEY,
   getLaunchStatus,
@@ -90,6 +82,4 @@ export {
   upgradePlan,
   redeploySite,
   downloadCode,
-  getMockCheckout,
-  payMockCheckout,
 };

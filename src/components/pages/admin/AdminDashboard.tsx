@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 
+import SandboxMode from 'src/components/pages/admin/SandboxMode';
 import ServerUsage from 'src/components/pages/admin/ServerUsage';
 import StatusSections from 'src/components/pages/admin/StatusSections';
 import { Badge } from 'src/components/shadui/badge';
@@ -36,6 +37,8 @@ export default function AdminDashboard() {
       </div>
 
       <ServerUsage />
+
+      <SandboxMode />
 
       {isError && <p className='text-sm text-destructive'>Couldn’t read the platform’s status.</p>}
 

@@ -59,6 +59,15 @@ export type DeploymentStatus = {
   last_deployment: Deployment | null;
 };
 
+// The calling admin's own sandbox mode (GET/PUT /admin/sandbox-mode): payments AND domains on their sandboxes.
+// sandbox: their switch; effective: whether their purchases are in sandbox mode now; server_sandbox: the server's
+// mode (everyone else's).
+export type SandboxMode = {
+  sandbox: boolean;
+  effective: boolean;
+  server_sandbox: boolean;
+};
+
 export type ProjectDeployments = {
   status: DeploymentStatus;
   history: Deployment[]; // newest first

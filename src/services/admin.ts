@@ -1,5 +1,5 @@
 import { callBe } from 'src/utils/request';
-import type { PlatformStatus, ProjectDeployments, ProjectStatus, ServerUsage } from 'src/types/admin';
+import type { PlatformStatus, ProjectDeployments, ProjectStatus, SandboxMode, ServerUsage } from 'src/types/admin';
 import type { DnsRecord, DomainContact, DomainVerification, RegistrarDomain } from 'src/types/domains';
 
 // Intentions: the admin dashboard's calls (biveit-backend controllers/admin). Admins only -- the BE answers
@@ -35,6 +35,16 @@ async function getProjectDeployments(projectId: number): Promise<ProjectDeployme
 // what's in the project's workspace now. The rollout runs in the background: watch getProjectDeployments.
 async function deployProject(projectId: number, domains: string[]): Promise<{ run_id: string; commit: string }> {
   return callBe({ url: `/admin/projects/${projectId}/deployments`, method: 'POST', data: { domains } });
+}
+
+// The calling admin's OWN sandbox mode: test payments and sandbox domains, together. Only their purchases from now
+// on -- ones already made stay where they were made. Everyone else follows the server's mode.
+async function getSandboxMode(): Promise<SandboxMode> {
+  return callBe('/admin/sandbox-mode');
+}
+
+async function setSandboxMode(sandbox: boolean): Promise<SandboxMode> {
+  return callBe({ url: '/admin/sandbox-mode', method: 'PUT', data: { sandbox } });
 }
 
 // The domain test bench (/admin/domain-name-test): the registrar primitives, raw. Sandbox only -- the BE answers
@@ -110,6 +120,8 @@ export {
   stopProject,
   getProjectDeployments,
   deployProject,
+  getSandboxMode,
+  setSandboxMode,
   getDomainTestAccount,
   listTestDomains,
   registerTestDomain,

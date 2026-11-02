@@ -10,6 +10,7 @@ import DomainStep from 'src/components/pages/projects/launch/DomainStep';
 import LaunchProgress from 'src/components/pages/projects/launch/LaunchProgress';
 import PlanStep from 'src/components/pages/projects/launch/PlanStep';
 import ReviewStep from 'src/components/pages/projects/launch/ReviewStep';
+import { Badge } from 'src/components/shadui/badge';
 import { Button } from 'src/components/shadui/button';
 import { LAUNCH_QUERY_KEY, addOwnDomain, downloadCode, getLaunchStatus, startLaunchCheckout } from 'src/services/launch';
 import { useStore } from 'src/state-store';
@@ -173,6 +174,10 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
   return (
     <Modal open={open} onClose={onClose} title={title} size='xl' fullScreenMobile={false}>
       <div data-component='launch-dialog' data-step={step} data-projectid={projectId}>
+        {/* Intentions: a test purchase must never pass for a real one (or the other way round). */}
+        {currentStatus.payment_provider === 'polar_sandbox' && (
+          <Badge variant='outline' className='mb-3' data-badge='sandbox-payments'>{t('launch_sandbox_payments')}</Badge>
+        )}
         {step === 'plan' && (
           <PlanStep
             plans={currentStatus.plans}
