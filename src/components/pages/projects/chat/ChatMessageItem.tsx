@@ -18,7 +18,7 @@ import { Marker, MarkerContent, MarkerIcon } from 'src/components/shadui/marker'
 import { Message, MessageAvatar, MessageContent } from 'src/components/shadui/message';
 import { Spinner } from 'src/components/common/Spinner';
 import { APPROVAL_ACTION_TEXT_KEYS, flattenInteractionItems, type InteractionItem } from 'src/services/chatInteractions';
-import { getInteractionResults, isAskUser, isShowArtifact, isUserFacingTool } from 'src/services/chatLog';
+import { getInteractionResults, isAskUser, isShowArtifact, isUserFacingTool, splitAgentText } from 'src/services/chatLog';
 import { formatDateTime } from 'src/utils/common';
 import { useStore } from 'src/state-store';
 import { SITE_KIND_OPTIONS } from 'src/utils/constants';
@@ -357,7 +357,11 @@ const _groupIntoBubbles = (blocks: ContentBlock[]) => _.reduce(blocks, (groups, 
 // `isRunStart`: this message starts a run of agent messages (so its first piece needs no line above it).
 function AssistantMessageBlocks({ message, renderContext, isRunStart }: { message: AiMessage; renderContext: ChatRenderContext; isRunStart: boolean }) {
   const isMobile = useIsMobile();
-  const [interactionBlocks, otherBlocks] = _.partition(message.content, _isInteractionBlock);
+  const [interactionBlocks, storedOtherBlocks] = _.partition(message.content, _isInteractionBlock);
+  // Each text block as its bubbles (splitAgentText): any break or stray tag the runner let through is handled here.
+  const otherBlocks = _.flatMap(storedOtherBlocks, (block): ContentBlock[] => (
+    _isTextBlock(block) ? _.map(splitAgentText(block.text), text => ({ type: 'text', text })) : [block]
+  ));
   const toNodes = (blocks: ContentBlock[]) => _.map(blocks, (block, index) => (
     <AssistantBlock key={_isToolUseBlock(block) ? block.id : index} block={block} renderContext={renderContext} />
   ));

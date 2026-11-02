@@ -91,6 +91,28 @@ function getSuggestedReply(messages: AiMessage[]): string | null {
   return _.trim(suggestion?.text) || null;
 }
 
+// Where the agent breaks its reply into bubbles (the runner normally takes these out; see biveit-session-runner's
+// channel.py). Closing/self-closing forms all count.
+const _BUBBLE_BREAK_PATTERN = /\s*<\/?new_bubble\s*\/?>\s*/g;
+// Simple HTML the agent sometimes slips into its markdown (`<p>Done</p>`). Markdown shows raw HTML as text, so
+// these come out: a line break stays a line break, the end of a paragraph a paragraph break, and the rest just
+// lose their tags. Inline formatting tags are left alone (rare, and taking them out could join words).
+const _STRAY_LINE_BREAK_TAG_PATTERN = /<br\s*\/?>/gi;
+const _STRAY_PARAGRAPH_END_TAG_PATTERN = /<\/(p|div)>/gi;
+const _STRAY_OTHER_TAG_PATTERN = /<\/?(p|div|span)(\s[^>]*)?>/gi;
+
+// Intentions: a safety net for the agent's text, for whatever got past the runner (messages stored before it
+// split question lead-ups, or a tag it didn't know). The text's bubbles: split at any leftover <new_bubble/>, with
+// stray HTML tags taken out. Empty pieces are dropped.
+function splitAgentText(text: string): string[] {
+  return _.compact(_.map(_.split(text, _BUBBLE_BREAK_PATTERN), piece => _.trim(
+    piece
+      .replace(_STRAY_LINE_BREAK_TAG_PATTERN, '\n')
+      .replace(_STRAY_PARAGRAPH_END_TAG_PATTERN, '\n\n')
+      .replace(_STRAY_OTHER_TAG_PATTERN, ''),
+  )));
+}
+
 // The build in progress, if any, read off the BUILDING / BUILDING_DONE signals: on while the latest of them
 // is a BUILDING less than _BUILDING_TTL_MS old. `since` is when the run started (its first BUILDING after
 // the last BUILDING_DONE), `summary` the latest description in it. `nowMs` is the caller's clock — a build
@@ -243,4 +265,5 @@ export {
   isSignalMessage,
   isUserFacingTool,
   mergeMessages,
+  splitAgentText,
 };
