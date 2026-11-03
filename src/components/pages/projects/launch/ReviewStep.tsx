@@ -68,6 +68,7 @@ export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isDi
       regular: isDiscounted ? domain.price_per_year : null,
     },
     domain?.kind === 'own' && { key: 'domain', label: `${t('launch_review_domain_line', { domain: domain.name })}: ${t('launch_review_own_domain')}`, today: 0, regular: null },
+    domain?.kind === 'subdomain' && { key: 'domain', label: `${t('launch_review_domain_line', { domain: domain.name })}: ${t('launch_review_subdomain')}`, today: 0, regular: null },
   ]);
   const submit = handleSubmit(registrant => onPay(isBuyingDomain ? registrant : null));
 

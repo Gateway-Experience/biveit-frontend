@@ -38,6 +38,18 @@ async function addOwnDomain(projectId: number, domain: string): Promise<OwnDomai
   return callBe({ url: `/projects/${projectId}/launch/domains`, method: 'POST', data: { domain } });
 }
 
+// A free subdomain of ours to offer (<slug>.<subdomain_parent>), named after the site. The same one each visit, unless
+// someone's taken it since.
+async function getSubdomainSuggestion(projectId: number): Promise<{ slug: string; domain: string }> {
+  return callBe(`/projects/${projectId}/launch/subdomain/suggestion`);
+}
+
+// Pick <slug>.<subdomain_parent> as the site's free subdomain (replacing the one it had) -- no plan needed, nothing to
+// pay. Refused as SUBDOMAIN_TAKEN / _RESERVED / _INVALID, or SUBDOMAIN_IN_USE when the one it'd replace is live.
+async function chooseSubdomain(projectId: number, slug: string): Promise<{ domain: string }> {
+  return callBe({ url: `/projects/${projectId}/launch/subdomain`, method: 'POST', data: { slug } });
+}
+
 // Switch the site to another of its attached domains: it's set up in the background, the current one serving until
 // it's done. operation_id: the switch, to poll with getDomainSwitch (null when there's no site yet -- the first
 // deployment happens instead, followed by the status). Refused (DOMAIN_NOT_VERIFIED) for the user's own domain until
@@ -77,6 +89,8 @@ export {
   checkOwnDomain,
   startLaunchCheckout,
   addOwnDomain,
+  getSubdomainSuggestion,
+  chooseSubdomain,
   activateLaunchDomain,
   getDomainSwitch,
   upgradePlan,

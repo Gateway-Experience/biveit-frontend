@@ -32,6 +32,9 @@ export type OwnDomainCheck = {
   verified: boolean;
 };
 
+// How a domain got onto the site: bought through us, the user's own, set by an admin, or a free subdomain of ours.
+export type SiteDomainKind = 'purchased' | 'external' | 'admin' | 'subdomain';
+
 export type DomainOffer = {
   domain: string;
   available: boolean;
@@ -56,9 +59,9 @@ export type LaunchStatus = {
   one_time: { paid_at: string } | null;
   domain_subscription: { domain: string; status: string; renews_at: string | null; trial_ends_at: string | null } | null;
   // The active domain: set up and served. It stays active even if it stops being servable (stage not_servable).
-  domain: { domain: string; kind: 'purchased' | 'external' | 'admin'; servable: boolean; check: OwnDomainCheck | null } | null;
+  domain: { domain: string; kind: SiteDomainKind; servable: boolean; check: OwnDomainCheck | null } | null;
   // Every attached domain. servable: it could be switched to now (a user's own once its records check out).
-  site_domains: { domain: string; kind: 'purchased' | 'external' | 'admin'; active: boolean; servable: boolean }[];
+  site_domains: { domain: string; kind: SiteDomainKind; active: boolean; servable: boolean }[];
   // The domain being set up right now (the old one keeps serving until it's done), and the last that failed to be.
   setting_up: string | null;
   // cause: dns (a user's own domain without its records), certificate, release (the site itself didn't come up).
@@ -70,6 +73,8 @@ export type LaunchStatus = {
   registration_failure: { domain: string; reason: string; at: string } | null;
   deployment: LaunchDeployment;
   server_ip: string;
+  // Our domain a free subdomain goes under (<slug>.<subdomain_parent>); null when this server offers none.
+  subdomain_parent: string | null;
   // Where this user's checkouts go. polar_sandbox: test cards, no real money (an admin testing, or a dev box).
   payment_provider: 'polar' | 'polar_sandbox';
 };
@@ -90,7 +95,8 @@ export type Registrant = {
 
 // What the domain step chose. A user's own domain carries its DNS records as last checked (shown again at review).
 export type DomainChoice = { kind: 'buy'; name: string; price_per_year: number; discountable: boolean }
-  | { kind: 'own'; name: string; records: DnsRecord[] };
+  | { kind: 'own'; name: string; records: DnsRecord[] }
+  | { kind: 'subdomain'; name: string; slug: string };
 
 // One thing to pay for: the provider has no cart, so a plan and a domain are two checkouts, the plan first.
 // How a domain switch went (a long-running operation, polled by its id). Only to tell the user: nothing decides from it.

@@ -11,12 +11,13 @@ import { DnsRecordsTable } from 'src/components/pages/projects/launch/LaunchProg
 import { Button } from 'src/components/shadui/button';
 import { Input } from 'src/components/shadui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'src/components/shadui/tabs';
-import { LAUNCH_QUERY_KEY, checkOwnDomain, searchLaunchDomains } from 'src/services/launch';
+import { LAUNCH_QUERY_KEY, checkOwnDomain, getSubdomainSuggestion, searchLaunchDomains } from 'src/services/launch';
 import { formatUsd } from 'src/services/pricing';
 import type { DomainChoice, DomainOffer } from 'src/types/launch';
 
-// Intentions: the launch dialog's domain question -- a hosted site needs one (for now): buy it through us, or use the
-// user's own. Buying: with nothing typed, ideas around the project's name; typing, search results. Each shows its
+// Intentions: the launch dialog's domain question -- a hosted site needs one: buy it through us, use the user's own,
+// or take a free subdomain of ours (<slug>.biveitapp.com, the name suggested from the site; only when the server
+// offers them, `subdomainParent`). Buying: with nothing typed, ideas around the project's name; typing, search results. Each shows its
 // price, struck through to free for the first year when the plan is yearly. Own: the two DNS records to add and
 // whether they're found yet (re-checked every few seconds) -- not ready yet is a warning, not a stop.
 // `hasDiscount`: whether discountable domains get the domain discount this time (yearly plan; today, the first year
@@ -26,23 +27,27 @@ import type { DomainChoice, DomainOffer } from 'src/types/launch';
 const _SEARCH_DEBOUNCE_MS = 400;
 const _OWN_RECHECK_MS = 30000;
 
-export default function DomainStep({ projectId, hasDiscount, onSwitchToYearly, onAskAgent, onChoose, onBack }: {
+type DomainTab = 'buy' | 'own' | 'subdomain';
+
+export default function DomainStep({ projectId, hasDiscount, subdomainParent, onSwitchToYearly, onAskAgent, onChoose, onBack }: {
   projectId: number;
   hasDiscount: boolean;
+  subdomainParent: string | null;
   onSwitchToYearly?: () => void;
   onAskAgent: () => void;
   onChoose: (domain: DomainChoice) => void;
   onBack?: () => void;
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'buy' | 'own'>('buy');
+  const [tab, setTab] = useState<DomainTab>('buy');
 
   return (
     <div className='flex flex-col gap-4' data-component='launch-domain-step'>
-      <Tabs value={tab} onValueChange={value => setTab(value as 'buy' | 'own')}>
+      <Tabs value={tab} onValueChange={value => setTab(value as DomainTab)}>
         <TabsList className='w-full'>
           <TabsTrigger value='buy' className='flex-1'>{t('launch_domain_tab_buy')}</TabsTrigger>
           <TabsTrigger value='own' className='flex-1'>{t('launch_domain_tab_own')}</TabsTrigger>
+          {subdomainParent && <TabsTrigger value='subdomain' className='flex-1'>{t('launch_domain_tab_subdomain')}</TabsTrigger>}
         </TabsList>
         <TabsContent value='buy' className='pt-3'>
           <BuyDomain projectId={projectId} hasDiscount={hasDiscount} onSwitchToYearly={onSwitchToYearly} onChoose={onChoose} />
@@ -50,6 +55,11 @@ export default function DomainStep({ projectId, hasDiscount, onSwitchToYearly, o
         <TabsContent value='own' className='pt-3'>
           <OwnDomain projectId={projectId} onChoose={onChoose} />
         </TabsContent>
+        {subdomainParent && (
+          <TabsContent value='subdomain' className='pt-3'>
+            <FreeSubdomain projectId={projectId} parent={subdomainParent} onChoose={onChoose} />
+          </TabsContent>
+        )}
       </Tabs>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         {onBack ? <Button variant='ghost' onClick={onBack}>{t('launch_back')}</Button> : <span />}
@@ -186,6 +196,45 @@ function OwnDomain({ projectId, onChoose }: { projectId: number; onChoose: (doma
           </Button>
         </>
       )}
+    </div>
+  );
+}
+
+// A free subdomain: the suggested name ready to take, or edited into one the user likes better. Taken and reserved
+// names are refused when it's picked (at review), sending the user back here.
+function FreeSubdomain({ projectId, parent, onChoose }: { projectId: number; parent: string; onChoose: (domain: DomainChoice) => void }) {
+  const { t } = useTranslation();
+  const [typed, setTyped] = useState<string | null>(null);
+  const { data: suggestion, isFetching, isError } = useQuery({
+    queryKey: [LAUNCH_QUERY_KEY, projectId, 'subdomain-suggestion'],
+    queryFn: () => getSubdomainSuggestion(projectId),
+    staleTime: Infinity,
+  });
+  // The suggestion fills the box until the user types their own. Read the way the backend reads it (lower case, no
+  // spaces around); whether it's free or allowed is the backend's to say, when it's picked.
+  const slug = _.toLower(_.trim(typed ?? suggestion?.slug ?? ''));
+  const isWellFormed = /^[a-z0-9]([a-z0-9-]{1,61}[a-z0-9])$/.test(slug);
+
+  return (
+    <div className='flex flex-col gap-3' data-component='free-subdomain'>
+      <p className='text-sm text-muted-foreground'>{t('launch_subdomain_intro')}</p>
+      {isFetching && !suggestion && <div className='flex justify-center py-4'><Spinner className='size-5 text-muted-foreground' /></div>}
+      {isError && <p className='text-sm text-destructive'>{t('launch_error_generic')}</p>}
+      {(suggestion || isError) && (
+        <div className='flex items-center gap-2'>
+          <Input value={typed ?? suggestion?.slug ?? ''} onChange={event => setTyped(event.target.value)} className='flex-1' data-input='subdomain-slug' />
+          <span className='shrink-0 text-sm text-muted-foreground'>.{parent}</span>
+        </div>
+      )}
+      {slug && !isWellFormed && <p className='text-xs text-destructive'>{t('launch_error_SUBDOMAIN_INVALID')}</p>}
+      <p className='text-xs text-muted-foreground'>{t('launch_subdomain_disclaimer')}</p>
+      <Button
+        disabled={!isWellFormed}
+        onClick={() => onChoose({ kind: 'subdomain', name: `${slug}.${parent}`, slug })}
+        data-action='choose-subdomain'
+      >
+        {t('launch_continue')}
+      </Button>
     </div>
   );
 }

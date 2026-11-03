@@ -12,7 +12,7 @@ import PlanStep from 'src/components/pages/projects/launch/PlanStep';
 import ReviewStep from 'src/components/pages/projects/launch/ReviewStep';
 import { Badge } from 'src/components/shadui/badge';
 import { Button } from 'src/components/shadui/button';
-import { LAUNCH_QUERY_KEY, addOwnDomain, downloadCode, getLaunchStatus, startLaunchCheckout } from 'src/services/launch';
+import { LAUNCH_QUERY_KEY, addOwnDomain, chooseSubdomain, downloadCode, getLaunchStatus, startLaunchCheckout } from 'src/services/launch';
 import { useStore } from 'src/state-store';
 import type { DomainChoice, LaunchStatus, PlanKey, Registrant } from 'src/types/launch';
 
@@ -25,7 +25,7 @@ import type { DomainChoice, LaunchStatus, PlanKey, Registrant } from 'src/types/
 //   'domain'  a domain for a running plan (none yet, a failed one replaced, or another one): domain -> review.
 // Plan and domain are separate purchases on the backend; this dialog just asks for both in one go. Paying opens the
 // provider's checkout for the plan in a new tab, and the dialog follows along by polling the launch status. The
-// user's own domain is added right away (nothing to pay). A domain to buy gets its checkout once the plan is paid --
+// user's own domain, or a free subdomain of ours, is added right away (nothing to pay). A domain to buy gets its checkout once the plan is paid --
 // that's when its free year (yearly) is real -- so it's "step 2 of 2". The choices live here only until then:
 // closing the dialog loses the domain choice, and the status then asks for a domain again.
 
@@ -109,12 +109,15 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
   const isDiscounted = hasDomainDiscount && domain?.kind === 'buy' && domain.discountable;
   const isDomainToPay = domain?.kind === 'buy' && !currentStatus.domain_subscription;
 
-  // Paying for what's next: the plan if it isn't paid yet (adding the user's own domain on the way), else the domain
-  // to buy. Resolves to the checkout opened, or null when there was nothing to pay (just the user's own domain).
+  // Paying for what's next: the plan if it isn't paid yet (adding the user's own domain or free subdomain on the way),
+  // else the domain to buy. Resolves to the checkout opened, or null when there was nothing to pay (just adding one).
   const { mutate: pay, isPending: isStartingCheckout, variables: registrant } = useMutation({
     mutationFn: async (chosenRegistrant: Registrant | null) => {
       if (domain?.kind === 'own') {
         await addOwnDomain(projectId, domain.name);
+      }
+      if (domain?.kind === 'subdomain') {
+        await chooseSubdomain(projectId, domain.slug);
       }
       if (!hasPaidPlan && plan) {
         return startLaunchCheckout(projectId, { plan });
@@ -139,7 +142,7 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
       if (code === 'PRICE_CHANGED' && domain?.kind === 'buy' && pricePerYear) {
         setDomain({ ...domain, price_per_year: pricePerYear });
       }
-      if (_.includes(['DOMAIN_UNAVAILABLE', 'DOMAIN_TAKEN', 'DOMAIN_NOT_SOLD', 'DOMAIN_OURS', 'DOMAIN_INVALID'], code)) {
+      if (_.includes(['DOMAIN_UNAVAILABLE', 'DOMAIN_TAKEN', 'DOMAIN_NOT_SOLD', 'DOMAIN_OURS', 'DOMAIN_INVALID'], code) || _.startsWith(code, 'SUBDOMAIN_')) {
         setStep('domain');
       }
       // A refusal with its own message, else the generic one.
@@ -192,6 +195,7 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
           <DomainStep
             projectId={projectId}
             hasDiscount={hasDomainDiscount}
+            subdomainParent={currentStatus.subdomain_parent}
             onSwitchToYearly={mode === 'new' && plan === 'monthly' ? () => setPlan('yearly') : undefined}
             onAskAgent={askAgent}
             onChoose={chooseDomain}
