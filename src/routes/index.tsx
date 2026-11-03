@@ -3,6 +3,7 @@ import { Navigate, Routes, Route } from 'react-router';
 
 import AdminRoute from 'src/components/common/AdminRoute';
 import ProtectedRoute from 'src/components/common/ProtectedRoute';
+import AdminLayout from 'src/components/layouts/AdminLayout';
 import DefaultLayout from 'src/components/layouts/DefaultLayout';
 import PublicLayout from 'src/components/layouts/PublicLayout';
 import ProjectList from 'src/components/pages/projects/ProjectList';
@@ -73,10 +74,13 @@ function AppRoutes() {
         <Route path={PATHS.trash} element={<ProtectedRoute><ProjectTrash /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path='/showcase' element={<ShowCase />} />
-        <Route path={PATHS.admin} element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-        <Route path={`${PATHS.admin}/projects/:projectId`} element={<AdminRoute><AdminProjectDetail /></AdminRoute>} />
-        <Route path={PATHS.adminDomainTest} element={<AdminRoute><AdminDomainTest /></AdminRoute>} />
-        <Route path={PATHS.adminAiUsage} element={<AdminRoute><AdminAiUsage /></AdminRoute>} />
+      </Route>
+      {/* The admin pages have their own frame and sidebar (AdminLayout), not the app's. */}
+      <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+        <Route path={PATHS.admin} element={<AdminDashboard />} />
+        <Route path={`${PATHS.admin}/projects/:projectId`} element={<AdminProjectDetail />} />
+        <Route path={PATHS.adminDomainTest} element={<AdminDomainTest />} />
+        <Route path={PATHS.adminAiUsage} element={<AdminAiUsage />} />
       </Route>
       <Route element={<OpenPageLayout />}>
         <Route path={PATHS.termsOfService} element={<TermsOfService />} />

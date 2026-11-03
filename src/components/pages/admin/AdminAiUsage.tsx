@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import _ from 'lodash';
-import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from 'cn';
 
@@ -8,7 +7,6 @@ import { Button } from 'src/components/shadui/button';
 import { Card, CardContent, CardHeader, CardTitle } from 'src/components/shadui/card';
 import { ADMIN_QUERY_KEY, getAiCostReport, getProjectAiCost } from 'src/services/admin';
 import type { AiCostSeries } from 'src/types/admin';
-import { PATHS } from 'src/utils/constants';
 
 // Intentions: what the agents cost us (/admin/ai-usage) -- per user and per project over a range, read from the
 // backend's ai_usage table at today's prices. Clicking a project charts its cost per hour (ranges up to 2 days) or
@@ -40,27 +38,60 @@ function formatBucket(at: string, bucket: AiCostSeries['bucket']) {
     : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
+// [Pure] The cost axis' ticks, from 0 up to a round number just above `highest`: about four even steps of 1, 2,
+// 2.5 or 5 times a power of ten (0.701 -> 0, 0.2, 0.4, 0.6, 0.8).
+function toCostTicks(highest: number) {
+  if (highest <= 0) {
+    return [0];
+  }
+  const roughStep = highest / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const step = (_.find([1, 2, 2.5, 5, 10], multiple => multiple * magnitude >= roughStep) as number) * magnitude;
+  return _.map(_.range(0, Math.ceil(highest / step) + 1), index => index * step);
+}
+
+// [Pure] An axis label: round ticks need no trailing zeros ($0.2, $0.0025).
+function formatTick(amount: number) {
+  return `$${Number(amount.toPrecision(3))}`;
+}
+
 function CostChart({ series }: { series: AiCostSeries }) {
   const highest = _.max(_.map(series.points, 'cost_usd')) || 0;
+  const ticks = toCostTicks(highest);
+  const top = _.last(ticks) || 1;
   // A label under every bar would overlap; a handful spread along the axis is enough.
   const labelEvery = Math.max(1, Math.ceil(_.size(series.points) / 8));
   return (
     <div className='flex flex-col gap-2' data-chart={series.bucket}>
-      <div className='flex h-48 items-end gap-px border-b'>
-        {_.map(series.points, point => (
-          <div
-            key={point.at}
-            className='group relative flex h-full flex-1 items-end'
-            title={`${formatBucket(point.at, series.bucket)}: ${formatUsd(point.cost_usd)}`}
-          >
+      <div className='flex gap-2'>
+        {/* The cost axis: each tick at its height, its gridline running behind the bars. */}
+        <div className='relative h-48 w-14 shrink-0 text-right font-mono text-[10px] text-muted-foreground'>
+          {_.map(ticks, tick => (
+            // Anchored at its height by its bottom edge, then pulled down half its own height: centred on its gridline.
+            <span key={tick} className='absolute right-0 translate-y-1/2' style={{ bottom: `${(tick / top) * 100}%` }}>
+              {formatTick(tick)}
+            </span>
+          ))}
+        </div>
+        <div className='relative flex h-48 flex-1 items-end gap-px border-b border-l'>
+          {_.map(ticks, tick => (
+            <div key={tick} className='pointer-events-none absolute inset-x-0 border-t border-dashed border-muted' style={{ bottom: `${(tick / top) * 100}%` }} />
+          ))}
+          {_.map(series.points, point => (
             <div
-              className={cn('w-full rounded-t-sm bg-primary/80 group-hover:bg-primary', point.cost_usd > 0 && 'min-h-px')}
-              style={{ height: highest ? `${(point.cost_usd / highest) * 100}%` : 0 }}
-            />
-          </div>
-        ))}
+              key={point.at}
+              className='group relative flex h-full flex-1 items-end'
+              title={`${formatBucket(point.at, series.bucket)}: ${formatUsd(point.cost_usd)}`}
+            >
+              <div
+                className={cn('w-full rounded-t-sm bg-primary/80 group-hover:bg-primary', point.cost_usd > 0 && 'min-h-px')}
+                style={{ height: `${(point.cost_usd / top) * 100}%` }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
-      <div className='flex gap-px text-[10px] text-muted-foreground'>
+      <div className='ml-16 flex gap-px text-[10px] text-muted-foreground'>
         {_.map(series.points, (point, index) => (
           <div key={point.at} className='flex-1 overflow-visible whitespace-nowrap'>
             {index % labelEvery === 0 ? formatBucket(point.at, series.bucket) : ''}
@@ -68,7 +99,7 @@ function CostChart({ series }: { series: AiCostSeries }) {
         ))}
       </div>
       <p className='text-xs text-muted-foreground'>
-        Per {series.bucket}{series.bucket === 'day' ? ' (UTC days)' : ''}, highest {formatUsd(highest)}. Hover a bar for its cost.
+        Cost per {series.bucket}{series.bucket === 'day' ? ' (UTC days)' : ''}, highest {formatUsd(highest)}. Hover a bar for its cost.
       </p>
     </div>
   );
@@ -110,10 +141,7 @@ export default function AdminAiUsage() {
   return (
     <div className='flex flex-col gap-6' data-page='admin-ai-usage'>
       <div className='flex flex-wrap items-center justify-between gap-4'>
-        <div className='flex flex-col gap-1'>
-          <Link to={PATHS.admin} className='text-sm text-primary hover:underline'>← Admin</Link>
-          <h1 className='text-2xl font-semibold'>AI usage</h1>
-        </div>
+        <h1 className='text-2xl font-semibold'>AI usage</h1>
         <div className='flex flex-wrap gap-2'>
           {_.map(_RANGES, ({ key, label, hours }) => (
             <Button

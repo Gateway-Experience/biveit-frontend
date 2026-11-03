@@ -7,8 +7,9 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from 'src/compon
 import { ADMIN_QUERY_KEY, getSandboxMode, setSandboxMode } from 'src/services/admin';
 
 // Intentions: the admin's switch for their OWN purchases between live and sandbox mode -- test payments (card
-// 4242 4242 4242 4242) and domains registered on the registrar's sandbox, together -- to try the launch flow end to
-// end on prod without spending. Everyone else follows the server's mode.
+// 4242 4242 4242 4242) and domains registered on the registrar's sandbox, together. Either way round: sandbox on a
+// live server to try the launch flow without spending, live on a sandbox server to try it for real before everyone
+// else. Without a choice of their own they follow the server's default, like every other user.
 
 export default function SandboxMode() {
   const queryClient = useQueryClient();
@@ -25,10 +26,15 @@ export default function SandboxMode() {
     <Card size='sm' data-section='sandbox-mode'>
       <CardHeader>
         <CardTitle>Sandbox mode</CardTitle>
-        <CardAction>
-          {mode && !mode.server_sandbox && (
-            <Button variant='outline' size='sm' disabled={isPending} onClick={() => setSandbox(!mode.sandbox)} data-action='toggle-sandbox'>
-              {mode.sandbox ? 'Back to live' : 'Switch to sandbox'}
+        <CardAction className='flex gap-2'>
+          {mode && mode.sandbox !== null && (
+            <Button variant='ghost' size='sm' disabled={isPending} onClick={() => setSandbox(null)} data-action='follow-server'>
+              Use server default
+            </Button>
+          )}
+          {mode && (
+            <Button variant='outline' size='sm' disabled={isPending} onClick={() => setSandbox(!mode.effective)} data-action='toggle-sandbox'>
+              {mode.effective ? 'Switch to live' : 'Switch to sandbox'}
             </Button>
           )}
         </CardAction>
@@ -39,11 +45,11 @@ export default function SandboxMode() {
             <p>
               Your purchases are{' '}
               <Badge variant={mode.effective ? 'outline' : 'default'}>{mode.effective ? 'Sandbox: test payments, sandbox domains' : 'Live: real money, real domains'}</Badge>
+              {' '}{mode.sandbox === null ? '(the server’s default)' : '(your own choice)'}
             </p>
             <p className='text-muted-foreground'>
-              {mode.server_sandbox
-                ? 'This server is in sandbox mode, so everyone’s purchases are.'
-                : 'Everyone else’s are live. Purchases already made stay where they were made.'}
+              The server’s default is {mode.server_sandbox ? 'sandbox' : 'live'}: every user without a choice of their own gets it.
+              Purchases already made stay where they were made.
             </p>
           </>
         )}

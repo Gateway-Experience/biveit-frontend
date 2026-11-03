@@ -50,12 +50,13 @@ async function deployProject(projectId: number, domains: string[]): Promise<{ ru
 }
 
 // The calling admin's OWN sandbox mode: test payments and sandbox domains, together. Only their purchases from now
-// on -- ones already made stay where they were made. Everyone else follows the server's mode.
+// on -- ones already made stay where they were made. Everyone without a choice of their own follows the server's mode.
 async function getSandboxMode(): Promise<SandboxMode> {
   return callBe('/admin/sandbox-mode');
 }
 
-async function setSandboxMode(sandbox: boolean): Promise<SandboxMode> {
+// true: sandbox, false: live, null: back to the server's default.
+async function setSandboxMode(sandbox: boolean | null): Promise<SandboxMode> {
   return callBe({ url: '/admin/sandbox-mode', method: 'PUT', data: { sandbox } });
 }
 

@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import { useState } from 'react';
-import { Link } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import Modal from 'src/components/common/Modal';
@@ -29,7 +28,6 @@ import {
 } from 'src/services/admin';
 import { getDomainPricing, searchDomains } from 'src/services/domains';
 import type { DnsRecord, DomainContact, DomainOffer } from 'src/types/domains';
-import { PATHS } from 'src/utils/constants';
 
 // Intentions: a test bench for the domain registrar (/admin/domain-name-test) -- every primitive the backend's
 // domains module has, by hand: search and price, buy, then manage what we hold (locks, autorenew, privacy,
@@ -89,7 +87,6 @@ export default function AdminDomainTest() {
 
   return (
     <div className='flex flex-col gap-6' data-page='admin-domain-test'>
-      <Link to={PATHS.admin} className='text-sm text-muted-foreground hover:underline'>← Admin</Link>
       <div className='flex flex-wrap items-center justify-between gap-4'>
         <h1 className='text-2xl font-semibold'>Domain registrar test bench</h1>
         <Button variant='outline' size='sm' onClick={refreshAccount} data-action='refresh'>Refresh</Button>

@@ -60,10 +60,10 @@ export type DeploymentStatus = {
 };
 
 // The calling admin's own sandbox mode (GET/PUT /admin/sandbox-mode): payments AND domains on their sandboxes.
-// sandbox: their switch; effective: whether their purchases are in sandbox mode now; server_sandbox: the server's
-// mode (everyone else's).
+// sandbox: their own choice (null = none, they follow the server); effective: whether their purchases are in sandbox
+// mode now; server_sandbox: the server's default, for everyone without a choice of their own.
 export type SandboxMode = {
-  sandbox: boolean;
+  sandbox: boolean | null;
   effective: boolean;
   server_sandbox: boolean;
 };
