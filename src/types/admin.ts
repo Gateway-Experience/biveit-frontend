@@ -73,3 +73,17 @@ export type ProjectDeployments = {
   history: Deployment[]; // newest first
   default_domain: string | null; // <project hash>.<PROD_DOMAIN>; null when the platform has no PROD_DOMAIN
 };
+
+// What the agents cost over a range (GET /admin/ai-usage), from the backend's ai_usage table at today's prices.
+export type AiCostReport = {
+  total_usd: number;
+  users: { user_id: number; name: string; cost_usd: number; project_count: number }[]; // costliest first
+  projects: { project_id: number; name: string | null; user_id: number; user_name: string; cost_usd: number }[];
+};
+
+// One project's cost per hour or per day (UTC) over a range (GET /admin/ai-usage/projects/:id); every bucket is
+// there, empty ones at 0.
+export type AiCostSeries = {
+  bucket: 'hour' | 'day';
+  points: { at: string; cost_usd: number }[];
+};

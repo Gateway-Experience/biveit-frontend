@@ -1,5 +1,7 @@
 import { callBe } from 'src/utils/request';
-import type { PlatformStatus, ProjectDeployments, ProjectStatus, SandboxMode, ServerUsage } from 'src/types/admin';
+import type {
+  AiCostReport, AiCostSeries, PlatformStatus, ProjectDeployments, ProjectStatus, SandboxMode, ServerUsage,
+} from 'src/types/admin';
 import type { DnsRecord, DomainContact, DomainVerification, RegistrarDomain } from 'src/types/domains';
 
 // Intentions: the admin dashboard's calls (biveit-backend controllers/admin). Admins only -- the BE answers
@@ -8,6 +10,16 @@ import type { DnsRecord, DomainContact, DomainVerification, RegistrarDomain } fr
 // the platform's internals have no business sitting in localStorage.
 
 const ADMIN_QUERY_KEY = 'admin';
+
+// What the agents cost in [since, until) (ISO datetimes), per user and per project.
+async function getAiCostReport(since: string, until: string): Promise<AiCostReport> {
+  return callBe({ url: '/admin/ai-usage', params: { since, until } });
+}
+
+// One project's cost over [since, until), per hour for a short range, per day for a longer one.
+async function getProjectAiCost(projectId: number, since: string, until: string): Promise<AiCostSeries> {
+  return callBe({ url: `/admin/ai-usage/projects/${projectId}`, params: { since, until } });
+}
 
 async function getServerUsage(): Promise<ServerUsage> {
   return callBe('/admin/server-usage');
@@ -114,6 +126,8 @@ async function deleteTestRecord(domainName: string, recordId: number): Promise<u
 
 export {
   ADMIN_QUERY_KEY,
+  getAiCostReport,
+  getProjectAiCost,
   getServerUsage,
   getPlatformStatus,
   getProjectStatus,

@@ -79,6 +79,7 @@ const PATHS = {
   pricing: '/pricing',
   admin: '/admin',
   adminDomainTest: '/admin/domain-name-test',
+  adminAiUsage: '/admin/ai-usage',
 };
 
 export {

@@ -29,6 +29,7 @@ export default function AdminDashboard() {
       <div className='flex items-center justify-between gap-4'>
         <h1 className='text-2xl font-semibold'>Admin</h1>
         <div className='flex gap-2'>
+          <Link to={PATHS.adminAiUsage} className='self-center text-sm text-primary hover:underline'>AI usage</Link>
           <Link to={PATHS.adminDomainTest} className='self-center text-sm text-primary hover:underline'>Domain test bench</Link>
           <Button variant='outline' size='sm' onClick={() => refetch()} disabled={isFetching} data-action='refresh'>
             {isFetching ? 'Refreshing…' : 'Refresh status'}
