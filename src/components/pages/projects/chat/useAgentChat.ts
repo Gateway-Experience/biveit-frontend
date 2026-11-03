@@ -31,7 +31,7 @@ export default function useAgentChat(projectId: number, options: {
   onDevenvChange?: () => void;
 } = {}) {
   const { sessionStatus = 'ready', onDevenvChange } = options;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const notify = useNotification();
   const [conversationId, setConversationId] = useState<number | null>(null);
   // null = not loaded yet.
@@ -134,10 +134,20 @@ export default function useAgentChat(projectId: number, options: {
 
   const notifyError = useCallback((error: unknown, fallbackMessageKey: string) => {
     const errorCode = getChatErrorCode(error);
+    // A daily AI limit is used up (the user's, or their network's): say when it frees up, in their own time.
+    // The time goes in unescaped: React escapes what it renders, and i18next's escaping would show its entities.
+    if (errorCode === 'AI_DAILY_LIMIT') {
+      const resetsAt = new Date(_.get(error, 'data.resets_at', ''));
+      const time = resetsAt.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+      notify('error', t(`chat_error_AI_DAILY_LIMIT_${_.get(error, 'data.scope') === 'ip' ? 'ip' : 'user'}`, {
+        time, interpolation: { escapeValue: false },
+      }));
+      return;
+    }
     notify('error', _.includes(_KNOWN_ERROR_CODES, errorCode)
       ? t(`chat_error_${errorCode}`, { reason: _.get(error, 'data.detail.reason') })
       : t(fallbackMessageKey));
-  }, [notify, t]);
+  }, [notify, t, i18n.language]);
 
   // Resolves to whether it went through, so the caller can hand the user their input back on failure.
   const postMessage = useCallback(async (body: PostChatMessageBody) => {

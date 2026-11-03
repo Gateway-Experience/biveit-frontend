@@ -1319,6 +1319,22 @@ export default {
     ru: 'Не удалось загрузить переписку. Обновите страницу.',
     ko: '대화를 불러오지 못했어요. 페이지를 새로고침해 보세요.',
   },
+  chat_error_AI_DAILY_LIMIT_user: {
+    en: 'You\'ve used up today\'s AI limit. You can send messages again at {{time}}.',
+    vi: 'Bạn đã dùng hết giới hạn AI của hôm nay. Bạn có thể gửi tin nhắn lại lúc {{time}}.',
+    zh: '你今天的 AI 用量已用完，{{time}} 后可以再次发送消息。',
+    ja: '本日の AI 利用上限に達しました。{{time}} 以降に再びメッセージを送れます。',
+    ru: 'Дневной лимит ИИ исчерпан. Снова отправлять сообщения можно будет в {{time}}.',
+    ko: '오늘의 AI 사용 한도를 다 썼어요. {{time}}부터 다시 메시지를 보낼 수 있어요.',
+  },
+  chat_error_AI_DAILY_LIMIT_ip: {
+    en: 'Today\'s AI limit for your network has been used up. You can send messages again at {{time}}.',
+    vi: 'Giới hạn AI của hôm nay cho mạng bạn đang dùng đã hết. Bạn có thể gửi tin nhắn lại lúc {{time}}.',
+    zh: '你所在网络今天的 AI 用量已用完，{{time}} 后可以再次发送消息。',
+    ja: 'お使いのネットワークの本日の AI 利用上限に達しました。{{time}} 以降に再びメッセージを送れます。',
+    ru: 'Дневной лимит ИИ для вашей сети исчерпан. Снова отправлять сообщения можно будет в {{time}}.',
+    ko: '사용 중인 네트워크의 오늘 AI 사용 한도를 다 썼어요. {{time}}부터 다시 메시지를 보낼 수 있어요.',
+  },
   chat_error_INTERACTION_PENDING: {
     en: 'The agent is waiting for your answer. Answer or dismiss its question first.',
     vi: 'Trợ lý đang chờ câu trả lời của bạn. Hãy trả lời hoặc bỏ qua câu hỏi trước.',
