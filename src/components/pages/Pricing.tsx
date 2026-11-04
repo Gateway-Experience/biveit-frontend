@@ -9,6 +9,7 @@ import { getPriceLabels, PLANS } from 'src/services/pricing';
 import { PATHS, SUPPORT_EMAIL } from 'src/utils/constants';
 
 const _FAQS = [
+  { id: 'how', questionKey: 'pricing_faq_how_q', answerKey: 'pricing_faq_how_a' },
   { id: 'when', questionKey: 'pricing_faq_when_q', answerKey: 'pricing_faq_when_a' },
   { id: 'difference', questionKey: 'pricing_faq_difference_q', answerKey: 'pricing_faq_difference_a' },
   { id: 'domain', questionKey: 'pricing_faq_domain_q', answerKey: 'pricing_faq_domain_a' },

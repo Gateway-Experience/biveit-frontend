@@ -3863,6 +3863,22 @@ export default {
     ru: 'Вопросы',
     ko: '자주 묻는 질문',
   },
+  pricing_faq_how_q: {
+    en: 'How does pricing work?',
+    vi: 'Giá được tính như thế nào?',
+    zh: '如何收费？',
+    ja: '料金のしくみは？',
+    ru: 'Как устроены цены?',
+    ko: '요금은 어떻게 되나요?',
+  },
+  pricing_faq_how_a: {
+    en: 'Building your site by chatting with the AI is free; you only pay once it\'s ready, by picking one of three options. Just the code ({{oneTimePrice}} once): you download your site\'s code and put it online yourself, and can keep changing it with the AI assistant for a month. Monthly ({{monthlyPrice}} a month) or Yearly ({{yearlyPrice}} a year, saving {{yearlySaving}}): we host your site and keep it online, and the AI assistant is there whenever you want to change something. With a subscription, the domain is paid separately at its yearly price (from {{domainFromPrice}}), or you use one you already own. On Yearly, we cover up to {{domainCredit}} of it.',
+    vi: 'Tạo website bằng cách trò chuyện với AI là miễn phí; bạn chỉ trả tiền khi website đã sẵn sàng, bằng cách chọn một trong ba gói. Chỉ mã nguồn ({{oneTimePrice}} một lần): bạn tải mã nguồn về và tự đưa website lên mạng, và vẫn có thể chỉnh sửa cùng trợ lý AI trong một tháng. Hàng tháng ({{monthlyPrice}} mỗi tháng) hoặc Hàng năm ({{yearlyPrice}} mỗi năm, tiết kiệm {{yearlySaving}}): chúng tôi lưu trữ và giữ website của bạn luôn hoạt động, và trợ lý AI luôn sẵn sàng mỗi khi bạn muốn thay đổi gì đó. Với gói đăng ký, tên miền được tính riêng theo giá hằng năm của nó (từ {{domainFromPrice}}), hoặc bạn dùng tên miền mình đã có. Với gói Hàng năm, chúng tôi trả giúp tối đa {{domainCredit}} tiền tên miền.',
+    zh: '通过和 AI 聊天来搭建网站是免费的；网站做好后，你才需要从三个方案中选一个付费。仅代码（一次性 {{oneTimePrice}}）：下载网站代码，自己把它上线，并且一个月内仍可以让 AI 助手帮你修改。按月（每月 {{monthlyPrice}}）或按年（每年 {{yearlyPrice}}，节省 {{yearlySaving}}）：我们托管你的网站并保持在线，想改什么时 AI 助手随时都在。订阅时，域名按其年费单独付费（{{domainFromPrice}} 起），也可以使用你已有的域名。按年方案最多为你承担 {{domainCredit}} 的域名费用。',
+    ja: 'AI とチャットしてサイトを作るのは無料です。お支払いはサイトが完成してから、3 つのプランから選ぶだけ。コードのみ（{{oneTimePrice}}・1 回）：サイトのコードをダウンロードしてご自身で公開できます。1 か月間は AI アシスタントで修正も可能です。月額（月 {{monthlyPrice}}）または年額（年 {{yearlyPrice}}、{{yearlySaving}} お得）：サイトのホスティングと公開を私たちが担当し、変更したいときはいつでも AI アシスタントに頼めます。サブスクリプションでは、ドメインはその年額で別途お支払い（{{domainFromPrice}} から）、またはお持ちのドメインを使えます。年額プランでは、ドメイン代を最大 {{domainCredit}} まで負担します。',
+    ru: 'Создавать сайт в чате с ИИ — бесплатно; платите, только когда сайт готов, выбрав один из трёх вариантов. Только код ({{oneTimePrice}} один раз): вы скачиваете код сайта и сами выкладываете его в интернет, а ещё месяц можете менять его с ИИ-ассистентом. Помесячно ({{monthlyPrice}} в месяц) или за год ({{yearlyPrice}} в год, экономия {{yearlySaving}}): мы размещаем сайт и следим, чтобы он работал, а ИИ-ассистент всегда готов что-то изменить. С подпиской домен оплачивается отдельно по его годовой цене (от {{domainFromPrice}}), или можно использовать свой. На годовом тарифе мы покрываем до {{domainCredit}} его стоимости.',
+    ko: 'AI와 대화하며 사이트를 만드는 건 무료예요. 사이트가 완성되면 세 가지 중 하나를 골라 결제하면 돼요. 코드만 ({{oneTimePrice}}, 1회): 사이트 코드를 내려받아 직접 온라인에 올리고, 한 달 동안 AI 어시스턴트로 계속 수정할 수 있어요. 월간 (월 {{monthlyPrice}}) 또는 연간 (연 {{yearlyPrice}}, {{yearlySaving}} 절약): 사이트 호스팅과 운영을 저희가 맡고, 바꾸고 싶을 때는 언제든 AI 어시스턴트가 도와드려요. 구독하면 도메인은 연간 가격으로 따로 결제하거나 ({{domainFromPrice}}부터), 이미 가진 도메인을 쓸 수 있어요. 연간 플랜은 도메인 비용을 최대 {{domainCredit}}까지 부담해 드려요.',
+  },
   pricing_faq_when_q: {
     en: 'When do I pay?',
     vi: 'Khi nào tôi phải thanh toán?',
