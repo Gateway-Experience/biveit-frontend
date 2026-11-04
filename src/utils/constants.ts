@@ -34,14 +34,15 @@ const SIDEBAR_WIDTH_PX = 256;
 //   monthlyPrice     subscription, billed monthly: we host and deploy it, the AI assistant stays on
 //   yearlyPrice      the same subscription, billed yearly
 //   domainFromPrice  the cheapest yearly price of a domain bought from us (domains are billed on their own)
-//   yearlyDomainCredit  on the yearly plan, how much of the domain's price we cover: a cheaper domain is free, a
-//                       dearer one costs only the difference
+//   yearlyFreeDomainMaxPrice  on the yearly plan, a domain at this yearly price or less gets its first year free
+//                             (one per site, then its normal price); a dearer one gets nothing off
+//                             (biveit-backend's DOMAIN_PRICE_POINTS, `discountable`)
 const PRICING = {
   oneTimePrice: 19,
   monthlyPrice: 19,
   yearlyPrice: 159,
   domainFromPrice: 10,
-  yearlyDomainCredit: 20,
+  yearlyFreeDomainMaxPrice: 20,
 };
 
 // Where people reach a human: the Help chat, the Pricing page's FAQ and the Terms all show it.

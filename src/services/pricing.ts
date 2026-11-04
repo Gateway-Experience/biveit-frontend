@@ -17,10 +17,7 @@ function formatUsd(amount: number, language?: string) {
 //   yearlyPerMonth   the yearly one spread over 12 months ("$13.25")
 //   yearlySaving     how much yearly saves over 12 monthly payments ("30%")
 //   domainFromPrice  the cheapest domain, per year
-//   domainCredit     on yearly, how much of the domain's price we cover
-//   domainExampleLow, domainExampleHigh, domainExampleHighPays
-//                    worked examples of the credit, for the FAQ: a domain under it (free), one over it, and what
-//                    that one costs ("a $15 domain is free, a $30 one costs $10")
+//   freeDomainMaxPrice  on yearly, the dearest domain whose first year is free
 function getPriceLabels(language?: string) {
   const yearlySaving = 1 - PRICING.yearlyPrice / (PRICING.monthlyPrice * 12);
   return {
@@ -30,10 +27,7 @@ function getPriceLabels(language?: string) {
     yearlyPerMonth: formatUsd(Math.round(PRICING.yearlyPrice / 12 * 100) / 100, language),
     yearlySaving: new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 }).format(yearlySaving),
     domainFromPrice: formatUsd(PRICING.domainFromPrice, language),
-    domainCredit: formatUsd(PRICING.yearlyDomainCredit, language),
-    domainExampleLow: formatUsd(PRICING.yearlyDomainCredit * 0.75, language),
-    domainExampleHigh: formatUsd(PRICING.yearlyDomainCredit * 1.5, language),
-    domainExampleHighPays: formatUsd(PRICING.yearlyDomainCredit * 0.5, language),
+    freeDomainMaxPrice: formatUsd(PRICING.yearlyFreeDomainMaxPrice, language),
   };
 }
 
