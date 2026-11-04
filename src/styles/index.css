@@ -322,6 +322,13 @@
   background-color: color-mix(in oklab, var(--card) 70%, transparent);
 }
 
+/* Dialogs (the shared DialogContent, so Modal and everything built on it) are nearly solid: 12% see-through (88%
+   solid). They're forms and small print to read, and at the usual 60% a dark page behind (a project's preview)
+   turns the panel murky grey and its muted text unreadable. Same blur and edge as the other glass. */
+[data-slot='dialog-content'] {
+  background-color: color-mix(in oklab, var(--card) 88%, transparent);
+}
+
 /* The selected pill tab (PillTabsList) in the selection colour, like the sidebar's current page. Laid over the card's
    solid colour, since the light theme's selection is see-through and the pills overlap: this way the pill tucked
    underneath doesn't show through. Plain CSS, outside the layers, so it wins over the tab's own active fill. */
