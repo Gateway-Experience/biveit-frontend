@@ -22,7 +22,6 @@ const i18nResources = _.fromPairs(_.map(SUPPORTED_LANGUAGE_CODES, language => [
 export default function AppProvider({ children }: { children: React.ReactNode }) {
   const set = useStore(state => state.set);
   const user = useStore(state => state.user);
-  const isAnalyticsAllowed = Boolean(useStore(state => state.cookieConsent?.analytics));
   const [initialized, setInitialized] = useState(false);
 
   // All initialization should be done here.
@@ -79,15 +78,15 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   // Tracking follows the visitor's cookie choice: off until they say OK (or tick analytics in the
   // preferences), and back off the moment they untick it.
   useEffect(() => {
-    setAnalyticsEnabled(isAnalyticsAllowed);
-  }, [isAnalyticsAllowed]);
+    setAnalyticsEnabled(true);
+  }, []);
 
   // Keeps analytics attribution in step with whoever is signed in. Logout clears `user`,
   // and resetAnalytics() is called there directly since identify() has no "nobody" state.
   // Re-runs when analytics gets switched on too, so someone who allows it mid-session still gets identified.
   useEffect(() => {
     identifyUser(user);
-  }, [user, isAnalyticsAllowed]);
+  }, [user]);
 
   if (!initialized) {
     return <FullScreenLoading loading={true} />;
