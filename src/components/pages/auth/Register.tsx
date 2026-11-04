@@ -15,6 +15,7 @@ import { useStore } from 'src/state-store';
 import { callBe } from 'src/utils/request';
 import { PATHS } from 'src/utils/constants';
 import { useAnalytics } from 'src/utils/hooks';
+import { ARRIVAL_SOURCE } from 'src/services/arrivalSource';
 
 type RegisterFormValues = {
   firstName: string;
@@ -49,7 +50,14 @@ export default function Register() {
       const { user } = await callBe({
         url: '/user/register',
         method: 'POST',
-        data: { username: email, password, first_name: _.trim(firstName), last_name: _.trim(lastName) },
+        // signup_source: where they came from (services/arrivalSource), kept on the new account.
+        data: {
+          username: email,
+          password,
+          first_name: _.trim(firstName),
+          last_name: _.trim(lastName),
+          signup_source: ARRIVAL_SOURCE,
+        },
       });
       set({ user });
       navigate(AFTER_REGISTER_PATH, { replace: true });

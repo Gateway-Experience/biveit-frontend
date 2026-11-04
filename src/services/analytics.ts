@@ -4,6 +4,7 @@ import _ from 'lodash';
 import type { User } from 'src/types/user';
 import type { AnalyticsEventMap } from 'src/types/analytics';
 import { getDisplayName, getUsername } from 'src/services/user';
+import { ARRIVAL_SOURCE } from 'src/services/arrivalSource';
 
 // PostHog is optional per project: with no key configured every function here is a
 // no-op, so call sites never have to guard. `setAnalyticsEnabled` is the only thing that
@@ -11,13 +12,6 @@ import { getDisplayName, getUsername } from 'src/services/user';
 const _KEY = import.meta.env.VITE_POSTHOG_KEY;
 const _HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
 const _PROJECT_NAME = import.meta.env.VITE_PROJECT_NAME;
-
-const _UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-
-// Where this visitor came from, read once as the app loads -- before any redirect (e.g. /projects -> /login) drops the
-// URL's tags, and before they've answered the cookie banner. It's only kept in memory: it becomes person properties
-// once they allow analytics (see _recordArrivalSource), and is simply lost if they never do.
-const _ARRIVAL_SOURCE = _readArrivalSource(new URL(window.location.href), document.referrer);
 
 // _initialized: posthog.init has run (it should only run once). _enabled: tracking is currently allowed.
 let _initialized = false;
@@ -64,26 +58,15 @@ function setAnalyticsEnabled(allowed: boolean) {
   _enabled = allowed;
 }
 
-// [Pure] Where a visit came from, as person properties: the URL's utm_* tags (first_utm_source...), and the referring
-// site's domain. The landing site (biveit-landing utils/arrivalSource) passes its own visitor's source along on its
-// links -- the tags, plus the referrer as `ref` -- since the browser's own referrer would only say biveit.com. Without
-// either, it's whatever site linked straight here; moving between the app's own pages isn't a source.
-function _readArrivalSource(url: URL, referrer: string): Record<string, string> {
-  const referrerHost = referrer ? new URL(referrer).hostname : '';
-  return _.pickBy({
-    ..._.fromPairs(_.map(_UTM_PARAMS, name => [`first_${name}`, url.searchParams.get(name)])),
-    first_referring_domain: url.searchParams.get('ref') || (referrerHost !== url.hostname ? referrerHost : null),
-  }, _.identity) as Record<string, string>;
-}
-
-// Intentions: the person's signup source -- set once, so their first known visit wins and a later one never rewrites
-// it. PostHog has its own $initial_utm_* too, but takes them from the page it starts on, which (because of the cookie
-// banner and redirects) is often not the page they arrived on. Safe to repeat: set-once ignores what's already there.
+// Intentions: where the person came from (services/arrivalSource), as person properties first_utm_source,
+// first_referring_domain... -- set once, so their first known visit wins. Covers visitors who never sign up too; a
+// signup sets the same ones from the backend's event. PostHog has its own $initial_utm_* as well, but takes them from
+// the page it starts on, which (cookie banner, redirects) often isn't the page they arrived on. Safe to repeat.
 function _recordArrivalSource() {
-  if (_.isEmpty(_ARRIVAL_SOURCE)) {
+  if (_.isEmpty(ARRIVAL_SOURCE)) {
     return;
   }
-  posthog.setPersonProperties(undefined, _ARRIVAL_SOURCE);
+  posthog.setPersonProperties(undefined, _.mapKeys(ARRIVAL_SOURCE, (_value, key) => `first_${key}`));
 }
 
 // Super properties ride along on every event from here on, including ones posthog fires

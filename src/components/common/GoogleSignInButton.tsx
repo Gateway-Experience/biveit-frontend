@@ -3,6 +3,7 @@ import { cn } from 'cn';
 
 import { Button } from 'src/components/shadui/button';
 import googleGPath from 'src/assets/google-g.svg';
+import { ARRIVAL_SOURCE } from 'src/services/arrivalSource';
 
 type GoogleSignInButtonProps = {
   // Same-origin path the BE sends the browser back to after a successful sign-in. Anything that
@@ -16,12 +17,15 @@ type GoogleSignInButtonProps = {
 // the BE finally lands the browser on `nextPath` with the session cookie set (or on
 // `/login?error=<CODE>` if something went wrong — see Login's error handling).
 // A signed-in guest gets promoted in place automatically; the BE reads them from the cookie.
+// Where the visitor came from (services/arrivalSource) rides along as query params -- a redirect has no body -- and
+// the BE keeps it on the account if this turns out to be a signup.
 // References: fourpixie-backend/docs/google-login-fe-handoff.md §2
 export default function GoogleSignInButton({ nextPath = '/', className }: GoogleSignInButtonProps) {
   const { t } = useTranslation();
 
   const startGoogleSignIn = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google/login?next=${encodeURIComponent(nextPath)}`;
+    const params = new URLSearchParams({ next: nextPath, ...ARRIVAL_SOURCE });
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google/login?${params}`;
   };
 
   return (

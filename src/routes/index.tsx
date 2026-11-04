@@ -26,6 +26,7 @@ import AdminDomainTest from 'src/components/pages/admin/AdminDomainTest';
 import AdminAiUsage from 'src/components/pages/admin/AdminAiUsage';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
+import { withArrivalSource } from 'src/services/arrivalSource';
 
 // Use ProtectedRoute for routes that are for logged in users only.
 // Unauthorized users going there will be redirected to the login page.
@@ -34,10 +35,11 @@ import { isSignedInUser } from 'src/services/user';
 const _LANDING_URL = import.meta.env.VITE_LANDING_URL;
 
 // Leaving the app for the landing site. `replace`, so Back from the landing page doesn't bounce off `/`
-// straight back to it.
+// straight back to it. Where the visitor came from goes along (services/arrivalSource), or a link to the bare app
+// domain would sign up as "came from app.biveit.com".
 function RedirectToLanding() {
   useEffect(() => {
-    window.location.replace(_LANDING_URL);
+    window.location.replace(withArrivalSource(_LANDING_URL));
   }, []);
   return null;
 }
