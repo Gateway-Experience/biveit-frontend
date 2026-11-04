@@ -1511,6 +1511,14 @@ export default {
     ru: 'Пропустить вопросы и начать',
     ko: '질문 건너뛰고 바로 만들기',
   },
+  chat_question_skip_rest: {
+    en: 'Skip questions',
+    vi: 'Bỏ qua câu hỏi',
+    zh: '跳过问题',
+    ja: '質問をスキップ',
+    ru: 'Пропустить вопросы',
+    ko: '질문 건너뛰기',
+  },
   chat_question_previous: {
     en: 'Previous question',
     vi: 'Câu hỏi trước',
@@ -1543,6 +1551,14 @@ export default {
     ru: 'Biveit заполнит пробелы разумными вариантами и сразу начнёт делать сайт. Потом всё можно поменять, просто напишите в чате.',
     ko: '빈 부분은 Biveit가 알맞게 채우고 바로 사이트를 만들기 시작해요. 나중에 채팅으로 말하면 무엇이든 바꿀 수 있어요.',
   },
+  chat_skip_confirm_body_later: {
+    en: 'Biveit will choose sensibly for the questions you skip and carry on. You can still change anything later, just say so in the chat.',
+    vi: 'Biveit sẽ tự chọn hợp lý cho những câu bạn bỏ qua và tiếp tục. Bạn vẫn có thể thay đổi bất cứ điều gì sau này, chỉ cần nói trong khung chat.',
+    zh: 'Biveit 会为你跳过的问题做出合理的选择，然后继续。之后你仍然可以随时修改，在聊天中告诉它就行。',
+    ja: 'スキップした質問は Biveit が適切に選んで先に進めます。あとからでも、チャットで伝えればいつでも変更できます。',
+    ru: 'Biveit сам сделает разумный выбор за пропущенные вопросы и продолжит. Всё можно изменить и позже — просто напишите об этом в чате.',
+    ko: '건너뛴 질문은 Biveit가 알맞게 정해서 계속 진행해요. 나중에 채팅으로 말하면 언제든 바꿀 수 있어요.',
+  },
   chat_skip_confirm_keep: {
     en: 'Keep answering',
     vi: 'Tiếp tục trả lời',
@@ -1559,13 +1575,13 @@ export default {
     ru: 'Пропустить и начать',
     ko: '건너뛰고 바로 만들기',
   },
-  chat_skip_message: {
-    en: 'Let\'s skip the rest of the questions. Please fill in the gaps with sensible choices and start building my site right away.',
-    vi: 'Mình muốn bỏ qua các câu hỏi còn lại. Bạn cứ tự chọn phương án hợp lý cho phần còn thiếu và bắt đầu làm website luôn nhé.',
-    zh: '剩下的问题就先跳过吧。请用合理的选择补全，直接开始搭建我的网站。',
-    ja: '残りの質問は飛ばしましょう。足りない部分はおまかせで補って、すぐにサイトを作り始めてください。',
-    ru: 'Давай пропустим остальные вопросы. Заполни пробелы разумными вариантами и сразу начинай делать сайт.',
-    ko: '남은 질문은 건너뛸게요. 빈 부분은 알맞게 채워서 바로 사이트를 만들어 주세요.',
+  chat_skip_confirm_go_later: {
+    en: 'Skip',
+    vi: 'Bỏ qua',
+    zh: '跳过',
+    ja: 'スキップ',
+    ru: 'Пропустить',
+    ko: '건너뛰기',
   },
   chat_question_back: {
     en: 'Back',
@@ -4368,6 +4384,14 @@ export default {
     ru: 'Найдите имя, например cozybakery',
     ko: '이름 검색 (예: cozybakery)',
   },
+  launch_domain_search_button: {
+    en: 'Search',
+    vi: 'Tìm',
+    zh: '搜索',
+    ja: '検索',
+    ru: 'Найти',
+    ko: '검색',
+  },
   launch_domain_suggestions: {
     en: 'Ideas for you',
     vi: 'Gợi ý cho bạn',
@@ -4856,6 +4880,14 @@ export default {
     ru: 'Домен {{domain}} зарегистрирован',
     ko: '도메인 {{domain}} 등록됨',
   },
+  launch_step_domain_connecting: {
+    en: 'Connecting {{domain}} — this can take from a few minutes to a few hours',
+    vi: 'Đang kết nối {{domain}} — việc này có thể mất từ vài phút đến vài giờ',
+    zh: '正在连接 {{domain}}，可能需要几分钟到几小时',
+    ja: '{{domain}} を接続中 — 数分から数時間かかることがあります',
+    ru: 'Подключаем {{domain}} — это может занять от нескольких минут до нескольких часов',
+    ko: '{{domain}} 연결 중 — 몇 분에서 몇 시간까지 걸릴 수 있어요',
+  },
   launch_step_domain_registering: {
     en: 'Registering {{domain}}',
     vi: 'Đang đăng ký {{domain}}',
@@ -5223,6 +5255,14 @@ export default {
     ja: 'サイトは {{domain}} で公開されています。',
     ru: 'Теперь ваш сайт работает на {{domain}}.',
     ko: '이제 사이트가 {{domain}}에서 열려요.',
+  },
+  launch_domain_connecting: {
+    en: 'Connecting…',
+    vi: 'Đang kết nối…',
+    zh: '正在连接…',
+    ja: '接続中…',
+    ru: 'Подключаем…',
+    ko: '연결 중…',
   },
   launch_domain_setting_up: {
     en: 'Setting up…',

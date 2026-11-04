@@ -166,7 +166,7 @@ function OlderMessagesLoader({ hasOlder, isLoading, hasFailed, onLoad }: {
   return null;
 }
 
-type AgentChatTab = 'chat' | 'preview' | 'deploy';
+export type AgentChatTab = 'chat' | 'preview' | 'deploy';
 
 // Original purpose: talking to a project's site-building agent.
 // Intentions: fills whatever box it's given (no width or height of its own) — a full page column while
@@ -177,7 +177,8 @@ type AgentChatTab = 'chat' | 'preview' | 'deploy';
 // `deploy`, once there's a finished site to publish.
 // The chat's state comes from the parent (`useAgentChat`), which also needs it to lay the page out.
 export default function AgentChat({
-  projectId, bootstrapData, chat, onRetrySession, isRetryingSession = false, preview, activeBuild = null, deploy, isLaunchPending = false, onOpenDeploy, className,
+  projectId, bootstrapData, chat, onRetrySession, isRetryingSession = false, preview, activeBuild = null, deploy, isLaunchPending = false, onOpenDeploy, isPlanning = false,
+  selectedTab, onSelectTab, className,
 }: {
   projectId: number;
   // The new-project form's answers (project.bootstrap_data): shown as the user's first message.
@@ -196,6 +197,13 @@ export default function AgentChat({
   // Shows the Deploy tab when it sits beside the chat rather than in it; left out while that tab is already open
   // there (nothing to nudge towards then).
   onOpenDeploy?: () => void;
+  // Still planning (nothing built yet): what skipping the agent's questions says (see InteractionPanel).
+  isPlanning?: boolean;
+  // Which of the chat's own tabs is picked (Preview and Deploy are only here when they're not beside the chat).
+  // Kept by the project page, so it can open Deploy itself (e.g. once a launch is paid for). onSelectTab must be
+  // stable (e.g. a state setter): handing text over to the chat picks the chat tab through it.
+  selectedTab: AgentChatTab;
+  onSelectTab: (tab: AgentChatTab) => void;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -206,19 +214,18 @@ export default function AgentChat({
     sendText, submitAnswers, uploadFiles, getFileUrl, loadOlderMessages, isLoadingOlder, hasLoadOlderFailed, hasOlder,
     hasUndeliveredMessage, resendUndelivered, isResending, isSessionDown,
   } = chat;
-  const [selectedTab, setSelectedTab] = useState<AgentChatTab>('chat');
   // Text handed over for the chat box (state-store's chatPrefill, e.g. from the launch dialog): show the chat.
   const chatPrefill = useStore(state => state.chatPrefill);
   useEffect(() => {
     if (chatPrefill) {
-      setSelectedTab('chat');
+      onSelectTab('chat');
     }
-  }, [chatPrefill]);
+  }, [chatPrefill, onSelectTab]);
   // Preview and Deploy can go away while selected (e.g. the window got wider and they moved beside the
   // chat): fall back to chat.
   const activeTab = (selectedTab === 'preview' && !preview) || (selectedTab === 'deploy' && !deploy) ? 'chat' : selectedTab;
   // Where the launch nudge takes them: our own Deploy tab, or the side panel's.
-  const openDeploy = deploy ? () => setSelectedTab('deploy') : onOpenDeploy;
+  const openDeploy = deploy ? () => onSelectTab('deploy') : onOpenDeploy;
   // Names of the agent's documents so far: the question panel's encouragement follows the planning progress.
   // Re-read whenever the agent says something new, since that's when a document can appear.
   const [specDocNames, setSpecDocNames] = useState<string[]>([]);
@@ -271,7 +278,7 @@ export default function AgentChat({
   return (
     <Tabs
       value={activeTab}
-      onValueChange={setSelectedTab}
+      onValueChange={value => onSelectTab(value as AgentChatTab)}
       data-component='agent-chat'
       data-projectid={projectId}
       data-agentworking={isAgentWorking}
@@ -406,6 +413,7 @@ export default function AgentChat({
                 sendText={sendText}
                 answeredQuestions={answeredQuestions}
                 specDocNames={specDocNames}
+                isPlanning={isPlanning}
               />
             )}
             {/* Hidden (not unmounted) while building too: the build panel takes its place, and the draft survives. */}

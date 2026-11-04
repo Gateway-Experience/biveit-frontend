@@ -36,8 +36,16 @@ function getLaunchSteps(status: LaunchStatus, t: (key: string, params?: Record<s
     }
     return 'todo';
   };
+  // A domain we bought is one step from paying until its site starts being set up: registering it, then waiting for
+  // public DNS to have it (waiting_dns, minutes to hours for a new name). Without the wait in it, that stretch showed
+  // nothing in progress at all and looked stuck.
+  const boughtDomainState: StepState = reached > 1 || status.stage === 'live' ? 'done' : (reached >= 0 ? 'active' : 'todo');
+  const boughtDomainLabelKey = {
+    registering_domain: 'launch_step_domain_registering',
+    waiting_dns: 'launch_step_domain_connecting',
+  }[status.stage as string] || 'launch_step_domain_registered';
   const domainStep = isBoughtDomain
-    ? { key: 'domain', label: t(stateOf(0) === 'done' ? 'launch_step_domain_registered' : 'launch_step_domain_registering', { domain: domainName }), state: stateOf(0) }
+    ? { key: 'domain', label: t(boughtDomainLabelKey, { domain: domainName }), state: boughtDomainState }
     : { key: 'domain', label: stateOf(1) === 'done' ? t('launch_step_domain_connected', { domain: domainName }) : t('launch_step_waiting_dns'), state: stateOf(1) };
   return [
     { key: 'payment', label: t('launch_step_payment'), state: 'done' as StepState },

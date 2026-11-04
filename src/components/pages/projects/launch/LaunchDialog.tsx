@@ -56,7 +56,7 @@ function _getFirstStep(mode: 'new' | 'domain', pickedPlan: PlanKey | null, needs
   return pickedPlan ? _getStepAfterPlan(pickedPlan, needsDomain) : 'plan';
 }
 
-export default function LaunchDialog({ projectId, projectName, open, mode, initialPlan = null, status, onClose }: {
+export default function LaunchDialog({ projectId, projectName, open, mode, initialPlan = null, status, onClose, onUnderWay }: {
   projectId: number;
   projectName: string;
   open: boolean;
@@ -64,6 +64,9 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
   initialPlan?: PlanKey | null;
   status: LaunchStatus;
   onClose: () => void;
+  // The launch is under way: paid for (or nothing to pay), and the dialog moved on to watching it go live. The page
+  // opens its Deploy tab then, so that's where they are once they close the dialog.
+  onUnderWay?: () => void;
 }) {
   const { t } = useTranslation();
   const notify = useNotification();
@@ -157,6 +160,14 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
       notify('error', t(`launch_error_${code}`, { price: pricePerYear, defaultValue: t('launch_error_generic') }));
     },
   });
+
+  useEffect(() => {
+    if (open && step === 'progress') {
+      onUnderWay?.();
+    }
+    // Once per arrival at the progress step; the page's callback is remade every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, step]);
 
   // Everything's paid for: on to watching it go live.
   useEffect(() => {

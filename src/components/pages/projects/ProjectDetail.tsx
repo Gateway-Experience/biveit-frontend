@@ -7,7 +7,7 @@ import { AppWindowIcon, ChevronLeftIcon, RocketIcon } from 'lucide-react';
 
 import LinkButton from 'src/components/common/LinkButton';
 import PillTabsList from 'src/components/common/PillTabsList';
-import AgentChat from 'src/components/pages/projects/chat/AgentChat';
+import AgentChat, { type AgentChatTab } from 'src/components/pages/projects/chat/AgentChat';
 import ProjectProgress from 'src/components/pages/projects/ProjectProgress';
 import PanelResizeHandle from 'src/components/pages/projects/PanelResizeHandle';
 import { WorkspaceBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
@@ -161,6 +161,13 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   // otherwise they're tabs of the chat.
   const hasSidePanel = !!preview && isSideBySide;
   const [sidePanelTab, setSidePanelTab] = useState<'preview' | 'deploy'>('preview');
+  // The chat's own tabs, when Preview and Deploy live inside it (narrow screens). See AgentChat.
+  const [chatTab, setChatTab] = useState<AgentChatTab>('chat');
+  // A launch got under way (LaunchDialog): show Deploy, wherever it is -- beside the chat or in it.
+  const showDeploy = () => {
+    setSidePanelTab('deploy');
+    setChatTab('deploy');
+  };
 
   // The "just now" moment: the sign-off happened while this tab was open, i.e. a re-read took it from null
   // to a time. A fresh load (undefined -> time) is just the steady Deploy tab, no pop-up.
@@ -217,6 +224,7 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
           initialPlan={launchRequest?.plan}
           status={launchStatus}
           onClose={() => setLaunchRequest(null)}
+          onUnderWay={showDeploy}
         />
       )}
 
@@ -247,6 +255,9 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
               deploy={hasSidePanel ? null : deploy}
               isLaunchPending={isLaunchPending}
               onOpenDeploy={hasSidePanel && deploy && sidePanelTab !== 'deploy' ? () => setSidePanelTab('deploy') : undefined}
+              isPlanning={(devenv?.stage || project.stage) === 'planning'}
+              selectedTab={chatTab}
+              onSelectTab={setChatTab}
               className='h-full'
             />
           </div>

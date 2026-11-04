@@ -328,7 +328,13 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
                         {t(recordsDomain === row.domain ? 'launch_domain_hide_records' : 'launch_domain_show_records')}
                       </Button>
                     )}
-                    {row.servable && (
+                    {/* A bought domain the site doesn't have yet: on its way (public DNS catching up), set up on its own. */}
+                    {!status.domain && row.kind === 'purchased' && status.stage === 'waiting_dns' && (
+                      <span className='flex items-center gap-1.5 text-xs text-muted-foreground'><Spinner className='size-3.5' />{t('launch_domain_connecting')}</span>
+                    )}
+                    {/* Only for moving a live site to another domain: with no active domain yet, the first one is set up by
+                        itself once it's ready (backend fulfilment), and starting it early would just fail. */}
+                    {row.servable && status.domain && (
                       <Button variant='ghost' size='sm' disabled={isActivating || !!status.setting_up} onClick={() => activateDomain(row.domain)} data-action='use-domain'>
                         {isActivating && activatingDomain === row.domain && <Spinner data-icon='inline-start' />}
                         {t('launch_domain_use')}

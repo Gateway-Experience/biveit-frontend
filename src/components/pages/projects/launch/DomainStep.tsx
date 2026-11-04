@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from 'cn';
@@ -17,14 +17,14 @@ import type { DomainChoice, DomainOffer } from 'src/types/launch';
 
 // Intentions: the launch dialog's domain question -- a hosted site needs one: buy it through us, use the user's own,
 // or take a free subdomain of ours (<slug>.biveitapp.com, the name suggested from the site; only when the server
-// offers them, `subdomainParent`). Buying: with nothing typed, ideas around the project's name; typing, search results. Each shows its
-// price, struck through to free for the first year when the plan is yearly. Own: the two DNS records to add and
+// offers them, `subdomainParent`). Buying: at first, ideas around the project's name; then whatever they search for
+// (on the Search button or Enter -- not as they type: each search asks the registrar, and half-typed names aren't
+// worth it). Each shows its price, struck through to free for the first year when the plan is yearly. Own: the two DNS records to add and
 // whether they're found yet (re-checked every few seconds) -- not ready yet is a warning, not a stop.
 // `hasDiscount`: whether discountable domains get the domain discount this time (yearly plan; today, the first year
 // free); `onSwitchToYearly` offers that switch
 // from the monthly plan (absent when it doesn't apply).
 
-const _SEARCH_DEBOUNCE_MS = 400;
 const _OWN_RECHECK_MS = 30000;
 
 type DomainTab = 'buy' | 'own' | 'subdomain';
@@ -79,26 +79,37 @@ function BuyDomain({ projectId, hasDiscount, onSwitchToYearly, onChoose }: {
   onChoose: (domain: DomainChoice) => void;
 }) {
   const { t, i18n } = useTranslation();
+  // `query`: what's in the box; `searchedQuery`: what the results are for (set on Search -- empty brings the ideas back).
   const [query, setQuery] = useState('');
   const [searchedQuery, setSearchedQuery] = useState('');
   const [selected, setSelected] = useState<DomainOffer | null>(null);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchedQuery(_.trim(query)), _SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [query]);
   const { data: offers, isFetching, isError } = useQuery({
     queryKey: [LAUNCH_QUERY_KEY, projectId, 'domains', searchedQuery],
     queryFn: () => searchLaunchDomains(projectId, searchedQuery),
     staleTime: 60 * 1000,
+    // REGISTRAR_BUSY: the registrar is rate-limiting us, and retrying straight away only keeps it that way.
+    retry: (failureCount, error) => _.get(error, 'data.detail') !== 'REGISTRAR_BUSY' && failureCount < 3,
   });
   const money = (amount: number) => formatUsd(amount, i18n.language);
 
   return (
     <div className='flex flex-col gap-3'>
-      <div className='relative'>
-        <SearchIcon className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
-        <Input value={query} onChange={event => setQuery(event.target.value)} placeholder={t('launch_domain_search_placeholder')} className='pl-9' data-input='domain-search' />
-      </div>
+      <form
+        className='flex gap-2'
+        onSubmit={event => {
+          event.preventDefault();
+          setSearchedQuery(_.trim(query));
+        }}
+      >
+        <div className='relative flex-1'>
+          <SearchIcon className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
+          <Input value={query} onChange={event => setQuery(event.target.value)} placeholder={t('launch_domain_search_placeholder')} className='pl-9' data-input='domain-search' />
+        </div>
+        <Button type='submit' variant='outline' disabled={isFetching} data-action='domain-search'>
+          {isFetching && <Spinner data-icon='inline-start' />}
+          {t('launch_domain_search_button')}
+        </Button>
+      </form>
       {!searchedQuery && <p className='text-xs font-medium text-muted-foreground'>{t('launch_domain_suggestions')}</p>}
       {isFetching && !offers && <div className='flex justify-center py-6'><Spinner className='size-5 text-muted-foreground' /></div>}
       {isError && <p className='text-sm text-destructive'>{t('launch_error_generic')}</p>}
