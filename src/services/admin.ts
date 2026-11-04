@@ -1,6 +1,7 @@
 import { callBe } from 'src/utils/request';
 import type {
-  AiCostReport, AiCostSeries, PlatformStatus, ProjectDeployments, ProjectStatus, SandboxMode, ServerUsage,
+  AiCostReport, AiCostSeries, PlatformStatus, ProjectDeployments, ProjectPlan, ProjectPlanRequest, ProjectStatus,
+  SandboxMode, ServerUsage,
 } from 'src/types/admin';
 import type { DnsRecord, DomainContact, DomainVerification, RegistrarDomain } from 'src/types/domains';
 
@@ -47,6 +48,20 @@ async function getProjectDeployments(projectId: number): Promise<ProjectDeployme
 // what's in the project's workspace now. The rollout runs in the background: watch getProjectDeployments.
 async function deployProject(projectId: number, domains: string[]): Promise<{ run_id: string; commit: string }> {
   return callBe({ url: `/admin/projects/${projectId}/deployments`, method: 'POST', data: { domains } });
+}
+
+// A project's plan, set by hand: read it, give it one (only when it has none), change an admin-set one, or delete
+// whichever it has (a bought one keeps billing at Polar). Each change makes the BE fulfil the project right away.
+async function getProjectPlan(projectId: number): Promise<{ plan: ProjectPlan | null }> {
+  return callBe(`/admin/projects/${projectId}/plan`);
+}
+
+async function saveProjectPlan(projectId: number, request: ProjectPlanRequest, isNew: boolean): Promise<{ plan: ProjectPlan }> {
+  return callBe({ url: `/admin/projects/${projectId}/plan`, method: isNew ? 'POST' : 'PUT', data: request });
+}
+
+async function deleteProjectPlan(projectId: number): Promise<{ plan: null }> {
+  return callBe({ url: `/admin/projects/${projectId}/plan`, method: 'DELETE' });
 }
 
 // The calling admin's OWN sandbox mode: test payments and sandbox domains, together. Only their purchases from now
@@ -135,6 +150,9 @@ export {
   stopProject,
   getProjectDeployments,
   deployProject,
+  getProjectPlan,
+  saveProjectPlan,
+  deleteProjectPlan,
   getSandboxMode,
   setSandboxMode,
   getDomainTestAccount,

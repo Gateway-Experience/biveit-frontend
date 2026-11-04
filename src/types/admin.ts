@@ -87,3 +87,19 @@ export type AiCostSeries = {
   bucket: 'hour' | 'day';
   points: { at: string; cost_usd: number }[];
 };
+
+// A project's plan as the admin page manages it (GET /admin/projects/<id>/plan): its latest plan or one-time
+// subscription that isn't deleted, expired or not. provider 'admin' = set by hand here (editable); a Polar one was
+// bought (delete only). created_at is when it starts; ends_at when it ends.
+export type AdminPlanName = 'monthly' | 'yearly' | 'one_time';
+export type ProjectPlan = {
+  id: number;
+  provider: 'admin' | 'polar' | 'polar_sandbox' | string;
+  product: 'plan' | 'one_time';
+  plan: AdminPlanName;
+  status: string;
+  created_at: string;
+  ends_at: string | null;
+  renews_at: string | null;
+};
+export type ProjectPlanRequest = { plan: AdminPlanName; starts_at: string; ends_at: string };
