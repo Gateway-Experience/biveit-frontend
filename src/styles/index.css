@@ -329,6 +329,20 @@
   background: linear-gradient(var(--selection), var(--selection)), var(--card);
 }
 
+/* Intentions: an unchecked checkbox has to show on glass. On its own it's an empty box with an --input border, and on a
+   glass-surface frame (see above) that border is about the colour of the frosted page behind it -- in the light theme
+   the box all but disappears. So it gets a solid card fill, like the text fields, and a firmer border. The dark theme
+   already fills it (its own dark:bg-input/30), so it keeps its own look: revert-layer hands back the component's
+   classes. Plain CSS, outside the layers, so it wins over the checkbox's own utility classes. */
+[data-slot='checkbox']:not([data-checked]) {
+  background-color: var(--card);
+  border-color: color-mix(in oklab, var(--foreground) 25%, transparent);
+}
+.dark [data-slot='checkbox']:not([data-checked]) {
+  background-color: revert-layer;
+  border-color: revert-layer;
+}
+
 /* Intentions: the highlight on a menu's or a select's item (hovered, or reached with the keyboard): the selection
    colour (lavender, or a soft lime with dark text in the dark theme), rather than the theme's neutral accent. Destructive items
    ("Delete") keep their own red. Plain CSS, outside the layers, so it wins over the items' own focus classes; their
