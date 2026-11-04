@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback, useSyncExternalStore } from 'react';
-import { useSearchParams, useLocation, useNavigate } from 'react-router';
+import { useSearchParams, useNavigate } from 'react-router';
 import _ from 'lodash';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -380,16 +380,6 @@ function useLogout() {
   }, [set, navigate, queryClient]);
 }
 
-// Fires a page view whenever the route changes. Mounted once in the layout — react-router
-// never does a full page load, so this is the only thing that sees navigations.
-function useTrackPageViews() {
-  const location = useLocation();
-
-  useEffect(() => {
-    trackEvent('page_view', { path: location.pathname, search: location.search });
-  }, [location.pathname, location.search]);
-}
-
 // The component-facing surface. The functions are module-level singletons, so this is
 // just a convenience wrapper — there's no context or state behind it.
 function useAnalytics() {
@@ -399,7 +389,6 @@ function useAnalytics() {
 export {
   useDebouncedValue,
   useAnalytics,
-  useTrackPageViews,
   useArray,
   useIndexedList,
   useElapsed,

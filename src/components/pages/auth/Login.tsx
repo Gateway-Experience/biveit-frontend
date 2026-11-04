@@ -6,14 +6,14 @@ import { useTranslation } from 'react-i18next';
 import FormField from 'src/components/common/FormField';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import AuthPageLayout from 'src/components/pages/auth/AuthPageLayout';
-import { AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN } from 'src/components/pages/auth/authForm';
+import { AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN, getAuthErrorCode } from 'src/components/pages/auth/authForm';
 import { Button } from 'src/components/shadui/button';
 import { Spinner } from 'src/components/common/Spinner';
 import { useStore } from 'src/state-store';
 import { callBe } from 'src/utils/request';
 import { PATHS } from 'src/utils/constants';
 import { getSafeNextPath } from 'src/utils/authRedirect';
-import { useOneTimeQueryParams } from 'src/utils/hooks';
+import { useAnalytics, useOneTimeQueryParams } from 'src/utils/hooks';
 
 type LoginFormValues = {
   email: string;
@@ -41,6 +41,7 @@ export default function Login() {
   const navigate = useNavigate();
   const notify = useNotification();
   const set = useStore(state => state.set);
+  const { trackEvent } = useAnalytics();
   const [searchParams] = useSearchParams();
   const nextPath = getSafeNextPath(searchParams.get('next'));
 
@@ -57,6 +58,8 @@ export default function Login() {
     if (!error) {
       return;
     }
+    // Google sends every failure back to this page, whether it started from here or from Register.
+    trackEvent('auth_failed', { method: 'google', form: 'login', code: error });
     // A cancel is the user's own choice, so it's info rather than an error.
     notify(error === 'ACCESS_DENIED' ? 'info' : 'error', t(_.get(GOOGLE_ERROR_I18N_KEYS, error, 'google_error_generic')));
   });
@@ -73,6 +76,7 @@ export default function Login() {
       set({ user });
       navigate(nextPath, { replace: true });
     } catch (error) {
+      trackEvent('auth_failed', { method: 'email', form: 'login', code: getAuthErrorCode(error) });
       // The BE gives one opaque answer for wrong password and unknown email (so the form can't be used
       // to probe which emails have accounts) — and Google-only accounts land here too, since they
       // have no password. Hence the one message that points at the Google button.

@@ -69,7 +69,7 @@ export default function DeployPanel({ variant = 'tab', projectId, projectName, s
     <div data-component='deploy-panel' data-variant={variant} data-stage={status?.stage} className={cn('flex min-h-0 flex-col overflow-y-auto', className)}>
       <div className={cn('mx-auto flex w-full shrink-0 grow flex-col', isCelebration ? 'max-w-xl gap-7 px-6 pt-12 pb-10 sm:px-8' : 'max-w-xl gap-5 px-5 py-6')}>
         {!isCelebration && !status && <div className='flex justify-center py-10'><Spinner className='size-5 text-muted-foreground' /></div>}
-        {showsOffer && isCelebration && <LaunchOffer isCelebration canBuyCode={!status?.access.can_download} onLaunch={plan => onLaunch('new', { plan })} />}
+        {showsOffer && isCelebration && <LaunchOffer isCelebration canBuyCode={!status?.access.can_download} onLaunch={plan => onLaunch('new', { source: 'offer_celebration', plan })} />}
         {/* The tab's offer: the showcase and plans together, what happens next pushed to the bottom. */}
         {showsOffer && !isCelebration && (
           <div className='flex grow flex-col justify-between gap-8'>
@@ -77,7 +77,7 @@ export default function DeployPanel({ variant = 'tab', projectId, projectName, s
               isCelebration={false}
               showcase={<SiteShowcase projectName={projectName} pictureUrl={sitePictureUrl} className='mx-auto max-w-[16rem] sm:mx-0 sm:w-56 sm:shrink-0' />}
               canBuyCode={!status?.access.can_download}
-              onLaunch={plan => onLaunch('new', { plan })}
+              onLaunch={plan => onLaunch('new', { source: 'offer_tab', plan })}
             />
             <LaunchSteps />
           </div>
@@ -233,7 +233,7 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
               ? t('launch_domain_failed', { domain: status.registration_failure.domain })
               : t('launch_choose_domain_body')}
           </p>
-          <Button className='self-start' onClick={() => onLaunch('domain')} data-action='choose-domain'>{t('launch_choose_domain')}</Button>
+          <Button className='self-start' onClick={() => onLaunch('domain', { source: 'choose_domain' })} data-action='choose-domain'>{t('launch_choose_domain')}</Button>
         </div>
       )}
       {status.stage === 'not_servable' && status.domain && (
@@ -269,7 +269,7 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
       {(status.stage === 'code_only' || status.stage === 'ended') && (
         <div className='flex flex-col gap-3'>
           <p className='text-sm'>{t(status.stage === 'ended' ? 'launch_ended_body' : 'launch_owned_code_note')}</p>
-          <Button className='self-start' onClick={() => onLaunch('new')} data-action='host-it'>{t('launch_cta')}</Button>
+          <Button className='self-start' onClick={() => onLaunch('new', { source: 'host_it' })} data-action='host-it'>{t('launch_cta')}</Button>
         </div>
       )}
 
@@ -343,7 +343,7 @@ function LaunchState({ projectId, projectName, status, onLaunch }: {
             </div>
           ))}
           {!hasServableDomain && (
-            <Button variant='link' size='sm' className='self-start px-0' onClick={() => onLaunch('domain')} data-action='add-domain'>
+            <Button variant='link' size='sm' className='self-start px-0' onClick={() => onLaunch('domain', { source: 'add_domain' })} data-action='add-domain'>
               {t('launch_domain_add')}
             </Button>
           )}

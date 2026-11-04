@@ -17,8 +17,7 @@ export type UserJourneyStep = {
 };
 
 export type User = {
-  _id: string;
-  id?: number; // the BE's primary key
+  id: number; // the BE's primary key -- also the analytics id (as a string), shared with the BE's own events
   username: string;
   user_type: UserType;
   first_name?: string | null; // asked for at signup; null on guests and accounts from before that

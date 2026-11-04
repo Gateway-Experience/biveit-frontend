@@ -2,9 +2,12 @@
 
 export type PlanKey = 'monthly' | 'yearly' | 'one_time';
 
+// Which button opened the launch dialog. Only for analytics, to see which entry points actually lead to a launch.
+export type LaunchSource = 'offer_tab' | 'offer_celebration' | 'host_it' | 'choose_domain' | 'add_domain';
+
 // Opens the launch dialog: 'new' to buy a plan (`plan`: already picked, so the dialog starts past its plan step),
 // 'domain' to finish / choose a domain on a running plan.
-export type OpenLaunchDialog = (mode: 'new' | 'domain', options?: { plan?: PlanKey }) => void;
+export type OpenLaunchDialog = (mode: 'new' | 'domain', options: { source: LaunchSource; plan?: PlanKey }) => void;
 
 export type LaunchPlan = {
   key: PlanKey;

@@ -16,7 +16,7 @@ const PRIVACY_CONTACT_EMAIL = 'privacy@biveit.com';
 // - projects and chats: migrations/0005-0008, files on the server under STORAGE_DIR
 // - the AI: services/agent (Claude, by Anthropic)
 // - AWS: utils/aws/s3 (uploads), utils/aws/ses (password reset emails)
-// - analytics: the FE's services/analytics (Mixpanel, only with consent; see CookiePolicy)
+// - analytics: the FE's services/analytics (PostHog, only with consent; see CookiePolicy)
 // A section can end with a link to another page.
 const SECTIONS: { titleKey: string; bodyKey: string; link?: { to: string; labelKey: string } }[] = [
   { titleKey: 'privacy_policy_collect_title', bodyKey: 'privacy_policy_collect_body' },

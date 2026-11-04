@@ -103,6 +103,10 @@ export type InteractionResult =
 // actions), in order.
 export type InteractionAnswer = { interaction_id: string; results: InteractionResult[] };
 
+// How a sent message's text got into the box: typed, the agent's suggested reply, or handed over from elsewhere on the
+// page (chatPrefill). Only for analytics.
+export type MessageSendVia = 'typed' | 'suggestion' | 'prefill';
+
 // POST /conversations/{id}/messages body.
 export type PostChatMessageBody =
   // Text may be empty when there are attachments (paths from the uploads endpoint), but not both.

@@ -26,7 +26,6 @@ import AdminDomainTest from 'src/components/pages/admin/AdminDomainTest';
 import AdminAiUsage from 'src/components/pages/admin/AdminAiUsage';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
-import { useTrackPageViews } from 'src/utils/hooks';
 
 // Use ProtectedRoute for routes that are for logged in users only.
 // Unauthorized users going there will be redirected to the login page.
@@ -61,11 +60,7 @@ function OpenPageLayout() {
   return isSignedInUser(user) ? <DefaultLayout /> : <PublicLayout />;
 }
 
-// Page views are tracked here rather than in a layout, so routes that don't use
-// DefaultLayout (/, /login) are counted too.
 function AppRoutes() {
-  useTrackPageViews();
-
   return (
     <Routes>
       <Route path='/' element={<HomeRoute />} />

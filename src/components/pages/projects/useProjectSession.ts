@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from 'react';
 
 import { openProject } from 'src/services/project';
+import { trackEvent } from 'src/services/analytics';
 import type { AgentSessionStatus } from 'src/types/chat';
 
 // Intentions: opens the project for this visit (POST /projects/{id}/open) and tracks how that went. Open
@@ -23,7 +24,13 @@ export default function useProjectSession(projectId: number, options: { onReady?
           onReady?.();
         }
       })
-      .catch(() => !isCancelled && setStatus('failed'));
+      .catch(() => {
+        if (isCancelled) {
+          return;
+        }
+        setStatus('failed');
+        trackEvent('project_setup_failed', { project_id: projectId, is_retry: attemptCount > 0 });
+      });
     return () => {
       isCancelled = true;
     };

@@ -471,19 +471,19 @@ function ExampleNotification() {
   );
 }
 
-// Events are no-ops unless VITE_MIXPANEL_TOKEN is set, so this is safe to click either way.
+// Events are no-ops unless VITE_POSTHOG_KEY is set, so this is safe to click either way.
 function ExampleAnalytics() {
   const { trackEvent } = useAnalytics();
   const notify = useNotification();
-  const enabled = Boolean(import.meta.env.VITE_MIXPANEL_TOKEN);
+  const enabled = Boolean(import.meta.env.VITE_POSTHOG_KEY);
 
   const sendDemoEvent = () => {
     trackEvent('showcase_demo_clicked', { source: 'showcase', at: new Date().toISOString() });
     notify(
       enabled ? 'success' : 'info',
       enabled
-        ? 'Sent `showcase_demo_clicked` to Mixpanel.'
-        : 'No VITE_MIXPANEL_TOKEN set — trackEvent() was a no-op.',
+        ? 'Sent `showcase_demo_clicked` to PostHog.'
+        : 'No VITE_POSTHOG_KEY set — trackEvent() was a no-op.',
     );
   };
 
@@ -494,7 +494,7 @@ function ExampleAnalytics() {
           Send test event
         </Button>
         <p className='text-muted-foreground'>
-          Mixpanel is {enabled ? 'enabled' : 'disabled'} for this project.
+          PostHog is {enabled ? 'enabled' : 'disabled'} for this project.
         </p>
       </div>
       <p className='text-muted-foreground'>

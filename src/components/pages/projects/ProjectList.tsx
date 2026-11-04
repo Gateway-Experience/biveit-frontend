@@ -15,6 +15,7 @@ import WelcomeShow from 'src/components/pages/projects/WelcomeShow';
 import { Button } from 'src/components/shadui/button';
 import { useStore } from 'src/state-store';
 import { PATHS } from 'src/utils/constants';
+import { useAnalytics } from 'src/utils/hooks';
 import type { Project } from 'src/types/project';
 
 const _GRID_CLASS = 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3';
@@ -62,6 +63,7 @@ function TrashTile({ trashCount, className }: { trashCount: number; className?: 
 
 // Intentions: the page with no projects. The whole page is basically one invitation to start building.
 function ProjectsEmptyState() {
+  const { trackEvent } = useAnalytics();
   const { t } = useTranslation();
   const set = useStore(state => state.set);
 
@@ -74,7 +76,14 @@ function ProjectsEmptyState() {
       <BuildFlowArt className='mb-8 w-full max-w-[340px]' />
       <h2 className='font-heading text-xl font-bold tracking-[-0.02em]'>{t('projects_empty_title')}</h2>
       <p className='mt-2 max-w-sm text-muted-foreground'>{t('projects_empty_body')}</p>
-      <Button size='lg' className='mt-7' onClick={() => set({ isNewProjectOpen: true })}>
+      <Button
+        size='lg'
+        className='mt-7'
+        onClick={() => {
+          trackEvent('new_project_form_opened', { source: 'empty_state' });
+          set({ isNewProjectOpen: true });
+        }}
+      >
         <PlusIcon data-icon='inline-start' />
         {t('projects_empty_cta')}
       </Button>
@@ -98,6 +107,7 @@ export default function ProjectList() {
   // The project whose rename / trash dialog is open, if any.
   const [renamingProject, setRenamingProject] = useState<Project | null>(null);
   const [trashingProject, setTrashingProject] = useState<Project | null>(null);
+  const { trackEvent } = useAnalytics();
   const set = useStore(state => state.set);
 
   const hasProjects = !_.isEmpty(projects);
@@ -136,7 +146,14 @@ export default function ProjectList() {
           </div>
           {/* bg-clip-border: the theme's buttons paint inside their (transparent) border, so the fill reads 2px
               shorter than the search box beside it, whose border shows. */}
-          <Button data-tour='new-project' className='h-10 shrink-0 bg-clip-border' onClick={() => set({ isNewProjectOpen: true })}>
+          <Button
+            data-tour='new-project'
+            className='h-10 shrink-0 bg-clip-border'
+            onClick={() => {
+              trackEvent('new_project_form_opened', { source: 'header' });
+              set({ isNewProjectOpen: true });
+            }}
+          >
             <PlusIcon data-icon='inline-start' />
             {t('projects_new')}
           </Button>

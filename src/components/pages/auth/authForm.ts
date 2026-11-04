@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 // Validation shared by the login and register forms (and the profile page). The BE doesn't check the email format, so the FE has to.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -8,10 +10,18 @@ const NAME_MAX_LENGTH = 100;
 const AUTH_INPUT_CLASS = 'rounded-full px-5';
 const AUTH_SUBMIT_CLASS = 'mt-1 h-11 w-full rounded-full';
 
+// [Pure] The BE's error code (`data.detail`) for analytics. A validation error's detail is a list, not a code, and a
+// network error has none -- both come out as 'UNKNOWN'.
+function getAuthErrorCode(error: unknown): string {
+  const detail = _.get(error, 'data.detail');
+  return _.isString(detail) ? detail : 'UNKNOWN';
+}
+
 export {
   AUTH_INPUT_CLASS,
   AUTH_SUBMIT_CLASS,
   EMAIL_PATTERN,
   MIN_PASSWORD_LENGTH,
   NAME_MAX_LENGTH,
+  getAuthErrorCode,
 };

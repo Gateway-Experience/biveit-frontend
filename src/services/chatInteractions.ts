@@ -1,8 +1,9 @@
 import _ from 'lodash';
 
 import { isAskUser } from 'src/services/chatLog';
+import type { AnalyticsEventMap } from 'src/types/analytics';
 import type {
-  ApprovalDecision, AskUserQuestion, InteractionAnswer, InteractionResult, QuestionAnswerValue, RequestedAction,
+  ActionAnswerValue, ApprovalDecision, AskUserQuestion, InteractionAnswer, InteractionResult, QuestionAnswerValue, RequestedAction,
   ToolUseBlock,
 } from 'src/types/chat';
 
@@ -98,6 +99,37 @@ function buildSubmissionAnswers(
   });
 }
 
+// [Pure] What a submission tells analytics: one entry per question or action, in each call's own order, with how it
+// went (status) and, for an action, which one and the button pressed. Never the question text or the options picked.
+// An answer whose call isn't among `interactions` (shouldn't happen) is left out.
+// References: types/analytics (interaction_answered).
+function toAnsweredItemEvents(
+  interactions: ToolUseBlock[],
+  answers: InteractionAnswer[],
+): Omit<AnalyticsEventMap['interaction_answered'], 'project_id'>[] {
+  const interactionsById = _.keyBy(interactions, 'id');
+  return _.flatMap(answers, answer => {
+    const interaction = interactionsById[answer.interaction_id];
+    if (!interaction) {
+      return [];
+    }
+    const items = _getCallItems(interaction);
+    return _.map(answer.results, (result, index) => {
+      const item = items[index];
+      const tool = isAskUser(interaction) ? 'ask_user' as const : 'request_actions' as const;
+      if (item?.kind !== 'action') {
+        return { tool, status: result.status };
+      }
+      return {
+        tool,
+        status: result.status,
+        action: item.action.name,
+        ...(result.status === 'submitted' ? { decision: (result.value as ActionAnswerValue).decision } : {}),
+      };
+    });
+  });
+}
+
 // [Pure] A question's options as {label, description}, whichever way each came (a plain label, or one with
 // a subtitle) -- so the panel renders one shape.
 function getQuestionOptions(question: AskUserQuestion): { label: string; description?: string }[] {
@@ -112,4 +144,5 @@ export {
   getEmptyDraft,
   getQuestionOptions,
   isQuestionDraftComplete,
+  toAnsweredItemEvents,
 };

@@ -35,7 +35,7 @@ import { useStore } from 'src/state-store';
 import { updateProject } from 'src/services/project';
 import { getDisplayName, isSignedInUser } from 'src/services/user';
 import { PATHS } from 'src/utils/constants';
-import { useLogout } from 'src/utils/hooks';
+import { useAnalytics, useLogout } from 'src/utils/hooks';
 import { buildLoginPath } from 'src/utils/authRedirect';
 import type { Project, ProjectChanges, ProjectFolder } from 'src/types/project';
 
@@ -394,6 +394,7 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
 export default function AppSidebar() {
   const { t } = useTranslation();
   const user = useStore(state => state.user);
+  const { trackEvent } = useAnalytics();
   const set = useStore(state => state.set);
   const location = useLocation();
   const logout = useLogout();
@@ -473,6 +474,7 @@ export default function AppSidebar() {
                       tooltip={t('projects_new')}
                       onClick={() => {
                         closeIfMobile();
+                        trackEvent('new_project_form_opened', { source: 'sidebar' });
                         set({ isNewProjectOpen: true });
                       }}
                       className={_ITEM_TEXT_CLASS}

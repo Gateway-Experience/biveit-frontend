@@ -22,6 +22,7 @@ import useDevenvStatus from 'src/components/pages/projects/preview/useDevenvStat
 import useProjectSession from 'src/components/pages/projects/useProjectSession';
 import { Spinner } from 'src/components/common/Spinner';
 import { Tabs, TabsContent } from 'src/components/shadui/tabs';
+import { trackEvent } from 'src/services/analytics';
 import { getPreviewState } from 'src/services/devenv';
 import { getProjects, getSitePreviewUrl } from 'src/services/project';
 import { PATHS } from 'src/utils/constants';
@@ -137,9 +138,14 @@ function ProjectWorkspace({ projectId }: { projectId: number }) {
   const isLaunchPending = launchStatus?.stage === 'not_paid';
   // What the dialog was opened for (its mode, and the plan if one was picked already); null = closed.
   const [launchRequest, setLaunchRequest] = useState<{ mode: 'new' | 'domain'; plan: PlanKey | null } | null>(null);
-  const openLaunchDialog: OpenLaunchDialog = (mode, options = {}) => {
+  const openLaunchDialog: OpenLaunchDialog = (mode, options) => {
     setIsSiteReadyModalOpen(false);
     setLaunchRequest({ mode, plan: options.plan || null });
+    trackEvent('launch_dialog_opened', { project_id: projectId, mode, source: options.source });
+    // A plan picked before opening skips the dialog's plan step -- still a plan choice as far as the funnel goes.
+    if (options.plan) {
+      trackEvent('launch_option_selected', { project_id: projectId, step: 'plan', plan: options.plan, is_preselected: true });
+    }
   };
   const deploy = buildApprovedAt && (
     <DeployPanel

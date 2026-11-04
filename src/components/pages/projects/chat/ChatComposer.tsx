@@ -14,7 +14,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } fro
 import { useStore } from 'src/state-store';
 import { formatFileSize } from 'src/utils/common';
 import { useMediaQuery } from 'src/utils/hooks';
-import type { Attachment } from 'src/types/chat';
+import type { Attachment, MessageSendVia } from 'src/types/chat';
 
 // Attachment limits — our own product rules, stricter than the BE's (10 files per upload, 25 MB each).
 // The count is per message, uploading ones included.
@@ -43,7 +43,7 @@ type DraftAttachment = { clientId: string; name: string; mime: string; size: num
 // in, and Enter sends it. Typing anything else just hides it, like a placeholder.
 export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisabled, isAttachDisabled = false, suggestedReply = null }: {
   // Resolves to false when the send failed, in which case the text and chips are put back.
-  onSend: (text: string, attachmentPaths: string[]) => Promise<boolean>;
+  onSend: (text: string, attachmentPaths: string[], options: { via: MessageSendVia }) => Promise<boolean>;
   // Resolves to the stored files in the order given, or null when the upload failed.
   onUpload: (files: File[]) => Promise<Attachment[] | null>;
   getFileUrl: (path: string) => string;
@@ -61,6 +61,9 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
   // says what it is, until they edit or send it (the draft no longer matches), or the cue times out.
   const [handedOverDraft, setHandedOverDraft] = useState<string | null>(null);
   const isHandOverCueOn = !!handedOverDraft && draft === handedOverDraft;
+  // The last text this box put in itself (a suggested reply or a hand-over), for analytics: sending it unedited counts
+  // as `via` that, anything else as typed. Kept apart from handedOverDraft, which a timer clears with the cue.
+  const [seededDraft, setSeededDraft] = useState<{ text: string; via: MessageSendVia } | null>(null);
   // The hint line + box, and where they are on screen while the spotlight's on (null = off).
   const handOverAreaRef = useRef<HTMLDivElement>(null);
   const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
@@ -96,6 +99,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
     }
     setDraft(chatPrefill);
     setHandedOverDraft(chatPrefill);
+    setSeededDraft({ text: chatPrefill, via: 'prefill' });
     setStore({ chatPrefill: null });
   }, [chatPrefill, setStore]);
   // Keyed on the handed-over text rather than chatPrefill: clearing chatPrefill re-runs the effect above, whose
@@ -126,6 +130,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
 
   function acceptSuggestion(suggestion: string) {
     setDraft(suggestion);
+    setSeededDraft({ text: suggestion, via: 'suggestion' });
     // Next frame, once the text is in: focus with the caret at its end, so Enter sends it straight away.
     requestAnimationFrame(() => {
       const textarea = textareaRef.current;
@@ -176,13 +181,16 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
       return;
     }
     const sentAttachments = draftAttachments;
+    const via = seededDraft && trimmedDraft === _.trim(seededDraft.text) ? seededDraft.via : 'typed';
     setDraft('');
     setDraftAttachments([]);
-    const isSent = await onSend(trimmedDraft, _.map(sentAttachments, 'stored.path'));
+    setSeededDraft(null);
+    const isSent = await onSend(trimmedDraft, _.map(sentAttachments, 'stored.path'), { via });
     // Put things back without clobbering whatever was typed or attached while the send was in flight.
     if (!isSent) {
       setDraft(current => (_.isEmpty(_.trim(current)) ? trimmedDraft : current));
       setDraftAttachments(current => [...sentAttachments, ...current]);
+      setSeededDraft(current => current ?? seededDraft);
     }
   }
 

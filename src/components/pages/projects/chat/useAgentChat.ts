@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 
 import { useNotification } from 'src/components/common/NotificationProvider';
+import { trackEvent } from 'src/services/analytics';
 import {
   getChatErrorCode, getConversation, getConversationFileUrl, getMessages, postChatMessage, resendLastMessage,
   subscribeToConversationEvents, uploadAttachments,
@@ -11,7 +12,10 @@ import {
   findLastSpokenMessage, findPendingInteractions, getChatIntroState, getIntroductionOverdueAtMs, getTurnSilenceEndsAtMs,
   hasOlderMessages, isAgentWorking as getIsAgentWorking, isSignalMessage, mergeMessages,
 } from 'src/services/chatLog';
-import type { AgentSessionStatus, AiMessage, Attachment, InteractionAnswer, PostChatMessageBody } from 'src/types/chat';
+import { toAnsweredItemEvents } from 'src/services/chatInteractions';
+import type {
+  AgentSessionStatus, AiMessage, Attachment, InteractionAnswer, MessageSendVia, PostChatMessageBody,
+} from 'src/types/chat';
 
 // Error codes the user can do something about get their own wording (`chat_error_<CODE>`, with the BE's
 // `reason` when it gives one); anything else gets the generic message for that action.
@@ -134,6 +138,11 @@ export default function useAgentChat(projectId: number, options: {
 
   const notifyError = useCallback((error: unknown, fallbackMessageKey: string) => {
     const errorCode = getChatErrorCode(error);
+    trackEvent('chat_error_shown', {
+      project_id: projectId,
+      code: errorCode || 'UNKNOWN',
+      ...(errorCode === 'AI_DAILY_LIMIT' ? { scope: _.get(error, 'data.scope') === 'ip' ? 'ip' as const : 'user' as const } : {}),
+    });
     // A daily AI limit is used up (the user's, or their network's): say when it frees up, in their own time.
     // The time goes in unescaped: React escapes what it renders, and i18next's escaping would show its entities.
     if (errorCode === 'AI_DAILY_LIMIT') {
@@ -147,7 +156,7 @@ export default function useAgentChat(projectId: number, options: {
     notify('error', _.includes(_KNOWN_ERROR_CODES, errorCode)
       ? t(`chat_error_${errorCode}`, { reason: _.get(error, 'data.detail.reason') })
       : t(fallbackMessageKey));
-  }, [notify, t, i18n.language]);
+  }, [notify, t, i18n.language, projectId]);
 
   // Resolves to whether it went through, so the caller can hand the user their input back on failure.
   const postMessage = useCallback(async (body: PostChatMessageBody) => {
@@ -162,6 +171,7 @@ export default function useAgentChat(projectId: number, options: {
       // Stored, just not delivered: the message is in the log (it comes in on the stream), so the input
       // is done with. The chat then offers to hand it over again rather than have the user retype it.
       if (getChatErrorCode(error) === 'AGENT_UNAVAILABLE') {
+        trackEvent('chat_error_shown', { project_id: projectId, code: 'AGENT_UNAVAILABLE' });
         setUndeliveredAfterSeq(_.last(messages)?.seq ?? 0);
         return true;
       }
@@ -170,7 +180,7 @@ export default function useAgentChat(projectId: number, options: {
     } finally {
       setIsPosting(false);
     }
-  }, [conversationId, receiveMessages, notifyError, messages]);
+  }, [conversationId, receiveMessages, notifyError, messages, projectId]);
 
   // The "try again" for an undelivered message: the BE hands the stored one over again (no duplicate).
   const resendUndelivered = useCallback(async () => {
@@ -193,10 +203,14 @@ export default function useAgentChat(projectId: number, options: {
   }, [conversationId, messages, notify, t]);
 
   // `attachmentPaths` come from `uploadFiles`; a message needs text, attachments, or both.
-  const sendText = useCallback(
-    (text: string, attachmentPaths: string[] = []) => postMessage({ type: 'text', text, attachments: attachmentPaths }),
-    [postMessage],
-  );
+  // `options.via` is only for analytics (see MessageSendVia); sends from elsewhere than the composer count as typed.
+  const sendText = useCallback(async (text: string, attachmentPaths: string[] = [], options: { via?: MessageSendVia } = {}) => {
+    const isSent = await postMessage({ type: 'text', text, attachments: attachmentPaths });
+    if (isSent) {
+      trackEvent('message_sent', { project_id: projectId, via: options.via || 'typed', attachment_count: _.size(attachmentPaths) });
+    }
+    return isSent;
+  }, [postMessage, projectId]);
 
   // Resolves to the stored attachments (in the order given), or null if the upload failed.
   const uploadFiles = useCallback(async (files: File[]): Promise<Attachment[] | null> => {
@@ -209,13 +223,19 @@ export default function useAgentChat(projectId: number, options: {
   }, [conversationId, notifyError]);
 
   const getFileUrl = useCallback((path: string) => getConversationFileUrl(conversationId as number, path), [conversationId]);
-  // One post answers everything pending — every pending question/action call (see buildSubmissionAnswers).
-  const submitAnswers = useCallback(
-    (answers: InteractionAnswer[]) => postMessage({ type: 'submission', answers }),
-    [postMessage],
-  );
 
   const pendingInteractions = useMemo(() => findPendingInteractions(messages || []), [messages]);
+
+  // One post answers everything pending — every pending question/action call (see buildSubmissionAnswers).
+  const submitAnswers = useCallback(async (answers: InteractionAnswer[]) => {
+    const isSent = await postMessage({ type: 'submission', answers });
+    // `pendingInteractions` is still this render's -- the questions just answered -- even though the post updated the log.
+    if (isSent) {
+      _.forEach(toAnsweredItemEvents(pendingInteractions, answers), item => trackEvent('interaction_answered', { project_id: projectId, ...item }));
+    }
+    return isSent;
+  }, [postMessage, pendingInteractions, projectId]);
+
   const introState = getChatIntroState(messages, sessionStatus, introducedAt, introCheckedAtMs);
   // A signal after it isn't the agent replying (we can write those ourselves, e.g. on an approval).
   const hasUndeliveredMessage = !_.isNull(undeliveredAfterSeq)

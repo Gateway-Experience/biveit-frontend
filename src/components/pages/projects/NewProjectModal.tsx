@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import _ from 'lodash';
 import { Controller, useForm } from 'react-hook-form';
@@ -20,6 +20,7 @@ import { useProjectListUpdaters } from 'src/components/pages/projects/useProject
 import { NEW_PROJECT_IDEA_PARAM, PATHS, SITE_KIND_OPTIONS } from 'src/utils/constants';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
+import { useAnalytics } from 'src/utils/hooks';
 
 const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-3.5 py-3 text-base transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15';
 
@@ -80,6 +81,10 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
   const set = useStore(state => state.set);
   const [searchParams, setSearchParams] = useSearchParams();
   const idea = searchParams.get(NEW_PROJECT_IDEA_PARAM);
+  const { trackEvent } = useAnalytics();
+  // Whether what's in the form started from a landing-site idea. Lives as long as the form's values do (until a submit
+  // empties it), unlike the store's session-wide hasLandingIdea.
+  const [isFromLandingIdea, setIsFromLandingIdea] = useState(false);
   // An idea typed on the landing site arrives as /projects?idea=... (biveit-landing's HeroPrompt, through Log in): open
   // the form with it starting the description. Only once signed in -- until then the page sends them to Log in, and the
   // idea has to still be in the URL to ride along. Dropped from the URL once taken, so a refresh doesn't put it back
@@ -90,11 +95,13 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
     }
     setValue('description', idea.slice(0, _DESCRIPTION_MAX_LENGTH));
     set({ isNewProjectOpen: true, hasLandingIdea: true });
+    setIsFromLandingIdea(true);
+    trackEvent('new_project_form_opened', { source: 'landing_idea' });
     setSearchParams(
       previous => new URLSearchParams(_.filter([...previous], ([key]) => key !== NEW_PROJECT_IDEA_PARAM)),
       { replace: true },
     );
-  }, [idea, user, setValue, set, setSearchParams]);
+  }, [idea, user, setValue, set, setSearchParams, trackEvent]);
 
   const onSubmit = async (values: NewProjectFormValues) => {
     try {
@@ -105,12 +112,20 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
           site_kinds: _.compact([...values.siteKinds, _.trim(values.otherSiteKind)]),
         },
       });
+      // The kinds' checkbox values only -- the "other" box is the user's own words.
+      trackEvent('project_created', {
+        project_id: project.id,
+        site_kinds: values.siteKinds,
+        has_other_site_kind: !_.isEmpty(_.trim(values.otherSiteKind)),
+        from_landing_idea: isFromLandingIdea,
+      });
       // The sidebar's recents should have it. Not awaited: the project page doesn't need the list.
       reloadProjects();
       navigate(`${PATHS.projects}/${project.id}`);
       // Closed and emptied by hand: going from one project to another keeps the same layout (and this form)
       // mounted, and the open flag lives in the store, so either would still be there otherwise.
       reset();
+      setIsFromLandingIdea(false);
       onClose();
     } catch {
       notify('error', t('new_project_failed'));

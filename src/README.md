@@ -121,9 +121,9 @@ Generic helpers with no domain knowledge — `hooks.js`, `request.js` (axios wra
 
 Rule of thumb vs. `services/`: if it knows about *our* backend or business rules, it's a service; if it would work in any app, it's a util.
 
-## Analytics (Mixpanel)
+## Analytics (PostHog)
 
-Optional per project. Set `VITE_MIXPANEL_TOKEN` in `.env` to switch it on; leave it empty
+Optional per project. Set `VITE_POSTHOG_KEY` (and `VITE_POSTHOG_HOST` for the EU cloud or a proxy) in `.env` to switch it on; leave it empty
 and every function in `services/analytics.ts` is a no-op, so **call sites never need a
 guard**.
 
@@ -131,25 +131,36 @@ guard**.
 import { useAnalytics } from 'src/utils/hooks';
 
 const { trackEvent } = useAnalytics();
-trackEvent('checkout_started', { plan: 'pro' });
+trackEvent('launch_dialog_opened', { project_id: 12, mode: 'new', source: 'host_it' });
 ```
 
-`VITE_PROJECT_NAME` is registered as a mixpanel super property (`project`), so it rides
-along on every event automatically — one mixpanel project can serve several apps built
+**Every event is declared in `types/analytics.ts` (`AnalyticsEventMap`)** — name → properties.
+`trackEvent` is typed against it, so add an event there first; a typo or a renamed property
+then fails typecheck instead of quietly splitting a funnel. Never put user content in
+properties (message text, project descriptions, question text, domain names).
+
+The app sends intent and UI facts it knows reliably (form opened, option picked, checkout
+started, errors shown). Milestones the backend owns — signup, first agent reply, plan/build
+approved, payment, site live, launch failed — are sent by the backend, so a closed tab can't
+drop them from a funnel. Don't re-send those from here.
+
+`VITE_PROJECT_NAME` is registered as a posthog super property (`project`), so it rides
+along on every event automatically — one posthog project can serve several apps built
 from this boilerplate and you can still filter by which one sent what. Set it per project;
 it's separate from `APP_NAME` in `utils/constants.ts`, which is the human-facing display
 name used for things like the logo alt text.
 
 Wired up already:
-- `initAnalytics()` in `AppProvider`, alongside the other site-wide init
+- `setAnalyticsEnabled()` in `AppProvider`, following the visitor's cookie consent — posthog isn't even initialized until they allow analytics
 - `identifyUser()` on any change to the store's `user` — covers both the initial `/me` and a later login
-- `resetAnalytics()` in `useLogout` (`utils/hooks.ts`), so the next person on this browser isn't merged into the previous profile. It re-registers the super properties afterwards — mixpanel's `reset()` clears persistence, and without that the `project` tag would quietly vanish from every event after the first logout
-- `useTrackPageViews()` in `routes/index.tsx`, above `<Routes>` — react-router never does a full page load, so mixpanel's own `track_pageview` would only ever see the first one. It sits there rather than in a layout because `/`, `/dummy` and `/login` don't use `DefaultLayout`, and a layout-mounted hook would silently miss them
+- `resetAnalytics()` in `useLogout` (`utils/hooks.ts`), so the next person on this browser isn't merged into the previous profile. It re-registers the super properties afterwards — posthog's `reset()` clears persistence, and without that the `project` tag would quietly vanish from every event after the first logout
+- Page views and page leaves: posthog's own `capture_pageview: 'history_change'` catches react-router navigations, so there's no hook for it
+- Session replay: on in the client config (inputs masked), but it also has to be switched on in the PostHog project settings. Rendered text isn't masked — use `maskTextSelector` or a `ph-no-capture` class on anything sensitive
 
-**Bundle cost:** `mixpanel-browser` is imported normally, which adds ~126 kB gzipped
-(292 → 418 kB) to *every* project, used or not. Switching `services/analytics.ts` to a
-dynamic `import()` keeps the main bundle at baseline and splits Mixpanel into a chunk
-fetched only when a token exists — worth doing if bundle size starts to matter.
+**Bundle cost:** `posthog-js` is imported normally, so its core lands in the main bundle of
+*every* project, used or not (the replay recorder is fetched from PostHog lazily, only when
+recording starts). Switching `services/analytics.ts` to a dynamic `import()` would split it
+into a chunk fetched only when a key exists — worth doing if bundle size starts to matter.
 
 ## Starting a new project from this boilerplate
 

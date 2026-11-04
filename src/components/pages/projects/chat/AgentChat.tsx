@@ -26,7 +26,7 @@ import type useAgentChat from 'src/components/pages/projects/chat/useAgentChat';
 import { getArtifacts } from 'src/services/chat';
 import { useStore } from 'src/state-store';
 import { getAnsweredQuestions, getSuggestedReply, indexToolResults, indexToolUses } from 'src/services/chatLog';
-import type { ChatIntroState } from 'src/types/chat';
+import type { ChatIntroState, MessageSendVia } from 'src/types/chat';
 import type { DevenvBuild } from 'src/types/preview';
 import { useIsMobile } from 'src/utils/hooks';
 
@@ -100,13 +100,13 @@ function ChatRetryBanner({ messageKey, isRetrying, onRetry }: { messageKey: stri
 
 // The send path, wrapped so that sending also jumps to the latest (you'll want to see your own message
 // even if you'd scrolled up). Lives inside the scroller's provider so it can reach `scrollToEnd`.
-type SendText = (text: string, attachmentPaths?: string[]) => Promise<boolean>;
+type SendText = (text: string, attachmentPaths?: string[], options?: { via?: MessageSendVia }) => Promise<boolean>;
 
 function useSendAndFollow(sendText: SendText): SendText {
   const { scrollToEnd } = useMessageScroller();
-  return (text, attachmentPaths) => {
+  return (text, attachmentPaths, options) => {
     scrollToEnd({ behavior: 'smooth' });
-    return sendText(text, attachmentPaths);
+    return sendText(text, attachmentPaths, options);
   };
 }
 

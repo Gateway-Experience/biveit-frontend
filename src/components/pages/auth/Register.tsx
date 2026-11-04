@@ -7,13 +7,14 @@ import FormField from 'src/components/common/FormField';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import AuthPageLayout from 'src/components/pages/auth/AuthPageLayout';
 import {
-  AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN, MIN_PASSWORD_LENGTH, NAME_MAX_LENGTH,
+  AUTH_INPUT_CLASS, AUTH_SUBMIT_CLASS, EMAIL_PATTERN, MIN_PASSWORD_LENGTH, NAME_MAX_LENGTH, getAuthErrorCode,
 } from 'src/components/pages/auth/authForm';
 import { Button } from 'src/components/shadui/button';
 import { Spinner } from 'src/components/common/Spinner';
 import { useStore } from 'src/state-store';
 import { callBe } from 'src/utils/request';
 import { PATHS } from 'src/utils/constants';
+import { useAnalytics } from 'src/utils/hooks';
 
 type RegisterFormValues = {
   firstName: string;
@@ -34,6 +35,7 @@ export default function Register() {
   const navigate = useNavigate();
   const notify = useNotification();
   const set = useStore(state => state.set);
+  const { trackEvent } = useAnalytics();
 
   const { control, handleSubmit, getValues, setError, formState: { isSubmitting } } = useForm<RegisterFormValues>({
     mode: 'onSubmit',
@@ -52,6 +54,7 @@ export default function Register() {
       set({ user });
       navigate(AFTER_REGISTER_PATH, { replace: true });
     } catch (error) {
+      trackEvent('auth_failed', { method: 'email', form: 'register', code: getAuthErrorCode(error) });
       if (_.get(error, 'data.detail') === 'DUPLICATE_USERNAME') {
         setError('email', { message: t('register_email_exists') });
         return;

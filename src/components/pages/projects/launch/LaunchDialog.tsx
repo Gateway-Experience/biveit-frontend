@@ -12,6 +12,7 @@ import PlanStep from 'src/components/pages/projects/launch/PlanStep';
 import ReviewStep from 'src/components/pages/projects/launch/ReviewStep';
 import { Badge } from 'src/components/shadui/badge';
 import { Button } from 'src/components/shadui/button';
+import { trackEvent } from 'src/services/analytics';
 import { LAUNCH_QUERY_KEY, addOwnDomain, chooseSubdomain, downloadCode, getLaunchStatus, startLaunchCheckout } from 'src/services/launch';
 import { useStore } from 'src/state-store';
 import type { DomainChoice, LaunchStatus, PlanKey, Registrant } from 'src/types/launch';
@@ -132,12 +133,19 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
         setStep('progress');
         return;
       }
+      trackEvent('checkout_started', {
+        project_id: projectId,
+        product: checkout.product,
+        ...(plan ? { plan } : {}),
+        ...(domain ? { domain_kind: domain.kind } : {}),
+      });
       setCheckoutUrls(urls => ({ ...urls, [checkout.product]: checkout.url }));
       window.open(checkout.url, '_blank');
       setStep('paying');
     },
     onError: error => {
       const code: string = _.get(error, 'data.detail') || '';
+      trackEvent('launch_error_shown', { project_id: projectId, code: code || 'UNKNOWN' });
       const pricePerYear = _.get(error, 'data.price_per_year');
       if (code === 'PRICE_CHANGED' && domain?.kind === 'buy' && pricePerYear) {
         setDomain({ ...domain, price_per_year: pricePerYear });
@@ -162,6 +170,7 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
     onClose();
   };
   const chooseDomain = (choice: DomainChoice) => {
+    trackEvent('launch_option_selected', { project_id: projectId, step: 'domain', domain_kind: choice.kind, is_preselected: false });
     setDomain(choice);
     setStep('review');
   };
@@ -186,6 +195,7 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
             plans={currentStatus.plans}
             hideOneTime={currentStatus.access.can_download}
             onChoose={chosen => {
+              trackEvent('launch_option_selected', { project_id: projectId, step: 'plan', plan: chosen, is_preselected: false });
               setPlan(chosen);
               setStep(_getStepAfterPlan(chosen, needsDomain));
             }}
@@ -196,7 +206,12 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
             projectId={projectId}
             hasDiscount={hasDomainDiscount}
             subdomainParent={currentStatus.subdomain_parent}
-            onSwitchToYearly={mode === 'new' && plan === 'monthly' ? () => setPlan('yearly') : undefined}
+            onSwitchToYearly={mode === 'new' && plan === 'monthly'
+              ? () => {
+                trackEvent('launch_option_selected', { project_id: projectId, step: 'plan', plan: 'yearly', is_preselected: false });
+                setPlan('yearly');
+              }
+              : undefined}
             onAskAgent={askAgent}
             onChoose={chooseDomain}
             onBack={mode === 'new' ? () => setStep('plan') : undefined}
