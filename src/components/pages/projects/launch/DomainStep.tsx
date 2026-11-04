@@ -72,6 +72,15 @@ export default function DomainStep({ projectId, hasDiscount, subdomainParent, on
   );
 }
 
+// The exact domain a search was for, the way the BE reads one (lower-cased; scheme, www., any path and characters a
+// domain can't have dropped), or
+// null for a bare name ("bikes" has no single exact domain).
+const _toSearchedDomain = (query: string) => {
+  const host = _.head(_.split(_.toLower(_.trim(query)).replace(/^https?:\/\//, '').replace(/^www\./, ''), '/')) ?? '';
+  const domain = host.replace(/[^a-z0-9.-]/g, '');
+  return _.includes(domain, '.') ? domain : null;
+};
+
 function BuyDomain({ projectId, hasDiscount, onSwitchToYearly, onChoose }: {
   projectId: number;
   hasDiscount: boolean;
@@ -91,6 +100,10 @@ function BuyDomain({ projectId, hasDiscount, onSwitchToYearly, onChoose }: {
     retry: (failureCount, error) => _.get(error, 'data.detail') !== 'REGISTRAR_BUSY' && failureCount < 3,
   });
   const money = (amount: number) => formatUsd(amount, i18n.language);
+  // Only what can be bought here -- except the exact domain they searched for, whatever it is, so they get an answer
+  // about it (taken, or not sold here). The BE sends everything, flags and all: the agent uses the same answer.
+  const searchedDomain = _toSearchedDomain(searchedQuery);
+  const shownOffers = _.filter(offers, offer => offer.sold || offer.domain === searchedDomain);
 
   return (
     <div className='flex flex-col gap-3'>
@@ -113,9 +126,9 @@ function BuyDomain({ projectId, hasDiscount, onSwitchToYearly, onChoose }: {
       {!searchedQuery && <p className='text-xs font-medium text-muted-foreground'>{t('launch_domain_suggestions')}</p>}
       {isFetching && !offers && <div className='flex justify-center py-6'><Spinner className='size-5 text-muted-foreground' /></div>}
       {isError && <p className='text-sm text-destructive'>{t('launch_error_generic')}</p>}
-      {offers && _.isEmpty(offers) && <p className='text-sm text-muted-foreground'>{t('launch_domain_none_found')}</p>}
+      {offers && _.isEmpty(shownOffers) && <p className='text-sm text-muted-foreground'>{t('launch_domain_none_found')}</p>}
       <div className={cn('flex max-h-72 flex-col gap-1.5 overflow-y-auto', isFetching && 'opacity-60')}>
-        {_.map(offers, offer => {
+        {_.map(shownOffers, offer => {
           const isFree = hasDiscount && offer.discountable;
           const isSelected = selected?.domain === offer.domain;
           return (
