@@ -12,6 +12,13 @@ const _KEY = import.meta.env.VITE_POSTHOG_KEY;
 const _HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
 const _PROJECT_NAME = import.meta.env.VITE_PROJECT_NAME;
 
+const _UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+
+// Where this visitor came from, read once as the app loads -- before any redirect (e.g. /projects -> /login) drops the
+// URL's tags, and before they've answered the cookie banner. It's only kept in memory: it becomes person properties
+// once they allow analytics (see _recordArrivalSource), and is simply lost if they never do.
+const _ARRIVAL_SOURCE = _readArrivalSource(new URL(window.location.href), document.referrer);
+
 // _initialized: posthog.init has run (it should only run once). _enabled: tracking is currently allowed.
 let _initialized = false;
 let _enabled = false;
@@ -37,9 +44,9 @@ function setAnalyticsEnabled(allowed: boolean) {
       // `maskTextSelector` or a `ph-no-capture` class once we decide what's sensitive.
       session_recording: { maskAllInputs: true },
       // Stamps our API calls with X-POSTHOG-DISTINCT-ID / -SESSION-ID / -WINDOW-ID, so the events the backend sends tie
-      // to this person and session (and show up as replay filters). Only once PostHog is on, i.e. after consent --
-      // the backend takes no headers as no consent. The backend's CORS has to let these headers through (it mirrors
-      // whatever's asked for). The page origin is the base, so a relative API URL works too.
+      // to this person's session (and show up as replay filters). Only once PostHog is on, i.e. after consent. The
+      // backend's CORS has to let these headers through (it mirrors whatever's asked for). The page origin is the
+      // base, so a relative API URL works too.
       tracing_headers: [new URL(import.meta.env.VITE_API_BASE_URL, window.location.origin).hostname],
     });
     _initialized = true;
@@ -50,10 +57,33 @@ function setAnalyticsEnabled(allowed: boolean) {
     }
     // reset() and opt-outs can clear persistence, super properties included, so they're re-added on every opt-in.
     _registerAppContext();
+    _recordArrivalSource();
   } else {
     posthog.opt_out_capturing();
   }
   _enabled = allowed;
+}
+
+// [Pure] Where a visit came from, as person properties: the URL's utm_* tags (first_utm_source...), and the referring
+// site's domain. The landing site (biveit-landing utils/arrivalSource) passes its own visitor's source along on its
+// links -- the tags, plus the referrer as `ref` -- since the browser's own referrer would only say biveit.com. Without
+// either, it's whatever site linked straight here; moving between the app's own pages isn't a source.
+function _readArrivalSource(url: URL, referrer: string): Record<string, string> {
+  const referrerHost = referrer ? new URL(referrer).hostname : '';
+  return _.pickBy({
+    ..._.fromPairs(_.map(_UTM_PARAMS, name => [`first_${name}`, url.searchParams.get(name)])),
+    first_referring_domain: url.searchParams.get('ref') || (referrerHost !== url.hostname ? referrerHost : null),
+  }, _.identity) as Record<string, string>;
+}
+
+// Intentions: the person's signup source -- set once, so their first known visit wins and a later one never rewrites
+// it. PostHog has its own $initial_utm_* too, but takes them from the page it starts on, which (because of the cookie
+// banner and redirects) is often not the page they arrived on. Safe to repeat: set-once ignores what's already there.
+function _recordArrivalSource() {
+  if (_.isEmpty(_ARRIVAL_SOURCE)) {
+    return;
+  }
+  posthog.setPersonProperties(undefined, _ARRIVAL_SOURCE);
 }
 
 // Super properties ride along on every event from here on, including ones posthog fires
