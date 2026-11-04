@@ -115,7 +115,7 @@ function ActionStep({ action, decision, isSubmitting, hasBack, onBack, onDecide,
 // earlier question was answered) and "Skip questions & build now" both dismiss from here and then say so in
 // the chat, in the user's own words, so the agent hears what they want. The "back" inside a set just steps
 // back, nothing's sent yet.
-export default function InteractionPanel({ interactions, onSubmit, onDismissAndSay, answeredQuestions, specDocNames }: {
+export default function InteractionPanel({ interactions, onSubmit, onDismissAndSay, answeredQuestions, specDocNames, isPlanning = false }: {
   // The pending `ask_user` / `request_actions` calls, in the order the agent made them.
   interactions: ToolUseBlock[];
   // Resolves to whether it went through. On success nothing is pending any more and this unmounts.
@@ -126,6 +126,9 @@ export default function InteractionPanel({ interactions, onSubmit, onDismissAndS
   answeredQuestions: string[];
   // File names of the agent's documents so far, for the encouragement (see _pickEncouragementKey).
   specDocNames: string[];
+  // The project is still being planned (nothing built yet): skipping the questions then means getting on with the
+  // build, and the skip button says so. Later on (a domain to pick...) it's just "skip".
+  isPlanning?: boolean;
 }) {
   const { t } = useTranslation();
   const items = flattenInteractionItems(interactions);
@@ -307,7 +310,7 @@ export default function InteractionPanel({ interactions, onSubmit, onDismissAndS
               className='-ml-2 text-muted-foreground'
             >
               <FastForwardIcon data-icon='inline-start' />
-              {t('chat_question_skip_all')}
+              {t(isPlanning ? 'chat_question_skip_all' : 'chat_question_skip_rest')}
             </Button>
             <div className='ml-auto flex items-center gap-2'>
               {currentIndex > 0 && (
@@ -344,13 +347,21 @@ export default function InteractionPanel({ interactions, onSubmit, onDismissAndS
         fullScreenMobile={false}
         buttons={[
           <Button key='keep' variant='outline' onClick={() => setIsSkipConfirmOpen(false)}>{t('chat_skip_confirm_keep')}</Button>,
-          <Button key='skip' onClick={() => dismissAndSay(t('chat_skip_message'))}>
+          // Skipping is an answer in itself: the skipped questions go to the agent as left to it to decide (the session
+          // runner's channel.to_refusal says so), so nothing needs saying on the user's behalf.
+          <Button
+            key='skip'
+            onClick={() => {
+              setIsSkipConfirmOpen(false);
+              dismissFromHere();
+            }}
+          >
             <FastForwardIcon data-icon='inline-start' />
-            {t('chat_skip_confirm_go')}
+            {t(isPlanning ? 'chat_skip_confirm_go' : 'chat_skip_confirm_go_later')}
           </Button>,
         ]}
       >
-        <p className='text-muted-foreground'>{t('chat_skip_confirm_body')}</p>
+        <p className='text-muted-foreground'>{t(isPlanning ? 'chat_skip_confirm_body' : 'chat_skip_confirm_body_later')}</p>
       </Modal>
     </div>
   );
