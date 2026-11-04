@@ -18,14 +18,16 @@ import { APP_NAME } from 'src/utils/constants';
 import { useMediaQuery } from 'src/utils/hooks';
 
 // The `welcome` journey's steps, as logged on the account (services/user.addJourneyStep). Its latest step says
-// what's next: nothing yet → the show, which ends on the experience question; the show skipped (or watched to the
-// end before the question moved into it) → the question on its own; answered, or left out because they came from
-// the landing site with an idea → done.
+// what's next: nothing yet → the show, which ends on the experience question; the show left before answering --
+// skipped while it played, or Next once it was over -- → the question on its own; answered, or left out because
+// they came from the landing site with an idea → done. Each step also reaches analytics (the backend sends a
+// journey_step event for it), which is how we see who skips, who watches it through, and where they answer.
 const _STEP = {
   skippedLandingIdea: 'skipped_landing_idea',
   slideshowFinished: 'slideshow_finished',
   slideshowSkipped: 'slideshow_skipped',
-  experienceAnswered: 'experience_answered', // data: { experience: one of _EXPERIENCE_OPTIONS' values }
+  // data: { experience: one of _EXPERIENCE_OPTIONS' values, asked_in: 'show' (at the end of it) | 'dialog' (after) }
+  experienceAnswered: 'experience_answered',
 } as const;
 
 // When the headline starts lighting up, and the gap between its words.
@@ -127,14 +129,17 @@ export default function WelcomeShow() {
   if (isShowDue && isNewcomer && !hasLandingIdea) {
     return (
       <WelcomeStage
-        onDone={experience => (experience
-          ? logStep(_STEP.experienceAnswered, { data: { experience } })
-          : logStep(_STEP.slideshowSkipped))}
+        onDone={(experience, { isFinished }) => {
+          if (experience) {
+            return logStep(_STEP.experienceAnswered, { data: { experience, asked_in: 'show' } });
+          }
+          return logStep(isFinished ? _STEP.slideshowFinished : _STEP.slideshowSkipped);
+        }}
       />
     );
   }
   if (welcomeStep === _STEP.slideshowFinished || welcomeStep === _STEP.slideshowSkipped) {
-    return <ExperienceModal onAnswer={experience => logStep(_STEP.experienceAnswered, { data: { experience } })} />;
+    return <ExperienceModal onAnswer={experience => logStep(_STEP.experienceAnswered, { data: { experience, asked_in: 'dialog' } })} />;
   }
   return null;
 }
@@ -165,15 +170,18 @@ function StageBackdrop() {
 
 // The show itself: the stage, opening on a short intro scene (WelcomeIntro), then a headline and the video playing
 // under it (WelcomeShowBody). Ends on the question, and answering it is the way in.
-// `onDone(experience)`: called once the stage has faded out, with the answer — or null when it was skipped.
-function WelcomeStage({ onDone }: { onDone: (experience: string | null) => void }) {
+// `onDone(experience, { isFinished })`: called once the stage has faded out, with the answer -- or null when they left
+// without one, and then `isFinished` says whether the video had played to the end (Next) or not (Skip).
+function WelcomeStage({ onDone }: { onDone: (experience: string | null, outcome: { isFinished: boolean }) => void }) {
   const { t } = useTranslation();
   const isReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   // With reduced motion there's nothing to watch in the intro: straight to the show.
   const [isIntroDone, setIsIntroDone] = useState(false);
   // Set when the show ends: the stage fades out, then hands over (see the root's onAnimationEnd).
-  const [leaving, setLeaving] = useState<{ experience: string | null } | null>(null);
-  const leave = (experience: string | null) => setLeaving(current => current || { experience });
+  const [leaving, setLeaving] = useState<{ experience: string | null; isFinished: boolean } | null>(null);
+  const leave = (experience: string | null, options: { isFinished?: boolean } = {}) => (
+    setLeaving(current => current || { experience, isFinished: !!options.isFinished })
+  );
 
   useEffect(() => {
     if (isIntroDone) {
@@ -190,7 +198,7 @@ function WelcomeStage({ onDone }: { onDone: (experience: string | null) => void 
       role='dialog'
       aria-modal='true'
       aria-label={t('welcome_intro_title')}
-      onAnimationEnd={event => leaving && event.target === event.currentTarget && onDone(leaving.experience)}
+      onAnimationEnd={event => leaving && event.target === event.currentTarget && onDone(leaving.experience, { isFinished: leaving.isFinished })}
       className={cn(_STAGE_CLASS, leaving && 'animate-out fade-out-0 duration-500 fill-mode-forwards')}
     >
       <StageBackdrop />
@@ -239,9 +247,11 @@ function WelcomeIntro() {
 
 // The show after the intro: a headline and the video playing under it, with a thin bar at the top filling over
 // the video's running time. Mounted when the intro ends, so the video and the bar start from there. Until it's
-// done, Skip (or Esc) leaves; once it's done, the headline gives way to the question.
-// `onLeave(experience)`: the show is over — with the answer, or null when it was skipped.
-function WelcomeShowBody({ onLeave }: { onLeave: (experience: string | null) => void }) {
+// done, Skip (or Esc) leaves; once it's done, the headline gives way to the question, and Skip turns into Next --
+// a clear way on for anyone who doesn't spot the question there. Both lead to the question in a dialog.
+// `onLeave(experience, { isFinished })`: the show is over -- with the answer, or null when they left without one
+// (isFinished: by Next, after the video ended).
+function WelcomeShowBody({ onLeave }: { onLeave: (experience: string | null, options?: { isFinished?: boolean }) => void }) {
   const { t } = useTranslation();
   const isVideoDone = useWelcomeVideoDone();
 
@@ -261,7 +271,7 @@ function WelcomeShowBody({ onLeave }: { onLeave: (experience: string | null) => 
 
   return (
     <>
-      {/* The running-time bar, and the way out (hidden, not removed, once it's done, so the bar keeps its width). */}
+      {/* The running-time bar, and the way on: Skip while the video plays, Next once it's over. */}
       <div className='relative flex items-center gap-4 px-6 pt-5 animate-in fade-in-0 duration-700'>
         <span className='h-0.5 flex-1 overflow-hidden rounded-full bg-brand-ink/10'>
           <span
@@ -272,11 +282,11 @@ function WelcomeShowBody({ onLeave }: { onLeave: (experience: string | null) => 
         <Button
           variant='ghost'
           size='sm'
-          data-action='skip-welcome'
-          onClick={() => onLeave(null)}
-          className={cn('text-brand-ink/60 hover:bg-brand-ink/5 hover:text-brand-ink', isVideoDone && 'invisible')}
+          data-action={isVideoDone ? 'next-welcome' : 'skip-welcome'}
+          onClick={() => onLeave(null, { isFinished: isVideoDone })}
+          className='text-brand-ink/60 hover:bg-brand-ink/5 hover:text-brand-ink'
         >
-          {t('welcome_skip')}
+          {t(isVideoDone ? 'welcome_next' : 'welcome_skip')}
         </Button>
       </div>
 
@@ -346,8 +356,8 @@ function _renderWithWordmark(word: string) {
   ));
 }
 
-// The question on its own, for those who skipped the show (and accounts that watched it to the end back when it
-// ended on "Begin"): have they made a website before. No way to close it other than answering: it's one click,
+// The question on its own, for those who left the show without answering (Skip, or Next once it was over): have
+// they made a website before. No way to close it other than answering: it's one click,
 // and the answer is the point. `onAnswer` gets the chosen option's value.
 function ExperienceModal({ onAnswer }: { onAnswer: (experience: string) => void }) {
   const { t } = useTranslation();

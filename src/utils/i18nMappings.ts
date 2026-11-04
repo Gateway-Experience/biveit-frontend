@@ -5352,6 +5352,14 @@ export default {
     ru: 'Пропустить',
     ko: '건너뛰기',
   },
+  welcome_next: {
+    en: 'Next',
+    vi: 'Tiếp theo',
+    zh: '下一步',
+    ja: '次へ',
+    ru: 'Далее',
+    ko: '다음',
+  },
   welcome_intro_title: {
     en: 'Welcome to Biveit.',
     vi: 'Chào mừng bạn đến với Biveit.',
