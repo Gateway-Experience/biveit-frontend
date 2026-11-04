@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import _ from 'lodash';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { CreditCardIcon, KeyRoundIcon, PencilIcon, Trash2Icon, UserRoundIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { CreditCardIcon, ExternalLinkIcon, KeyRoundIcon, PencilIcon, Trash2Icon, UserRoundIcon } from 'lucide-react';
 import { cn } from 'cn';
 
 import FormField from 'src/components/common/FormField';
@@ -10,7 +11,6 @@ import { useNotification } from 'src/components/common/NotificationProvider';
 import { Spinner } from 'src/components/common/Spinner';
 import { MIN_PASSWORD_LENGTH, NAME_MAX_LENGTH } from 'src/components/pages/auth/authForm';
 import { Avatar, AvatarFallback, AvatarImage } from 'src/components/shadui/avatar';
-import { Badge } from 'src/components/shadui/badge';
 import { Button } from 'src/components/shadui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'src/components/shadui/card';
 import { useStore } from 'src/state-store';
@@ -325,60 +325,22 @@ function PasswordSection() {
   );
 }
 
-// Simple wordmarks for the payment options, so the list is easy to scan. Not the official logos.
-const _PAYMENT_METHODS = [
-  {
-    id: 'visa',
-    name: 'Visa',
-    descriptionKey: 'profile_payment_card',
-    mark: <span className='text-sm font-black tracking-tight text-[#1a1f71] italic dark:text-[#8f9cff]'>VISA</span>,
-  },
-  {
-    id: 'mastercard',
-    name: 'Mastercard',
-    descriptionKey: 'profile_payment_card',
-    mark: (
-      <span aria-hidden='true' className='flex'>
-        <span className='size-4 rounded-full bg-[#eb001b]' />
-        <span className='-ml-1.5 size-4 rounded-full bg-[#f79e1b]/90' />
-      </span>
-    ),
-  },
-  {
-    id: 'vnpay',
-    name: 'VNPay',
-    descriptionKey: 'profile_payment_vnpay',
-    mark: <span className='text-xs font-extrabold'><span className='text-[#005baa] dark:text-[#5aa9ff]'>VN</span><span className='text-[#ed1c24]'>PAY</span></span>,
-  },
-  {
-    id: 'paypal',
-    name: 'PayPal',
-    descriptionKey: 'profile_payment_paypal',
-    mark: <span className='text-xs font-extrabold italic'><span className='text-[#003087] dark:text-[#6f9cff]'>Pay</span><span className='text-[#009cde]'>Pal</span></span>,
-  },
-];
-
-// Intentions: where saved payment methods will live. Payments aren't connected to a provider yet, and card
-// details must only ever go to one (never through our own BE), so for now this lists what's coming
-// without collecting anything.
-function PaymentMethodsSection() {
+// Intentions: where the user manages what they pay for -- plan and domain subscriptions, invoices, payment method,
+// cancelling. All of it lives with Polar (our payment provider), so this just links to its customer portal; the BE
+// says which portal (live, or the sandbox in sandbox mode). Cancelling there reaches us by webhook.
+function BillingSection() {
   const { t } = useTranslation();
+  const { data: portal } = useQuery({ queryKey: ['payments', 'portal'], queryFn: () => callBe('/payments/portal'), staleTime: Infinity });
 
   return (
-    <ProfileSection Icon={CreditCardIcon} title={t('profile_payment_title')} description={t('profile_payment_description')}>
-      <ul className='flex flex-col divide-y rounded-xl border'>
-        {_.map(_PAYMENT_METHODS, method => (
-          <li key={method.id} data-payment-method={method.id} className='flex items-center gap-3 px-4 py-3'>
-            <span className='flex h-8 w-14 shrink-0 items-center justify-center rounded-md border bg-background'>{method.mark}</span>
-            <div className='min-w-0 flex-1'>
-              <p className='text-sm font-medium'>{method.name}</p>
-              <p className='truncate text-xs text-muted-foreground'>{t(method.descriptionKey)}</p>
-            </div>
-            <Badge variant='secondary' className='shrink-0'>{t('profile_payment_soon')}</Badge>
-            <Button variant='outline' size='sm' disabled className='shrink-0 max-sm:hidden'>{t('profile_payment_add')}</Button>
-          </li>
-        ))}
-      </ul>
+    <ProfileSection Icon={CreditCardIcon} title={t('profile_billing_title')} description={t('profile_billing_description')}>
+      <div className='flex flex-wrap items-center gap-3'>
+        <Button variant='outline' disabled={!portal} data-action='manage-billing' nativeButton={false} render={<a href={portal?.url} target='_blank' rel='noopener noreferrer' />}>
+          {t('profile_billing_manage')}
+          <ExternalLinkIcon data-icon='inline-end' />
+        </Button>
+        <p className='text-xs text-muted-foreground'>{t('profile_billing_sign_in_hint')}</p>
+      </div>
     </ProfileSection>
   );
 }
@@ -395,7 +357,7 @@ function UserProfile() {
       </div>
       <NameSection />
       <PasswordSection />
-      <PaymentMethodsSection />
+      <BillingSection />
     </div>
   );
 }
