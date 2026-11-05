@@ -6,6 +6,7 @@ import { Controller, useForm } from 'react-hook-form';
 import FormField from 'src/components/common/FormField';
 import { Spinner } from 'src/components/common/Spinner';
 import { DnsRecordsTable } from 'src/components/pages/projects/launch/LaunchProgress';
+import OtherPaymentContacts from 'src/components/pages/projects/launch/OtherPaymentContacts';
 import { Button } from 'src/components/shadui/button';
 import { Checkbox } from 'src/components/shadui/checkbox';
 import { formatUsd } from 'src/services/pricing';
@@ -37,7 +38,9 @@ function formatDateIn(days: number, language: string) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toLocaleDateString(language);
 }
 
-export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isDiscounted, defaultEmail, isPaying, onPay, onBack }: {
+export default function ReviewStep({ projectId, projectName, plan, plans, domain, ownDomainRecords, isDiscounted, defaultEmail, isPaying, onPay, onBack }: {
+  projectId: number;
+  projectName: string;
   plan: PlanKey | null;
   plans: LaunchPlan[];
   domain: DomainChoice | null;
@@ -157,6 +160,7 @@ export default function ReviewStep({ plan, plans, domain, ownDomainRecords, isDi
           {t('launch_pay')}
         </Button>
       </div>
+      <OtherPaymentContacts projectId={projectId} projectName={projectName} />
     </form>
   );
 }

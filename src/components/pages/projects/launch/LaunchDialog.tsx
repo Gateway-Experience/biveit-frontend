@@ -230,6 +230,8 @@ export default function LaunchDialog({ projectId, projectName, open, mode, initi
         )}
         {step === 'review' && (
           <ReviewStep
+            projectId={projectId}
+            projectName={projectName}
             plan={mode === 'domain' ? null : plan}
             plans={currentStatus.plans}
             domain={domain}
