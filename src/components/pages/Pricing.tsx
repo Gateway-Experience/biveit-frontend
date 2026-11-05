@@ -14,6 +14,7 @@ const _FAQS = [
   { id: 'difference', questionKey: 'pricing_faq_difference_q', answerKey: 'pricing_faq_difference_a' },
   { id: 'domain', questionKey: 'pricing_faq_domain_q', answerKey: 'pricing_faq_domain_a' },
   { id: 'own-domain', questionKey: 'pricing_faq_own_domain_q', answerKey: 'pricing_faq_own_domain_a' },
+  { id: 'payment', questionKey: 'pricing_faq_payment_q', answerKey: 'pricing_faq_payment_a' },
   { id: 'human', questionKey: 'pricing_faq_human_q', answerKey: 'pricing_faq_human_a' },
 ];
 

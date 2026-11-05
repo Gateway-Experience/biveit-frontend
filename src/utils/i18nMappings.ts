@@ -4111,6 +4111,22 @@ export default {
     ru: 'Да. С подпиской мы разместим сайт на вашем домене, и докупать ничего не придётся.',
     ko: '네. 구독하면 이미 가진 도메인으로 사이트를 호스팅해 드려서, 따로 살 건 없어요.',
   },
+  pricing_faq_payment_q: {
+    en: 'How can I pay?',
+    vi: 'Tôi có thể thanh toán bằng cách nào?',
+    zh: '可以用哪些方式付款？',
+    ja: '支払い方法は？',
+    ru: 'Как можно оплатить?',
+    ko: '어떻게 결제하나요?',
+  },
+  pricing_faq_payment_a: {
+    en: 'By card at checkout. Can\'t pay by card? We also accept PayPal and bank transfer (QR): tap "Can\'t pay by card?" at checkout or email {{email}}, and we\'ll set it up for you.',
+    vi: 'Bằng thẻ khi thanh toán. Không dùng thẻ được? Chúng tôi cũng nhận PayPal và chuyển khoản ngân hàng (QR): bấm "Không thanh toán được bằng thẻ?" ở bước thanh toán hoặc email {{email}}, chúng tôi sẽ hỗ trợ bạn.',
+    zh: '结账时用银行卡付款。不能用卡？我们也接受 PayPal 和银行转账（二维码）：在结账时点"无法用银行卡付款？"或发邮件到 {{email}}，我们会帮你安排。',
+    ja: 'お支払いはチェックアウト時にカードで。カードが使えない場合は PayPal や銀行振込（QR）にも対応しています。チェックアウトで「カードで支払えませんか？」を押すか、{{email}} までメールしてください。ご案内します。',
+    ru: 'Картой при оформлении. Не получается картой? Мы также принимаем PayPal и банковский перевод (QR): нажмите «Не получается оплатить картой?» при оформлении или напишите на {{email}}, и мы всё устроим.',
+    ko: '결제 단계에서 카드로 하시면 돼요. 카드를 쓸 수 없나요? PayPal과 계좌이체(QR)도 받아요. 결제 단계에서 "카드로 결제할 수 없나요?"를 누르거나 {{email}}로 메일 주시면 안내해 드릴게요.',
+  },
   pricing_faq_human_q: {
     en: 'What if I need help from a person?',
     vi: 'Nếu tôi cần người thật hỗ trợ thì sao?',
