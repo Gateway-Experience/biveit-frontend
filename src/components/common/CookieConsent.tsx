@@ -58,6 +58,7 @@ export default function CookieConsent() {
       {!cookieConsent && !isPreferencesOpen && (
         <div
           role='region'
+          data-component='cookie-banner'
           aria-label={t('cookie_policy_title')}
           className='fixed bottom-4 left-4 z-50 w-[calc(100%-2rem)] max-w-xs rounded-surface glass-surface p-5 text-sm text-popover-foreground'
         >
