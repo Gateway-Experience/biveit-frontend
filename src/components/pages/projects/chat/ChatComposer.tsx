@@ -38,16 +38,20 @@ type DraftAttachment = { clientId: string; name: string; mime: string; size: num
 // Intentions: the prompt box. Enter sends, Shift+Enter makes a new line, and it grows with the text
 // up to a cap. Files (picked with the paperclip, or pasted — handy for screenshots) upload straight
 // away and sit above the text as removable chips; sending waits until they've all landed.
-// Typing is always allowed; only sending is held back (see `isSendDisabled` in AgentChat).
+// Sending is held back by `isSendDisabled` (see AgentChat). `isTypingDisabled` locks the whole box too (no typing,
+// no files), e.g. while the agent is working: a message typed then couldn't go anywhere. Whatever's already in it stays.
 // When the agent suggested a reply, the empty box shows it in the placeholder's spot: a tap (or Tab) types it
 // in, and Enter sends it. Typing anything else just hides it, like a placeholder.
-export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisabled, isAttachDisabled = false, suggestedReply = null }: {
+export default function ChatComposer({
+  onSend, onUpload, getFileUrl, isSendDisabled, isTypingDisabled = false, isAttachDisabled = false, suggestedReply = null,
+}: {
   // Resolves to false when the send failed, in which case the text and chips are put back.
   onSend: (text: string, attachmentPaths: string[], options: { via: MessageSendVia }) => Promise<boolean>;
   // Resolves to the stored files in the order given, or null when the upload failed.
   onUpload: (files: File[]) => Promise<Attachment[] | null>;
   getFileUrl: (path: string) => string;
   isSendDisabled: boolean;
+  isTypingDisabled?: boolean;
   isAttachDisabled?: boolean;
   suggestedReply?: string | null;
 }) {
@@ -205,7 +209,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
           </p>
         )}
         {/* The registry's input-group is sized for dense UIs; scaled up here to match the app's inputs. */}
-        <InputGroup className={cn('rounded-2xl bg-card shadow-xs', isHandOverCueOn && 'chat-composer-cue border-primary')}>
+        <InputGroup data-disabled={isTypingDisabled || undefined} className={cn('rounded-2xl bg-card shadow-xs', isHandOverCueOn && 'chat-composer-cue border-primary')}>
           {!_.isEmpty(draftAttachments) && (
             <InputGroupAddon align='block-start' className='px-3 pt-3'>
               {/* pt/pr: room for the remove badges that poke out of image thumbnails' corners (the group clips overflow).
@@ -231,6 +235,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
             ref={textareaRef}
             data-slot='chat-composer'
             rows={1}
+            disabled={isTypingDisabled}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onKeyDown={e => {
@@ -252,7 +257,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
                 attachFiles(pastedFiles);
               }
             }}
-            placeholder={shownSuggestion ? '' : t('chat_placeholder')}
+            placeholder={shownSuggestion ? '' : t(isTypingDisabled ? 'chat_placeholder_agent_working' : 'chat_placeholder')}
             aria-label={t('chat_placeholder')}
             // flex-none: the input-group stacks vertically here, and its default flex-1 would size the textarea
             // from its row count, ignoring the height set by the auto-grow above.
@@ -304,7 +309,7 @@ export default function ChatComposer({ onSend, onUpload, getFileUrl, isSendDisab
               size='icon-sm'
               aria-label={t('chat_attach_files')}
               title={t('chat_attach_files')}
-              disabled={isAttachDisabled || isAtAttachmentLimit}
+              disabled={isTypingDisabled || isAttachDisabled || isAtAttachmentLimit}
               onClick={() => fileInputRef.current?.click()}
               className='size-8 rounded-full'
             >

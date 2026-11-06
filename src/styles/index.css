@@ -322,10 +322,14 @@
   background-color: color-mix(in oklab, var(--card) 70%, transparent);
 }
 
-/* Dialogs (the shared DialogContent, so Modal and everything built on it) are nearly solid: 12% see-through (88%
-   solid). They're forms and small print to read, and at the usual 60% a dark page behind (a project's preview)
-   turns the panel murky grey and its muted text unreadable. Same blur and edge as the other glass. */
-[data-slot='dialog-content'] {
+/* Dialogs and the small things that pop up over the page are nearly solid: 12% see-through (88% solid). They're
+   forms, menu items and small print to read, and at the usual 60% whatever's behind (a project's preview, a card's
+   text) shows through and muddles their text. Same blur and edge as the other glass.
+   Covers the shared DialogContent (so Modal and everything built on it), menus and their submenus, popovers,
+   select lists, the site-ready popup (SiteReadyModal) and the cookie banner (CookieConsent). */
+:is([data-slot='dialog-content'], [data-slot='dropdown-menu-content'], [data-slot='dropdown-menu-sub-content'],
+    [data-slot='popover-content'], [data-slot='select-content'], [data-component='site-ready-modal'],
+    [data-component='cookie-banner']) {
   background-color: color-mix(in oklab, var(--card) 88%, transparent);
 }
 

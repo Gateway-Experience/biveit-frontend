@@ -1023,6 +1023,14 @@ export default {
     ru: 'Напишите сообщение...',
     ko: '메시지를 입력하세요...',
   },
+  chat_placeholder_agent_working: {
+    en: 'You can write again once I\'ve replied...',
+    vi: 'Bạn có thể nhắn tiếp khi tôi trả lời xong...',
+    zh: '等我回复后你就可以继续输入了...',
+    ja: '返信が終わったら、また入力できます...',
+    ru: 'Вы сможете написать, как только я отвечу...',
+    ko: '제가 답장한 뒤에 다시 입력할 수 있어요...',
+  },
   chat_suggestion_use: {
     en: 'Use this reply: {{text}}',
     vi: 'Dùng câu trả lời này: {{text}}',

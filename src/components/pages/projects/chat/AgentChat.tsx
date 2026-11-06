@@ -425,6 +425,9 @@ export default function AgentChat({
                 onUpload={uploadFiles}
                 getFileUrl={getFileUrl}
                 isSendDisabled={isSendDisabled}
+                // While the agent's on it, the box is locked, not just the send button (like while building, when
+                // the build panel takes its place): the reply comes first.
+                isTypingDisabled={isAgentWorking}
                 // Uploads need the conversation, which only exists once the chat has loaded.
                 isAttachDisabled={!conversationId}
                 // Not while it couldn't be sent anyway (e.g. the agent is still replying).
