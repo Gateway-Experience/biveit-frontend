@@ -22,7 +22,7 @@ import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
 import { useAnalytics } from 'src/utils/hooks';
 
-const _OPTION_ROW_CLASS = 'flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-3.5 py-3 text-base transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15';
+const _OPTION_ROW_CLASS = 'flex cursor-pointer items-start gap-3 rounded-lg border bg-card px-3.5 py-3 text-base transition-colors hover:bg-muted has-data-checked:border-primary has-data-checked:bg-primary/15';
 
 // The form fills the screen, so it reads a size up from the app's compact fields: 16px labels, fields and
 // options, 14px hints.
@@ -215,12 +215,17 @@ export default function NewProjectModal({ open, onClose }: { open: boolean; onCl
                     <div className='grid gap-2 sm:grid-cols-2'>
                       {_.map(SITE_KIND_OPTIONS, option => (
                         <label key={option.value} data-sitekind={option.value} className={_OPTION_ROW_CLASS}>
+                          {/* mt-1: lines the box up with the name's first line, now that a description sits under it. */}
                           <Checkbox
+                            className='mt-1'
                             checked={_.includes(field.value, option.value)}
                             disabled={isSubmitting}
                             onCheckedChange={() => field.onChange(_.xor(field.value, [option.value]))}
                           />
-                          {t(option.labelKey)}
+                          <span className='min-w-0'>
+                            {t(option.labelKey)}
+                            <span className={cn('mt-0.5 block text-muted-foreground', _HINT_CLASS)}>{t(option.descriptionKey)}</span>
+                          </span>
                         </label>
                       ))}
                     </div>

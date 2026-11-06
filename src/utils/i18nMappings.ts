@@ -1863,6 +1863,14 @@ export default {
     ru: 'Лендинг',
     ko: '랜딩 페이지',
   },
+  new_project_kind_landing_description: {
+    en: 'One page that presents your business or idea and gets visitors to act.',
+    vi: 'Một trang giới thiệu doanh nghiệp hoặc ý tưởng của bạn và khuyến khích khách hành động.',
+    zh: '用一个页面介绍你的业务或想法，并引导访客采取行动。',
+    ja: '事業やアイデアを1ページで紹介し、訪問者の行動につなげます。',
+    ru: 'Одна страница о вашем деле или идее, которая побуждает посетителей к действию.',
+    ko: '사업이나 아이디어를 한 페이지로 소개하고 방문자의 행동을 이끌어요.',
+  },
   new_project_kind_blog: {
     en: 'Blog',
     vi: 'Blog',
@@ -1870,6 +1878,14 @@ export default {
     ja: 'ブログ',
     ru: 'Блог',
     ko: '블로그',
+  },
+  new_project_kind_blog_description: {
+    en: 'Articles or news you post regularly, newest first.',
+    vi: 'Bài viết hoặc tin tức bạn đăng thường xuyên, bài mới nhất ở trên cùng.',
+    zh: '定期发布的文章或新闻，最新的排在最前面。',
+    ja: '定期的に投稿する記事やお知らせを、新しい順に並べます。',
+    ru: 'Статьи или новости, которые вы публикуете регулярно, сначала самые новые.',
+    ko: '정기적으로 올리는 글이나 소식을 최신순으로 보여줘요.',
   },
   new_project_kind_portfolio: {
     en: 'Portfolio',
@@ -1879,6 +1895,14 @@ export default {
     ru: 'Портфолио',
     ko: '포트폴리오',
   },
+  new_project_kind_portfolio_description: {
+    en: 'A showcase of your work, such as projects, photos or designs.',
+    vi: 'Nơi trưng bày sản phẩm của bạn, như dự án, ảnh hoặc thiết kế.',
+    zh: '展示你的作品，例如项目、照片或设计。',
+    ja: 'プロジェクト、写真、デザインなどの作品を紹介します。',
+    ru: 'Витрина ваших работ: проекты, фотографии или дизайн.',
+    ko: '프로젝트, 사진, 디자인 같은 작품을 보여줘요.',
+  },
   new_project_kind_web_app: {
     en: 'Web app',
     vi: 'Ứng dụng web',
@@ -1886,6 +1910,14 @@ export default {
     ja: 'Web アプリ',
     ru: 'Веб-приложение',
     ko: '웹 앱',
+  },
+  new_project_kind_web_app_description: {
+    en: 'A tool people sign in to and use, like a booking system or a dashboard.',
+    vi: 'Công cụ để mọi người đăng nhập và sử dụng, như hệ thống đặt lịch hoặc trang quản lý.',
+    zh: '供用户登录使用的工具，例如预约系统或管理后台。',
+    ja: '予約システムや管理画面など、ログインして使うツールです。',
+    ru: 'Инструмент, в который входят и работают, например система бронирования или панель управления.',
+    ko: '예약 시스템이나 대시보드처럼 로그인해서 쓰는 도구예요.',
   },
   new_project_kind_other_placeholder: {
     en: 'Something else? Type it here',

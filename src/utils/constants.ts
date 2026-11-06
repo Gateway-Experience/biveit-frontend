@@ -51,10 +51,10 @@ const SUPPORT_EMAIL = 'support@biveit.com';
 // The site kinds the new-project form offers up front (bootstrap_data.site_kinds). Values are what the agent
 // reads, so they stay in English; the labels are translated. The chat shows them back in the user's language.
 const SITE_KIND_OPTIONS = [
-  { value: 'landing page', labelKey: 'new_project_kind_landing' },
-  { value: 'blog', labelKey: 'new_project_kind_blog' },
-  { value: 'portfolio', labelKey: 'new_project_kind_portfolio' },
-  { value: 'web app', labelKey: 'new_project_kind_web_app' },
+  { value: 'landing page', labelKey: 'new_project_kind_landing', descriptionKey: 'new_project_kind_landing_description' },
+  { value: 'blog', labelKey: 'new_project_kind_blog', descriptionKey: 'new_project_kind_blog_description' },
+  { value: 'portfolio', labelKey: 'new_project_kind_portfolio', descriptionKey: 'new_project_kind_portfolio_description' },
+  { value: 'web app', labelKey: 'new_project_kind_web_app', descriptionKey: 'new_project_kind_web_app_description' },
 ];
 
 // The query param that carries a site idea into the new-project form (/projects?idea=...), so someone who types
