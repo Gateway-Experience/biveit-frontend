@@ -363,21 +363,46 @@ function useUpdateUser() {
   return update;
 }
 
-// Logs the user out and lands them on the login page. The session is an httpOnly cookie, so only the BE can
-// clear it: wait for that before dropping local state, or a reload would sign them straight back in. The
-// analytics identity is reset too, so the next person signing in on this browser isn't merged into this
-// one's profile, and so is the (localStorage-persisted) query cache, which holds their project list.
-function useLogout() {
+// Tells this browser's other tabs that the session is gone: the cookie is shared across tabs, but each tab keeps its
+// own `user` in memory, so without this they'd carry on looking signed in. One channel object for the whole tab on
+// purpose: a channel doesn't hear its own messages, so the tab that logged out won't react to itself.
+const _logoutChannel = new BroadcastChannel('biveit-logout');
+
+// Forgets the signed-in user in this tab. The analytics identity is reset too, so the next person signing in on this
+// browser isn't merged into this one's profile, and so is the (localStorage-persisted) query cache, which holds their
+// project list.
+function useForgetUser() {
   const set = useStore(state => state.set);
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  return useCallback(async () => {
-    await callBe({ url: '/auth/logout', method: 'POST' });
+  return useCallback(() => {
     set({ user: null });
     queryClient.clear();
     resetAnalytics();
+  }, [set, queryClient]);
+}
+
+// Logs the user out and lands them on the login page. The session is an httpOnly cookie, so only the BE can
+// clear it: wait for that before dropping local state, or a reload would sign them straight back in.
+function useLogout() {
+  const forgetUser = useForgetUser();
+  const navigate = useNavigate();
+  return useCallback(async () => {
+    await callBe({ url: '/auth/logout', method: 'POST' });
+    forgetUser();
+    _logoutChannel.postMessage('logged-out');
     navigate(PATHS.login);
-  }, [set, navigate, queryClient]);
+  }, [forgetUser, navigate]);
+}
+
+// Intentions: when another tab logs out (useLogout), this tab follows. No navigating here: dropping the user is enough
+// for ProtectedRoute to send a signed-in page to the login page, with `?next=` back to where this tab was. A public
+// page just stays put, now logged out.
+function useFollowLogoutFromOtherTabs() {
+  const forgetUser = useForgetUser();
+  useEffect(() => {
+    _logoutChannel.addEventListener('message', forgetUser);
+    return () => _logoutChannel.removeEventListener('message', forgetUser);
+  }, [forgetUser]);
 }
 
 // The component-facing surface. The functions are module-level singletons, so this is
@@ -404,4 +429,5 @@ export {
   useRequest,
   useUpdateUser,
   useLogout,
+  useFollowLogoutFromOtherTabs,
 };

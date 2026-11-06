@@ -10,6 +10,7 @@ import FullScreenLoading from 'src/components/common/FullScreenLoading';
 import i18nMappings from 'src/utils/i18nMappings';
 import { setAnalyticsEnabled, identifyUser } from 'src/services/analytics';
 import { SUPPORTED_LANGUAGES } from 'src/utils/constants';
+import { useFollowLogoutFromOtherTabs } from 'src/utils/hooks';
 
 // i18nMappings is keyed by text, then language. Flip it into one resource bundle per language;
 // keys missing a translation are left out so i18next falls back to the default language for them.
@@ -23,6 +24,7 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   const set = useStore(state => state.set);
   const user = useStore(state => state.user);
   const [initialized, setInitialized] = useState(false);
+  useFollowLogoutFromOtherTabs();
 
   // All initialization should be done here.
   useEffect(() => {
