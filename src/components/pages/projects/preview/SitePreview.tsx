@@ -5,6 +5,7 @@ import { cn } from 'cn';
 import { ArrowLeftIcon, ArrowRightIcon, MonitorIcon, RotateCwIcon, SmartphoneIcon, TriangleAlertIcon } from 'lucide-react';
 
 import BuildSketch from 'src/components/pages/projects/preview/BuildSketch';
+import CodeTypingSketch from 'src/components/pages/projects/preview/CodeTypingSketch';
 import { Button } from 'src/components/shadui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from 'src/components/shadui/input-group';
 import { Spinner } from 'src/components/common/Spinner';
@@ -33,10 +34,12 @@ const _NAV_BUTTON_CLASS = 'max-sm:size-7';
 // The site in a frame. It opens `src` when it mounts and then leaves the frame alone: a new `src` on a live
 // frame would navigate it (and add an entry to the PAGE's history, hijacking the browser's own back
 // button). To open somewhere else, mount a new one (see `loadCount`).
-// Until the page has loaded, a spinner covers it: a dev server that just started compiles the site on its
-// first visit, which can take a while, and a blank white frame reads as broken. Each mount (a new load, the
-// site coming back) starts covered again. Placed over the frame's box, so its parent has to be `relative`.
-function PreviewFrame({ src, ...frameProps }: ComponentProps<'iframe'> & { src: string }) {
+// Until the page has loaded, a code editor typing away covers it (CodeTypingSketch), with a spinner and "Loading
+// the site": a dev server that just started compiles the site on its first visit, which can take a while, and a
+// blank white frame or a lone spinner reads as broken. Each mount (a new load, the site coming back) starts
+// covered again. Placed over the frame's box, so its parent has to be `relative`.
+// `siteName`: what the made-up code in the cover is about.
+function PreviewFrame({ src, siteName, ...frameProps }: ComponentProps<'iframe'> & { src: string; siteName: string }) {
   const { t } = useTranslation();
   const [initialSrc] = useState(src);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -44,10 +47,12 @@ function PreviewFrame({ src, ...frameProps }: ComponentProps<'iframe'> & { src: 
     <>
       <iframe src={initialSrc} onLoad={() => setIsLoaded(true)} {...frameProps} />
       {!isLoaded && (
-        <div data-section='preview-loading' className='absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground'>
-          <Spinner className='size-5' />
-          {t('preview_loading')}
-        </div>
+        <CodeTypingSketch
+          siteName={siteName}
+          statusText={t('preview_loading')}
+          statusIcon={<Spinner className='size-4' />}
+          className='absolute inset-0'
+        />
       )}
     </>
   );
@@ -185,6 +190,7 @@ export default function SitePreview({ state, siteUrl, build, buildSketch, classN
               // whenever the site comes back (e.g. after a restart), on the page the user was last on.
               key={navigation.loadCount}
               src={getSiteUrl(getCurrentPreviewPath(navigation))}
+              siteName={buildSketch.siteName}
               title={t('preview_frame_title')}
               className='origin-top-left border-0'
               style={{ width: deviceWidth, height: stageSize.height / scale, transform: `scale(${scale})` }}
