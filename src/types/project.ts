@@ -20,9 +20,16 @@ export type Project = {
   updated_at: string;
   // When the user moved it to Trash; null = not in Trash. Only the Trash list has projects with it set.
   trashed_at: string | null;
+  // When the user archived it; null = not archived. Only the archive's list has projects with it set.
+  archived_at: string | null;
   // When the BE last took a picture of its dev site (for the card); null/absent = no picture yet, e.g.
   // still being spec-ed. Only the list and the edits that return a project carry it.
   site_preview_at?: string | null;
+  // Which ways out of the project list it has, because of what's been bought (the BE decides, and refuses the rest):
+  // a project that's paid for or has gone live can't go to Trash, and one that went live and whose plan stopped can
+  // be archived instead. Absent on a project just created or trashed, where neither is held back.
+  can_trash?: boolean;
+  can_archive?: boolean;
 };
 
 // What PATCH /projects/{id} takes: any of these, only what changes. folder_id null = out of its folder.

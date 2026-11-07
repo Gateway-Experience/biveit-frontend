@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import {
-  CheckIcon, ChevronRightIcon, ChevronsUpDownIcon, EllipsisIcon, FolderIcon, FolderInputIcon, FolderMinusIcon,
+  ArchiveIcon, CheckIcon, ChevronRightIcon, ChevronsUpDownIcon, EllipsisIcon, FolderIcon, FolderInputIcon, FolderMinusIcon,
   FolderPlusIcon, HouseIcon, LifeBuoyIcon, LogInIcon, LogOutIcon, PencilIcon, PinIcon, PinOffIcon, PlusIcon,
   SearchIcon, Trash2Icon, UserIcon, UserPlusIcon,
 } from 'lucide-react';
@@ -16,11 +16,11 @@ import ThemeSelector from 'src/components/common/ThemeSelector';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import UserAvatar from 'src/components/common/UserAvatar';
 import {
-  DeleteFolderModal, FolderNameModal, RenameProjectModal, TrashProjectModal,
+  ArchiveProjectModal, DeleteFolderModal, FolderNameModal, ProjectRemovalMenuItems, RenameProjectModal, TrashProjectModal,
 } from 'src/components/pages/projects/ProjectActionDialogs';
 import ProjectSearchDialog from 'src/components/pages/projects/ProjectSearchDialog';
 import {
-  groupProjectsForSidebar, useProjectFolders, useProjectListUpdaters, useProjects,
+  groupProjectsForSidebar, useProjectFolders, useProjectListUpdaters, useProjects, useTrashedProjects,
 } from 'src/components/pages/projects/useProjectLists';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'src/components/shadui/collapsible';
 import {
@@ -29,7 +29,7 @@ import {
 } from 'src/components/shadui/dropdown-menu';
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarHeader, SidebarMenu,
-  SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar,
+  SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar,
 } from 'src/components/shadui/sidebar';
 import { useStore } from 'src/state-store';
 import { updateProject } from 'src/services/project';
@@ -47,16 +47,17 @@ const _ITEM_TEXT_CLASS = 'text-sm';
 // empty space around them expands the sidebar.
 const _INTERACTIVE_SELECTOR = 'a, button, input, [role="menuitem"], [role="button"]';
 
-// The "⋯" menu on a project in the sidebar: pin, file into a folder, rename, move to Trash. Each choice is
+// The "⋯" menu on a project in the sidebar: pin, file into a folder, rename, archive or move to Trash. Each choice is
 // handed up as an action; the sidebar does the work (and owns the dialogs). Like every sidebar menu it's
 // as wide as its longest item (w-auto min-w-0), so there's no empty strip on the right.
-function ProjectItemMenu({ project, folders, onChange, onNewFolder, onRename, onTrash }: {
+function ProjectItemMenu({ project, folders, onChange, onNewFolder, onRename, onTrash, onArchive }: {
   project: Project;
   folders: ProjectFolder[];
   onChange: (project: Project, changes: ProjectChanges) => void;
   onNewFolder: (project: Project) => void;
   onRename: (project: Project) => void;
   onTrash: (project: Project) => void;
+  onArchive: (project: Project) => void;
 }) {
   const { t } = useTranslation();
   const isPinned = !_.isNil(project.pinned_at);
@@ -103,10 +104,7 @@ function ProjectItemMenu({ project, folders, onChange, onNewFolder, onRename, on
           {t('project_menu_rename')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant='destructive' data-action='trash-project' onClick={() => onTrash(project)}>
-          <Trash2Icon />
-          {t('project_menu_trash')}
-        </DropdownMenuItem>
+        <ProjectRemovalMenuItems project={project} onTrash={onTrash} onArchive={onArchive} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -255,9 +253,10 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
   const location = useLocation();
   const { data: projects } = useProjects();
   const { data: folders = [] } = useProjectFolders();
-  const { setProject, moveProjectToTrash, setFolder, removeFolder } = useProjectListUpdaters();
+  const { setProject, moveProjectToTrash, moveProjectToArchive, setFolder, removeFolder } = useProjectListUpdaters();
   const [renamingProject, setRenamingProject] = useState<Project | null>(null);
   const [trashingProject, setTrashingProject] = useState<Project | null>(null);
+  const [archivingProject, setArchivingProject] = useState<Project | null>(null);
   // 'new' = the "new folder" dialog. `projectToFile` is set when it was opened from a project's "Move to",
   // so the project goes straight into the folder it makes.
   const [editingFolder, setEditingFolder] = useState<ProjectFolder | 'new' | null>(null);
@@ -281,6 +280,7 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
     },
     onRename: setRenamingProject,
     onTrash: setTrashingProject,
+    onArchive: setArchivingProject,
   };
 
   const saveFolder = (folder: ProjectFolder) => {
@@ -299,12 +299,19 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
   };
   const { isOver: isOverRecents, dropProps: recentsDropProps } = useProjectDropTarget(projectId => fileDroppedProject(projectId, null));
 
-  // Trashing the project that's open leaves nothing to look at: back to the list.
-  const afterProjectTrashed = (project: Project) => {
-    moveProjectToTrash(project);
+  const leaveIfOpen = (project: Project) => {
     if (location.pathname === `${PATHS.projects}/${project.id}`) {
       navigate(PATHS.projects, { replace: true });
     }
+  };
+  // Trashing or archiving the project that's open leaves nothing to look at: back to the list.
+  const afterProjectTrashed = (project: Project) => {
+    moveProjectToTrash(project);
+    leaveIfOpen(project);
+  };
+  const afterProjectArchived = (project: Project) => {
+    moveProjectToArchive(project);
+    leaveIfOpen(project);
   };
 
   return (
@@ -370,6 +377,7 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
 
       <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
       <TrashProjectModal project={trashingProject} onClose={() => setTrashingProject(null)} onTrashed={afterProjectTrashed} />
+      <ArchiveProjectModal project={archivingProject} onClose={() => setArchivingProject(null)} onArchived={afterProjectArchived} />
       <FolderNameModal
         folder={editingFolder}
         onClose={() => {
@@ -384,7 +392,7 @@ function SidebarProjects({ onNavigate }: { onNavigate: () => void }) {
 }
 
 // Original purpose: the app's navigation, replacing the old top bar.
-// Intentions: a left sidebar. On top: the brand, the collapse button, then New project and Search. In the
+// Intentions: a left sidebar. On top: the brand, the collapse button, then New project, Search, Archived and Trash. In the
 // middle, the user's projects (Pinned / Folders / Recents, see SidebarProjects). At the bottom, the "about
 // me" things: language, Help, then the profile button (the account menu).
 // It collapses to an icon rail (remembered between visits, see SidebarProvider) so the project workspace gets
@@ -401,6 +409,8 @@ export default function AppSidebar() {
   const { state, isMobile, setOpen, setOpenMobile } = useSidebar();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { data: trashedProjects } = useTrashedProjects();
+  const trashCount = _.size(trashedProjects);
   const isSignedIn = isSignedInUser(user);
   const isCollapsed = state === 'collapsed' && !isMobile;
   const displayName = getDisplayName(user);
@@ -489,6 +499,32 @@ export default function AppSidebar() {
                       <span>{t('search_open')}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location.pathname === PATHS.archived}
+                      tooltip={t('nav_archived')}
+                      data-action='open-archived'
+                      render={<Link to={PATHS.archived} onClick={closeIfMobile} />}
+                      className={_ITEM_TEXT_CLASS}
+                    >
+                      <ArchiveIcon />
+                      <span>{t('nav_archived')}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location.pathname === PATHS.trash}
+                      tooltip={t('projects_trash')}
+                      data-action='open-trash'
+                      data-trashcount={trashCount}
+                      render={<Link to={PATHS.trash} onClick={closeIfMobile} />}
+                      className={_ITEM_TEXT_CLASS}
+                    >
+                      <Trash2Icon />
+                      <span>{t('projects_trash')}</span>
+                    </SidebarMenuButton>
+                    {trashCount > 0 && <SidebarMenuBadge className='right-2 font-normal text-muted-foreground'>{trashCount}</SidebarMenuBadge>}
+                  </SidebarMenuItem>
                 </>
               )
               : (
@@ -523,7 +559,7 @@ export default function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <ThemeSelector
-              options={{ label: isCollapsed ? 'none' : 'name', side: isMobile ? 'top' : 'right' }}
+              options={{ label: isCollapsed ? 'none' : 'title', side: isMobile ? 'top' : 'right' }}
               className={cn('h-8 w-full justify-start gap-2 rounded-full px-2 font-normal', isCollapsed && 'justify-center px-0')}
             />
           </SidebarMenuItem>
@@ -553,11 +589,11 @@ export default function AppSidebar() {
                     <span title={displayName} className='min-w-0 flex-1 truncate text-sm font-medium'>{displayName}</span>
                     <ChevronsUpDownIcon className='ml-auto size-4 text-muted-foreground' />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent side={isMobile ? 'top' : 'right'} align='end' className='w-56'>
+                  <DropdownMenuContent side={isMobile ? 'top' : 'right'} align='end' className='w-auto max-w-60 min-w-0'>
                     <p title={displayName} className='truncate px-2.5 py-1.5 text-xs text-muted-foreground'>{displayName}</p>
                     <DropdownMenuItem render={<Link to={PATHS.userProfile} onClick={closeIfMobile} />}>
                       <UserIcon />
-                      {t('nav_profile_settings')}
+                      {t('nav_profile')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout}>

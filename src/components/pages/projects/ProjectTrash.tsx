@@ -16,7 +16,7 @@ import { formatRelativeTime } from 'src/utils/common';
 import { PATHS } from 'src/utils/constants';
 import type { Project } from 'src/types/project';
 
-function TrashListSkeleton() {
+export function ProjectRowsSkeleton() {
   return (
     <div className='mt-4 flex flex-col gap-3'>
       {_.times(2, index => (
@@ -31,7 +31,8 @@ function TrashListSkeleton() {
 
 // Original purpose: the Trash page (from the Trash tile on the projects page). The user's trashed projects,
 // most recently trashed first and searchable, each with Restore (back in the list where it was) and
-// Delete forever (after a confirmation: the only way a project is deleted for good).
+// Delete forever (after a confirmation: the only way a project is deleted for good). Delete is greyed out for a project
+// that's paid for or has gone live: it can't get in here any more, but one may have before that rule.
 // References: fourpixie-frontend components/pages/Trash.tsx
 export default function ProjectTrash() {
   const { t, i18n } = useTranslation();
@@ -76,7 +77,7 @@ export default function ProjectTrash() {
       </div>
 
       {hasLoadFailed && <p className='py-20 text-center text-muted-foreground'>{t('trash_load_failed')}</p>}
-      {_.isNil(trashedProjects) && !hasLoadFailed && <TrashListSkeleton />}
+      {_.isNil(trashedProjects) && !hasLoadFailed && <ProjectRowsSkeleton />}
       {_.isEmpty(trashedProjects) && !_.isNil(trashedProjects) && (
         <div data-section='trash-empty' className='mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed py-14 text-center text-muted-foreground'>
           <Trash2Icon className='size-8' />
@@ -115,7 +116,8 @@ export default function ProjectTrash() {
                 <Button
                   variant='destructive'
                   data-action='delete-project'
-                  disabled={!_.isNil(restoringProjectId)}
+                  disabled={!_.isNil(restoringProjectId) || project.can_trash === false}
+                  title={project.can_trash === false ? t('trash_delete_locked') : undefined}
                   onClick={() => setDeletingProject(project)}
                 >
                   <Trash2Icon data-icon='inline-start' />

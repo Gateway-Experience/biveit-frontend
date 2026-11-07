@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import { callBe } from 'src/utils/request';
-import type { DomainOffer, DomainSwitch, LaunchCheckout, LaunchStatus, OwnDomainCheck, PlanKey, Registrant } from 'src/types/launch';
+import type { DeployedSite, DomainOffer, DomainSwitch, LaunchCheckout, LaunchStatus, OwnDomainCheck, PlanKey, Registrant } from 'src/types/launch';
 
 // Intentions: the launch flow's calls (biveit-backend controllers/launch): where a project's launch stands, finding a
 // domain, paying (checkouts open at Polar, in a new tab).
@@ -13,6 +13,11 @@ const LAUNCH_QUERY_KEY = 'launch';
 // Also moves a waiting launch along (the backend re-runs its setup on each read), so it's polled while one waits.
 async function getLaunchStatus(projectId: number): Promise<LaunchStatus> {
   return callBe(`/projects/${projectId}/launch`);
+}
+
+// All the user's sites that have gone live.
+async function getDeployedSites(): Promise<DeployedSite[]> {
+  return callBe('/me/sites');
 }
 
 // An empty query gives ideas around the project's name.
@@ -85,6 +90,7 @@ async function downloadCode(projectId: number, projectName: string): Promise<voi
 export {
   LAUNCH_QUERY_KEY,
   getLaunchStatus,
+  getDeployedSites,
   searchLaunchDomains,
   checkOwnDomain,
   startLaunchCheckout,

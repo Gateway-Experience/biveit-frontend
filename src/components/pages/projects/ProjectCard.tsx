@@ -3,8 +3,9 @@ import _ from 'lodash';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
-import { EllipsisIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { EllipsisIcon, PencilIcon } from 'lucide-react';
 
+import { ProjectRemovalMenuItems } from 'src/components/pages/projects/ProjectActionDialogs';
 import { Button } from 'src/components/shadui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -108,10 +109,11 @@ function ProjectPreview({ project }: { project: Project }) {
 // The card's "⋯" menu. A sibling of the card's link, not inside it: a button nested in a link would open the
 // project on every click. On wide screens it shows on hover (or focus); on touch screens there's no hover,
 // so it's always there.
-function ProjectCardMenu({ project, onRename, onTrash }: {
+function ProjectCardMenu({ project, onRename, onTrash, onArchive }: {
   project: Project;
   onRename: (project: Project) => void;
   onTrash: (project: Project) => void;
+  onArchive: (project: Project) => void;
 }) {
   const { t } = useTranslation();
 
@@ -137,10 +139,7 @@ function ProjectCardMenu({ project, onRename, onTrash }: {
           <PencilIcon />
           {t('project_menu_rename')}
         </DropdownMenuItem>
-        <DropdownMenuItem variant='destructive' data-action='trash-project' onClick={() => onTrash(project)}>
-          <Trash2Icon />
-          {t('project_menu_trash')}
-        </DropdownMenuItem>
+        <ProjectRemovalMenuItems project={project} onTrash={onTrash} onArchive={onArchive} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -171,11 +170,12 @@ function ProjectStepBar({ project }: { project: Project }) {
   );
 }
 
-// `onRename` / `onTrash`: the card's menu asks; the list owns the dialogs (see ProjectActionDialogs).
-export default function ProjectCard({ project, onRename, onTrash }: {
+// `onRename` / `onTrash` / `onArchive`: the card's menu asks; the list owns the dialogs (see ProjectActionDialogs).
+export default function ProjectCard({ project, onRename, onTrash, onArchive }: {
   project: Project;
   onRename: (project: Project) => void;
   onTrash: (project: Project) => void;
+  onArchive: (project: Project) => void;
 }) {
   const { t, i18n } = useTranslation();
 
@@ -208,7 +208,7 @@ export default function ProjectCard({ project, onRename, onTrash }: {
           </div>
         </div>
       </Link>
-      <ProjectCardMenu project={project} onRename={onRename} onTrash={onTrash} />
+      <ProjectCardMenu project={project} onRename={onRename} onTrash={onTrash} onArchive={onArchive} />
     </div>
   );
 }
