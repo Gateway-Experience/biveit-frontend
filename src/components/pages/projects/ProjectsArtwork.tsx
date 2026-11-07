@@ -117,7 +117,8 @@ function useRabbitUnderPointer(meadowRef: React.RefObject<HTMLDivElement | null>
 // The art (`daydream-backdrop` in index.css: pieces in public/daydream-*.svg) is drawn at a fixed size whatever
 // the window, with the tree pinned to the bottom right and its root on the bottom edge; only the sky and the
 // meadow strips stretch. The pieces move on their own with CSS animations inside them, which they stop
-// themselves for reduced motion.
+// themselves for reduced motion. Phones get still copies of the pieces and no rabbits (`still-backdrop` in index.css):
+// the moving version keeps a phone working, and warm, even when nobody's touching the page.
 // The dark theme gets the same meadow at night (`daydream-backdrop-night`: the pieces recoloured by
 // scripts/make-night-backdrop.mjs): a deep blue sky with moonlight and stars, the meadow and tree in the dark, pale
 // rabbits.
@@ -138,8 +139,8 @@ function WorkspaceBackdrop({ className }: { className?: string }) {
     >
       <div className='daydream-backdrop absolute inset-0 dark:daydream-backdrop-night' />
       {/* The meadow band the rabbits cross, at grass level. Gone for reduced motion: rabbits standing still
-          wherever the loop left them would look odd. */}
-      <div ref={meadowRef} data-section='rabbits' className='@container absolute inset-x-0 bottom-14 h-10 motion-reduce:hidden'>
+          wherever the loop left them would look odd. Gone on phones too, where the whole backdrop stands still. */}
+      <div ref={meadowRef} data-section='rabbits' className='@container absolute inset-x-0 bottom-14 h-10 motion-reduce:hidden still-backdrop:hidden'>
         {_.map(_RABBITS, (rabbit) => {
           // Stopped: both its run and its hop freeze where they are, and pick up from there.
           const playState = pausedRabbitId === rabbit.id ? 'paused' : 'running';

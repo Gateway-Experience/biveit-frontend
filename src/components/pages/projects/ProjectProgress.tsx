@@ -29,8 +29,10 @@ export default function ProjectProgress({ stage, buildApprovedAt, className, sty
           // The last step only takes its own room (it has no line after it), so the bar ends flush with the frame below.
           <li key={stepKey} aria-current={isCurrent ? 'step' : undefined} className={cn('flex min-w-0 items-center gap-2', isLast ? 'flex-none' : 'flex-1')}>
             <span className='relative flex size-6 shrink-0'>
-              {/* The current step pulses, so "you are here" is the first thing the eye lands on. */}
-              {isCurrent && <span className='absolute inset-0 animate-ping rounded-full bg-primary/50' />}
+              {/* The current step pulses a few times, so "you are here" is the first thing the eye lands on. It stops after
+                  that: a pulse that never ends keeps the page redrawing, which warms up a phone. Stays at its last
+                  frame, which is invisible, leaving just the dot. Moving to the next step pulses again. */}
+              {isCurrent && <span className='absolute inset-0 animate-ping rounded-full bg-primary/50 [animation-fill-mode:forwards] [animation-iteration-count:3]' />}
               <span
                 className={cn(
                   'relative flex size-6 items-center justify-center rounded-full text-xs font-semibold transition-colors',

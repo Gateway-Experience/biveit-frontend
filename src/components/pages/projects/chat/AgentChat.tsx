@@ -371,9 +371,11 @@ export default function AgentChat({
                       <span className='inline-flex items-center gap-2.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/40 animate-in fade-in-0 slide-in-from-bottom-1 duration-500'>
                         {/* A pinging dot: the "it's your turn" cue that catches the eye without moving the layout. The
                             brand's two colours swapped between pill and dot: lime on the buttons' lavender (like the user's
-                            bubbles) in light; the dark theme flips them to lavender on lime. */}
+                            bubbles) in light; the dark theme flips them to lavender on lime. It pings a few times and
+                            then stops, leaving just the dot: this can sit waiting for ages, and a ping that never ends
+                            keeps the page redrawing, which warms up a phone. */}
                         <span className='relative flex size-2.5'>
-                          <span className='absolute inline-flex size-full animate-ping rounded-full bg-brand-light opacity-75' />
+                          <span className='absolute inline-flex size-full animate-ping rounded-full bg-brand-light opacity-75 [animation-fill-mode:forwards] [animation-iteration-count:3]' />
                           <span className='relative inline-flex size-2.5 rounded-full bg-brand-light' />
                         </span>
                         {t('chat_waiting_for_answer')}

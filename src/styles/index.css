@@ -7,6 +7,13 @@
 /* `.force-light` pins a subtree to the light theme even when the app is in dark mode (e.g. PublicLayout,
    which matches the always-light landing site): it re-declares the light tokens below, and this variant stops `dark:` utilities inside it. */
 @custom-variant dark (&:is(.dark *):not(.force-light, .force-light *));
+/* Phones, and any touch device whatever its width (a phone on its side is as wide as a small laptop): where the backdrop
+   stands still to save battery and heat (WorkspaceBackdrop). 767px is useIsMobile's cutoff. */
+@custom-variant still-backdrop {
+  @media (max-width: 767px), (hover: none) and (pointer: coarse) {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-success: var(--success);
@@ -431,6 +438,18 @@
   background-position: 40px bottom, right bottom, left bottom, right bottom, left bottom, center top, left top, 0 0;
   background-size: auto, auto, 100% 100px, auto, 100% 300px, auto, auto, 100% 100%;
   background-repeat: no-repeat;
+  /* The `-still` copies come from scripts/make-still-backdrop.mjs. */
+  @variant still-backdrop {
+    background-image:
+      url(/daydream-grass-left-still.svg?v=1),
+      url(/daydream-grass-right-still.svg?v=1),
+      url(/daydream-meadow-front-still.svg?v=1),
+      url(/daydream-tree-still.svg?v=1),
+      url(/daydream-meadow-back-still.svg?v=1),
+      url(/daydream-sky-still.svg?v=1),
+      url(/daydream-sky-left-still.svg?v=1),
+      linear-gradient(var(--daydream-sky-top), var(--daydream-sky-middle) 65%, var(--daydream-sky-bottom));
+  }
 }
 /* The same meadow at night, for the dark theme: each piece's `-night` copy (recoloured from the daytime one by
    scripts/make-night-backdrop.mjs -- run it after changing the daytime art), laid out exactly like the day. The
@@ -445,6 +464,17 @@
     url(/daydream-sky-night.svg?v=1),
     url(/daydream-sky-left-night.svg?v=1),
     linear-gradient(#121A36, #18213F 65%, #212C48);
+  @variant still-backdrop {
+    background-image:
+      url(/daydream-grass-left-night-still.svg?v=1),
+      url(/daydream-grass-right-night-still.svg?v=1),
+      url(/daydream-meadow-front-night-still.svg?v=1),
+      url(/daydream-tree-night-still.svg?v=1),
+      url(/daydream-meadow-back-night-still.svg?v=1),
+      url(/daydream-sky-night-still.svg?v=1),
+      url(/daydream-sky-left-night-still.svg?v=1),
+      linear-gradient(#121A36, #18213F 65%, #212C48);
+  }
 }
 
 /* Intentions: the rabbits playing across the project page's meadow (WorkspaceBackdrop's _RABBITS). Each one is a
