@@ -2,19 +2,17 @@ import { useState } from 'react';
 import _ from 'lodash';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
-import { PlusIcon, Trash2Icon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 
-import LinkButton from 'src/components/common/LinkButton';
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
-import { RenameProjectModal, TrashProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
+import { ArchiveProjectModal, RenameProjectModal, TrashProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
 import ProjectSearchBox from 'src/components/pages/projects/ProjectSearchBox';
 import { BuildFlowArt, DotGridBackdrop, WorkspaceBackdrop } from 'src/components/pages/projects/ProjectsArtwork';
-import { useProjectListUpdaters, useProjects, useTrashedProjects } from 'src/components/pages/projects/useProjectLists';
+import { useProjectListUpdaters, useProjects } from 'src/components/pages/projects/useProjectLists';
 import useProjectSearch from 'src/components/pages/projects/useProjectSearch';
 import WelcomeShow from 'src/components/pages/projects/WelcomeShow';
 import { Button } from 'src/components/shadui/button';
 import { useStore } from 'src/state-store';
-import { PATHS } from 'src/utils/constants';
 import { useAnalytics } from 'src/utils/hooks';
 import type { Project } from 'src/types/project';
 
@@ -91,22 +89,21 @@ function ProjectsEmptyState() {
 }
 
 // Original purpose: the home page — lists the current user's projects, or nudges them to make one. Projects
-// can be searched, renamed, or moved to Trash (from their ⋯ menu). Trash is a button in the header, and a new
-// project starts from the tile at the end of the grid.
+// can be searched, renamed, or moved to Trash (from their ⋯ menu). A new project starts from the tile at the end
+// of the grid.
 export default function ProjectList() {
   const { t } = useTranslation();
   // Shared with the sidebar. undefined = still loading, [] = loaded but nothing there yet. Most recently
   // edited first (pinning and filing don't change that).
   const { data: unsortedProjects, isError: hasLoadFailed } = useProjects();
   const projects = unsortedProjects && _.orderBy(unsortedProjects, ['updated_at'], ['desc']);
-  const { data: trashedProjects } = useTrashedProjects();
-  const trashCount = _.size(trashedProjects);
   const [searchQuery, setSearchQuery] = useState('');
   const { matchingProjects, isSearchActive, searchedQuery, isSearching } = useProjectSearch(projects, searchQuery);
-  const { setProject, moveProjectToTrash } = useProjectListUpdaters();
-  // The project whose rename / trash dialog is open, if any.
+  const { setProject, moveProjectToTrash, moveProjectToArchive } = useProjectListUpdaters();
+  // The project whose rename / trash / archive dialog is open, if any.
   const [renamingProject, setRenamingProject] = useState<Project | null>(null);
   const [trashingProject, setTrashingProject] = useState<Project | null>(null);
+  const [archivingProject, setArchivingProject] = useState<Project | null>(null);
   const { trackEvent } = useAnalytics();
   const set = useStore(state => state.set);
 
@@ -123,11 +120,11 @@ export default function ProjectList() {
       {/* A rename counts as an edit (fresh updated_at), so the sort moves the project to the top. */}
       <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
       <TrashProjectModal project={trashingProject} onClose={() => setTrashingProject(null)} onTrashed={moveProjectToTrash} />
+      <ArchiveProjectModal project={archivingProject} onClose={() => setArchivingProject(null)} onArchived={moveProjectToArchive} />
 
-      {/* The page header: a slim panel. Title and count on the left, Trash and search on the right, and the line art
-          in between on wide screens (and not when the empty state below already shows it). Search is always there,
-          even with nothing to search yet: the first-time tour (ProjectsIntro) starts by pointing at it. Trash only
-          shows with something in it. */}
+      {/* The page header: a slim panel. Title and count on the left, search on the right, and the line art in between
+          on wide screens (and not when the empty state below already shows it). Search is always there, even with
+          nothing to search yet: the first-time tour (ProjectsIntro) starts by pointing at it. */}
       <header className='relative isolate mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-surface glass-surface px-5 py-4 sm:px-6'>
         <DotGridBackdrop />
         <span aria-hidden='true' className='pointer-events-none absolute -top-20 right-1/3 -z-10 size-48 rounded-full bg-primary/10 blur-3xl' />
@@ -142,24 +139,9 @@ export default function ProjectList() {
             <BuildFlowArt className='pointer-events-none h-16 w-auto' />
           </div>
         )}
-        <div className='flex w-full items-center gap-3 sm:ml-auto sm:w-auto'>
-          {trashCount > 0 && (
-            <LinkButton
-              href={PATHS.trash}
-              variant='outline'
-              data-action='open-trash'
-              data-trashcount={trashCount}
-              title={t('projects_trash_count', { count: trashCount })}
-              className='h-10 shrink-0'
-            >
-              <Trash2Icon data-icon='inline-start' />
-              {t('projects_trash')}
-              <span className='text-muted-foreground tabular-nums'>{trashCount}</span>
-            </LinkButton>
-          )}
-          <div data-tour='search' className='flex-1 sm:w-64 sm:flex-none'>
-            <ProjectSearchBox value={searchQuery} onChange={setSearchQuery} isSearching={isSearching} />
-          </div>
+        {/* Up to w-96, but it'd rather shrink a bit than drop below the title on a narrower window. */}
+        <div data-tour='search' className='min-w-0 flex-1 basis-64 sm:ml-auto sm:max-w-96'>
+          <ProjectSearchBox value={searchQuery} onChange={setSearchQuery} isSearching={isSearching} />
         </div>
       </header>
 
@@ -180,7 +162,7 @@ export default function ProjectList() {
               className='flex animate-in fade-in-0 slide-in-from-bottom-2 duration-500 fill-mode-both *:flex-1'
               style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
             >
-              <ProjectCard project={project} onRename={setRenamingProject} onTrash={setTrashingProject} />
+              <ProjectCard project={project} onRename={setRenamingProject} onTrash={setTrashingProject} onArchive={setArchivingProject} />
             </div>
           ))}
           {/* Not a search result, so it steps aside while searching. */}

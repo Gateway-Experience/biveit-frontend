@@ -114,3 +114,25 @@ export type DomainSwitch = {
 };
 
 export type LaunchCheckout = { product: 'plan' | 'domain'; url: string };
+
+// One of the user's live sites, for the profile page (services/launch/status.to_deployed_site on the backend).
+export type DeployedSite = {
+  project_id: number;
+  name: string;
+  url: string;
+  // status, renews_at, trial_ends_at: only for a domain they bought from us and are still paying for.
+  domain: { domain: string; kind: SiteDomainKind; status: string | null; renews_at: string | null; trial_ends_at: string | null };
+  state: 'live' | 'not_servable' | 'plan_ended';
+  plan: {
+    plan: 'monthly' | 'yearly';
+    status: string;
+    price_usd: number;
+    interval: 'month' | 'year';
+    started_at: string;
+    renews_at: string | null;
+    ends_at: string | null;
+  } | null;
+  live_since: string;
+  last_deployed_at: string | null;
+  site_preview_at: string | null;
+};

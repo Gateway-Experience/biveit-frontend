@@ -8,6 +8,7 @@ import DefaultLayout from 'src/components/layouts/DefaultLayout';
 import PublicLayout from 'src/components/layouts/PublicLayout';
 import ProjectList from 'src/components/pages/projects/ProjectList';
 import ProjectDetail from 'src/components/pages/projects/ProjectDetail';
+import ProjectArchive from 'src/components/pages/projects/ProjectArchive';
 import ProjectTrash from 'src/components/pages/projects/ProjectTrash';
 import UserProfile from 'src/components/pages/UserProfile';
 import Login from 'src/components/pages/auth/Login';
@@ -69,6 +70,7 @@ function AppRoutes() {
       <Route element={<DefaultLayout />}>
         <Route path={PATHS.projects} element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
         <Route path={PATHS.trash} element={<ProtectedRoute><ProjectTrash /></ProtectedRoute>} />
+        <Route path={PATHS.archived} element={<ProtectedRoute><ProjectArchive /></ProtectedRoute>} />
         <Route path={PATHS.userProfile} element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path='/showcase' element={<ShowCase />} />
       </Route>

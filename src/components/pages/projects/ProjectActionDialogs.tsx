@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import _ from 'lodash';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { ArchiveIcon, Trash2Icon } from 'lucide-react';
 
 import FormField from 'src/components/common/FormField';
 import Modal from 'src/components/common/Modal';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import { Spinner } from 'src/components/common/Spinner';
 import { Button } from 'src/components/shadui/button';
+import { DropdownMenuItem } from 'src/components/shadui/dropdown-menu';
 import {
-  createProjectFolder, deleteProject, deleteProjectFolder, renameProject, renameProjectFolder, trashProject,
+  archiveProject, createProjectFolder, deleteProject, deleteProjectFolder, renameProject, renameProjectFolder, trashProject,
 } from 'src/services/project';
 import type { Project, ProjectFolder } from 'src/types/project';
 
@@ -82,6 +84,89 @@ export function RenameProjectModal({ project, onClose, onRenamed }: {
           )}
         />
       </form>
+    </Modal>
+  );
+}
+
+// Intentions: the end of a project's "⋯" menu (its card's and the sidebar's): the ways out of the list. Archive when the
+// project has that option, and Move to Trash -- greyed out, with a line saying why, for a project that's paid for or has
+// gone live (the BE decides: can_trash, can_archive).
+export function ProjectRemovalMenuItems({ project, onTrash, onArchive }: {
+  project: Project;
+  onTrash: (project: Project) => void;
+  onArchive: (project: Project) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      {project.can_archive && (
+        <DropdownMenuItem data-action='archive-project' onClick={() => onArchive(project)}>
+          <ArchiveIcon />
+          {t('project_menu_archive')}
+        </DropdownMenuItem>
+      )}
+      {project.can_trash === false
+        ? (
+          <DropdownMenuItem disabled data-action='trash-project' className='text-muted-foreground data-disabled:opacity-100'>
+            <Trash2Icon className='opacity-60' />
+            <span className='flex max-w-56 flex-col'>
+              <span className='opacity-60'>{t('project_menu_trash')}</span>
+              <span className='text-xs'>{t(project.can_archive ? 'project_menu_trash_locked_launched' : 'project_menu_trash_locked_paid')}</span>
+            </span>
+          </DropdownMenuItem>
+        )
+        : (
+          <DropdownMenuItem variant='destructive' data-action='trash-project' onClick={() => onTrash(project)}>
+            <Trash2Icon />
+            {t('project_menu_trash')}
+          </DropdownMenuItem>
+        )}
+    </>
+  );
+}
+
+// Original purpose: the project "⋯" menu's "Archive" item.
+// Intentions: a light "are you sure" that names the project and says it can come back. Open while `project` is set; the
+// parent gets the archived project back to move it between its lists.
+export function ArchiveProjectModal({ project, onClose, onArchived }: {
+  project: Project | null;
+  onClose: () => void;
+  onArchived: (project: Project) => void;
+}) {
+  const { t } = useTranslation();
+  const notify = useNotification();
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  const archive = async () => {
+    const target = project as Project;
+    setIsArchiving(true);
+    try {
+      onArchived(await archiveProject(target.id));
+      notify('success', t('project_archive_done', { name: target.name }));
+      onClose();
+    } catch {
+      notify('error', t('project_archive_failed'));
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={!!project}
+      onClose={() => !isArchiving && onClose()}
+      title={t('project_archive_title', { name: project?.name })}
+      fullScreenMobile={false}
+      buttons={[
+        <Button key='cancel' variant='outline' disabled={isArchiving} onClick={onClose}>{t('project_action_cancel')}</Button>,
+        <Button key='archive' data-action='confirm-archive' disabled={isArchiving} onClick={archive}>
+          {isArchiving && <Spinner data-icon='inline-start' />}
+          {t('project_menu_archive')}
+        </Button>,
+      ]}
+    >
+      <p data-projectid={project?.id} className='text-muted-foreground'>{t('project_archive_body')}</p>
     </Modal>
   );
 }

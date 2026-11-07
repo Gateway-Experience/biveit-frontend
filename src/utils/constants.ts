@@ -77,6 +77,7 @@ const PATHS = {
   cookiePolicy: '/cookie-policy',
   projects: '/projects',
   trash: '/projects/trash',
+  archived: '/projects/archived',
   pricing: '/pricing',
   admin: '/admin',
   adminDomainTest: '/admin/domain-name-test',

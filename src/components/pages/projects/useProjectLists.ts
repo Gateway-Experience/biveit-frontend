@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useStore } from 'src/state-store';
-import { getProjectFolders, getProjects, getTrashedProjects } from 'src/services/project';
+import { getArchivedProjects, getProjectFolders, getProjects, getTrashedProjects } from 'src/services/project';
 import type { Project, ProjectFolder } from 'src/types/project';
 
 // Intentions: one copy of the user's projects and folders, shared by everything that lists them (the
@@ -19,6 +19,10 @@ function _foldersKey(userId: unknown) {
 
 function _trashedProjectsKey(userId: unknown) {
   return ['trashed-projects', userId];
+}
+
+function _archivedProjectsKey(userId: unknown) {
+  return ['archived-projects', userId];
 }
 
 function useCurrentUserId() {
@@ -38,6 +42,12 @@ function useProjects() {
 function useTrashedProjects() {
   const userId = useCurrentUserId();
   return useQuery({ queryKey: _trashedProjectsKey(userId), queryFn: getTrashedProjects, enabled: !_.isNil(userId), staleTime: 0 });
+}
+
+// The current user's archived projects (undefined while loading), most recently archived first.
+function useArchivedProjects() {
+  const userId = useCurrentUserId();
+  return useQuery({ queryKey: _archivedProjectsKey(userId), queryFn: getArchivedProjects, enabled: !_.isNil(userId), staleTime: 0 });
 }
 
 function useProjectFolders() {
@@ -64,6 +74,17 @@ function useProjectListUpdaters() {
 
   const restoreProjectFromTrash = useCallback((restoredProject: Project) => {
     queryClient.setQueryData<Project[]>(_trashedProjectsKey(userId), previous => _.reject(previous, { id: restoredProject.id }));
+    queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => previous && [restoredProject, ...previous]);
+  }, [queryClient, userId]);
+
+  // The same for the archive.
+  const moveProjectToArchive = useCallback((archivedProject: Project) => {
+    queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => _.reject(previous, { id: archivedProject.id }));
+    queryClient.setQueryData<Project[]>(_archivedProjectsKey(userId), previous => previous && [archivedProject, ...previous]);
+  }, [queryClient, userId]);
+
+  const restoreProjectFromArchive = useCallback((restoredProject: Project) => {
+    queryClient.setQueryData<Project[]>(_archivedProjectsKey(userId), previous => _.reject(previous, { id: restoredProject.id }));
     queryClient.setQueryData<Project[]>(_projectsKey(userId), previous => previous && [restoredProject, ...previous]);
   }, [queryClient, userId]);
 
@@ -95,7 +116,8 @@ function useProjectListUpdaters() {
   }, [queryClient, userId]);
 
   return {
-    setProject, reloadProjects, moveProjectToTrash, restoreProjectFromTrash, removeTrashedProject, setFolder, removeFolder,
+    setProject, reloadProjects, moveProjectToTrash, restoreProjectFromTrash, moveProjectToArchive, restoreProjectFromArchive,
+    removeTrashedProject, setFolder, removeFolder,
   };
 }
 
@@ -126,6 +148,7 @@ function groupProjectsForSidebar(projects: Project[] | undefined, folders: Proje
 export {
   getFolderSubtreeIds,
   groupProjectsForSidebar,
+  useArchivedProjects,
   useProjectFolders,
   useProjectListUpdaters,
   useProjects,

@@ -56,7 +56,7 @@ async function deleteProjectFolder(folderId: number): Promise<void> {
 
 // The picture of the project's dev site, for its card (only when it has one: see site_preview_at). The time
 // it was taken is in the URL, so each picture has its own URL and the browser can cache it for good.
-function getSitePreviewUrl(project: Project): string {
+function getSitePreviewUrl(project: Pick<Project, 'id' | 'site_preview_at'>): string {
   const takenAt = encodeURIComponent(project.site_preview_at || '');
   return `${import.meta.env.VITE_API_BASE_URL}/projects/${project.id}/site-preview?v=${takenAt}`;
 }
@@ -84,6 +84,21 @@ async function getTrashedProjects(): Promise<Project[]> {
   return callBe('/projects/trash');
 }
 
+// The user's archived projects, most recently archived first.
+async function getArchivedProjects(): Promise<Project[]> {
+  return callBe('/projects/archived');
+}
+
+// Out of the project list and into the archive. Only for a project with can_archive. Resolves to the archived project.
+async function archiveProject(projectId: number): Promise<Project> {
+  return callBe({ method: 'POST', url: `/projects/${projectId}/archive` });
+}
+
+// Out of the archive, back in the list where it was. Resolves to that project.
+async function unarchiveProject(projectId: number): Promise<Project> {
+  return callBe({ method: 'POST', url: `/projects/${projectId}/unarchive` });
+}
+
 // Out of the project list and into Trash (the BE turns off whatever was running for it). Resolves to the
 // trashed project.
 async function trashProject(projectId: number): Promise<Project> {
@@ -102,10 +117,12 @@ async function deleteProject(projectId: number): Promise<void> {
 
 export {
   PROJECT_STEP_KEYS,
+  archiveProject,
   createProject,
   createProjectFolder,
   deleteProject,
   deleteProjectFolder,
+  getArchivedProjects,
   getProjectFolders,
   getProjectHistory,
   getProjectStepIndex,
@@ -118,5 +135,6 @@ export {
   restoreProject,
   searchProjectPrompts,
   trashProject,
+  unarchiveProject,
   updateProject,
 };

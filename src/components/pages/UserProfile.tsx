@@ -2,21 +2,26 @@ import { useEffect, useRef, useState } from 'react';
 import _ from 'lodash';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { CreditCardIcon, ExternalLinkIcon, KeyRoundIcon, PencilIcon, Trash2Icon, UserRoundIcon } from 'lucide-react';
+import { CreditCardIcon, ExternalLinkIcon, KeyRoundIcon, PencilIcon, RocketIcon, Trash2Icon, UserRoundIcon } from 'lucide-react';
 import { cn } from 'cn';
 
 import FormField from 'src/components/common/FormField';
+import PillTabsList from 'src/components/common/PillTabsList';
+import SegmentedTabsList from 'src/components/common/SegmentedTabsList';
 import { useNotification } from 'src/components/common/NotificationProvider';
 import { Spinner } from 'src/components/common/Spinner';
 import { MIN_PASSWORD_LENGTH, NAME_MAX_LENGTH } from 'src/components/pages/auth/authForm';
+import DeployedSites from 'src/components/pages/DeployedSites';
 import { Avatar, AvatarFallback, AvatarImage } from 'src/components/shadui/avatar';
 import { Button } from 'src/components/shadui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'src/components/shadui/card';
+import { Tabs, TabsContent } from 'src/components/shadui/tabs';
 import { useStore } from 'src/state-store';
 import { getAvatarUrl, getDisplayName, getUsername } from 'src/services/user';
 import type { User } from 'src/types/user';
-import { useUpdateUser } from 'src/utils/hooks';
+import { useIsMobile, useUpdateUser } from 'src/utils/hooks';
 import { callBe } from 'src/utils/request';
 
 type NameFormValues = { firstName: string; lastName: string };
@@ -345,9 +350,13 @@ function BillingSection() {
   );
 }
 
-// Original purpose: the profile page, from the account menu's "Profile settings".
+// Original purpose: the profile page, from the account menu's "Profile". Two tabs: the account itself, and the sites
+// the user has put online. The tab lives in the URL (?tab=sites), so a reload or a link lands on the same one.
 function UserProfile() {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'sites' ? 'sites' : 'account';
 
   return (
     <div data-page='user-profile' className='flex flex-col gap-6'>
@@ -355,9 +364,34 @@ function UserProfile() {
         <h1 className='font-heading text-3xl font-bold tracking-[-0.03em]'>{t('profile_title')}</h1>
         <p className='mt-1 text-muted-foreground'>{t('profile_subtitle')}</p>
       </div>
-      <NameSection />
-      <PasswordSection />
-      <BillingSection />
+      <Tabs value={tab} onValueChange={value => setSearchParams(value === 'sites' ? { tab: 'sites' } : {}, { replace: true })} className='gap-6'>
+        {isMobile
+          ? (
+            <SegmentedTabsList
+              tabs={[
+                { value: 'account', label: t('profile_tab_account') },
+                { value: 'sites', label: t('profile_tab_sites') },
+              ]}
+              className='self-center'
+            />
+          )
+          : (
+            <PillTabsList
+              tabs={[
+                { value: 'account', label: t('profile_tab_account'), Icon: UserRoundIcon },
+                { value: 'sites', label: t('profile_tab_sites'), Icon: RocketIcon },
+              ]}
+            />
+          )}
+        <TabsContent value='account' className='flex flex-col gap-6'>
+          <NameSection />
+          <PasswordSection />
+          <BillingSection />
+        </TabsContent>
+        <TabsContent value='sites'>
+          <DeployedSites />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
