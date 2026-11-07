@@ -11,7 +11,7 @@ type DomainKind = 'buy' | 'own' | 'subdomain';
 
 export type AnalyticsEventMap = {
   auth_failed: { method: 'email' | 'google'; form: 'login' | 'register'; code: string };
-  new_project_form_opened: { source: 'empty_state' | 'header' | 'sidebar' | 'landing_idea' };
+  new_project_form_opened: { source: 'empty_state' | 'project_grid' | 'sidebar' | 'landing_idea' };
   project_created: { project_id: number; site_kinds: string[]; has_other_site_kind: boolean; from_landing_idea: boolean };
   // One per failed attempt, retries included (is_retry = the user pressed retry).
   project_setup_failed: { project_id: number; is_retry: boolean };

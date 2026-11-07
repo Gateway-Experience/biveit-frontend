@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import _ from 'lodash';
-import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { cn } from 'cn';
 import { PlusIcon, Trash2Icon } from 'lucide-react';
 
+import LinkButton from 'src/components/common/LinkButton';
 import ProjectCard from 'src/components/pages/projects/ProjectCard';
 import { RenameProjectModal, TrashProjectModal } from 'src/components/pages/projects/ProjectActionDialogs';
 import ProjectSearchBox from 'src/components/pages/projects/ProjectSearchBox';
@@ -37,27 +37,25 @@ function ProjectGridSkeleton() {
   );
 }
 
-// The way into Trash, shaped like an empty slot in the project grid: where the projects it holds used to be.
-// References: fourpixie-frontend components/pages/projects/ProjectList.tsx (TrashTile)
-function TrashTile({ trashCount, className }: { trashCount: number; className?: string }) {
+// A new project's way in, shaped like an empty slot in the project grid: where the next one will go.
+function NewProjectTile({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation();
   return (
-    <Link
-      to={PATHS.trash}
-      data-action='open-trash'
-      data-trashcount={trashCount}
+    <button
+      type='button'
+      data-tour='new-project'
+      data-action='new-project'
+      onClick={onClick}
       className={cn(
-        'group flex h-full min-h-44 flex-col items-center justify-center gap-2 rounded-surface border-2 border-dashed border-foreground/15 p-5 text-muted-foreground transition',
+        'group flex h-full min-h-44 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-surface border-2 border-dashed border-foreground/15 p-5 text-muted-foreground transition',
         'outline-none hover:border-primary/60 hover:bg-card/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
-        className,
       )}
     >
-      <span className='flex size-11 items-center justify-center rounded-full bg-foreground/5 transition group-hover:bg-primary/15 group-hover:text-foreground'>
-        <Trash2Icon className='size-5' />
+      <span className='flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground transition group-hover:scale-105'>
+        <PlusIcon className='size-5' />
       </span>
-      <span className='font-heading text-base font-semibold'>{t('projects_trash')}</span>
-      <span className='text-sm'>{t('projects_trash_count', { count: trashCount })}</span>
-    </Link>
+      <span className='font-heading text-base font-semibold'>{t('projects_new')}</span>
+    </button>
   );
 }
 
@@ -77,6 +75,7 @@ function ProjectsEmptyState() {
       <h2 className='font-heading text-xl font-bold tracking-[-0.02em]'>{t('projects_empty_title')}</h2>
       <p className='mt-2 max-w-sm text-muted-foreground'>{t('projects_empty_body')}</p>
       <Button
+        data-tour='new-project'
         size='lg'
         className='mt-7'
         onClick={() => {
@@ -92,7 +91,8 @@ function ProjectsEmptyState() {
 }
 
 // Original purpose: the home page — lists the current user's projects, or nudges them to make one. Projects
-// can be searched, renamed, or moved to Trash (from their ⋯ menu); Trash is a tile at the end of the grid.
+// can be searched, renamed, or moved to Trash (from their ⋯ menu). Trash is a button in the header, and a new
+// project starts from the tile at the end of the grid.
 export default function ProjectList() {
   const { t } = useTranslation();
   // Shared with the sidebar. undefined = still loading, [] = loaded but nothing there yet. Most recently
@@ -111,8 +111,10 @@ export default function ProjectList() {
   const set = useStore(state => state.set);
 
   const hasProjects = !_.isEmpty(projects);
-  // Trash isn't a search result, so it steps aside while searching.
-  const isTrashShown = trashCount > 0 && !isSearchActive;
+  const openNewProjectFromGrid = () => {
+    trackEvent('new_project_form_opened', { source: 'project_grid' });
+    set({ isNewProjectOpen: true });
+  };
   const hasNoProjects = _.isEmpty(projects) && !_.isNil(projects);
 
   return (
@@ -122,10 +124,10 @@ export default function ProjectList() {
       <RenameProjectModal project={renamingProject} onClose={() => setRenamingProject(null)} onRenamed={setProject} />
       <TrashProjectModal project={trashingProject} onClose={() => setTrashingProject(null)} onTrashed={moveProjectToTrash} />
 
-      {/* The page header: a slim panel. Title and count on the left, search and "New project" on the right,
-          and the line art in between on wide screens (and not when the empty state below already shows it).
-          Search and "New project" are always there, even with nothing to search yet: the first-time tour
-          (ProjectsIntro) starts by pointing at them. */}
+      {/* The page header: a slim panel. Title and count on the left, Trash and search on the right, and the line art
+          in between on wide screens (and not when the empty state below already shows it). Search is always there,
+          even with nothing to search yet: the first-time tour (ProjectsIntro) starts by pointing at it. Trash only
+          shows with something in it. */}
       <header className='relative isolate mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-surface glass-surface px-5 py-4 sm:px-6'>
         <DotGridBackdrop />
         <span aria-hidden='true' className='pointer-events-none absolute -top-20 right-1/3 -z-10 size-48 rounded-full bg-primary/10 blur-3xl' />
@@ -141,33 +143,29 @@ export default function ProjectList() {
           </div>
         )}
         <div className='flex w-full items-center gap-3 sm:ml-auto sm:w-auto'>
+          {trashCount > 0 && (
+            <LinkButton
+              href={PATHS.trash}
+              variant='outline'
+              data-action='open-trash'
+              data-trashcount={trashCount}
+              title={t('projects_trash_count', { count: trashCount })}
+              className='h-10 shrink-0'
+            >
+              <Trash2Icon data-icon='inline-start' />
+              {t('projects_trash')}
+              <span className='text-muted-foreground tabular-nums'>{trashCount}</span>
+            </LinkButton>
+          )}
           <div data-tour='search' className='flex-1 sm:w-64 sm:flex-none'>
             <ProjectSearchBox value={searchQuery} onChange={setSearchQuery} isSearching={isSearching} />
           </div>
-          {/* bg-clip-border: the theme's buttons paint inside their (transparent) border, so the fill reads 2px
-              shorter than the search box beside it, whose border shows. */}
-          <Button
-            data-tour='new-project'
-            className='h-10 shrink-0 bg-clip-border'
-            onClick={() => {
-              trackEvent('new_project_form_opened', { source: 'header' });
-              set({ isNewProjectOpen: true });
-            }}
-          >
-            <PlusIcon data-icon='inline-start' />
-            {t('projects_new')}
-          </Button>
         </div>
       </header>
 
       {hasLoadFailed && <p className='py-20 text-center text-muted-foreground'>{t('projects_load_failed')}</p>}
       {_.isNil(projects) && !hasLoadFailed && <ProjectGridSkeleton />}
-      {hasNoProjects && (
-        <>
-          <ProjectsEmptyState />
-          {trashCount > 0 && <TrashTile trashCount={trashCount} className='mt-5 min-h-0 py-4 sm:w-80' />}
-        </>
-      )}
+      {hasNoProjects && <ProjectsEmptyState />}
       {hasProjects && isSearchActive && _.isEmpty(matchingProjects) && (
         <p data-section='no-search-results' className='py-16 text-center text-muted-foreground'>
           {t('projects_search_no_results', { query: searchedQuery })}
@@ -185,7 +183,8 @@ export default function ProjectList() {
               <ProjectCard project={project} onRename={setRenamingProject} onTrash={setTrashingProject} />
             </div>
           ))}
-          {isTrashShown && <TrashTile trashCount={trashCount} />}
+          {/* Not a search result, so it steps aside while searching. */}
+          {!isSearchActive && <NewProjectTile onClick={openNewProjectFromGrid} />}
         </div>
       )}
 
