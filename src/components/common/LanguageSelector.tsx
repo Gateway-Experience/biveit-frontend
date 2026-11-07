@@ -58,7 +58,7 @@ export default function LanguageSelector({ className, options = {} }: {
         {/* Fixed width so the button (and whatever sits next to it) doesn't shift when the code changes. */}
         {label === 'code' && <span className='inline-block w-6 text-center'>{currentLanguage.code.toUpperCase()}</span>}
       </DropdownMenuTrigger>
-      <DropdownMenuContent data-menu='language' side={side} align='end' className='max-h-[70svh] min-w-[180px] overflow-y-auto'>
+      <DropdownMenuContent data-menu='language' side={side} align='end' className='max-h-[70svh] w-auto min-w-0 overflow-y-auto'>
         <DropdownMenuRadioGroup value={currentLanguage.code} onValueChange={code => selectLanguage(code)}>
           {SUPPORTED_LANGUAGES.map(language => (
             // closeOnClick: radio items stay open after a pick by default; this is a pick-and-go menu.

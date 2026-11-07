@@ -95,7 +95,10 @@ export default function ProjectSearchDialog({ open, onClose }: { open: boolean; 
   };
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={isOpen => !isOpen && close()}>
+    // Not modal, so a click anywhere outside closes it. A modal one only closes on a click that lands on its own
+    // invisible backdrop, and the sidebar and raised bits of the page sit above that: they'd stay clickable, and
+    // the window would stay open over whatever page they led to.
+    <DialogPrimitive.Root modal={false} open={open} onOpenChange={isOpen => !isOpen && close()}>
       <DialogPrimitive.Portal>
         {/* No backdrop on purpose: the page stays as it is underneath, seen through the frosted glass like the other
             frames (glass-surface). */}

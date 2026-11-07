@@ -26,11 +26,12 @@ const _THEMES = [
 // is a separate app and stays light.
 // The menu's items are radio items: the choice in use carries a tick. (Plain items only had the menu's focus
 // highlight, which sits on the first item when it opens -- so "Light" looked chosen even in dark mode.)
-// `options.label`: the theme's name next to its icon (roomy spots like the sidebar), or just the icon.
+// `options.label`: the word "Theme" next to the icon (roomy spots like the sidebar), or just the icon. It's always that
+// word, not the current choice: "System" alone doesn't say what the button is for. The icon and the menu's tick show the choice.
 // `options.side`: which side of the button the menu opens on.
 export default function ThemeSelector({ className, options = {} }: {
   className?: string;
-  options?: { label?: 'name' | 'none'; side?: 'top' | 'bottom' | 'right' };
+  options?: { label?: 'title' | 'none'; side?: 'top' | 'bottom' | 'right' };
 }) {
   const { label = 'none', side = 'bottom' } = options;
   const { t } = useTranslation();
@@ -49,9 +50,9 @@ export default function ThemeSelector({ className, options = {} }: {
         render={<Button variant='ghost' size='sm' className={cn('text-sm', className)} />}
       >
         <current.Icon aria-hidden='true' className='size-4' />
-        {label === 'name' && <span className='truncate'>{t(current.labelKey)}</span>}
+        {label === 'title' && <span className='truncate'>{t('theme_select')}</span>}
       </DropdownMenuTrigger>
-      <DropdownMenuContent data-menu='theme' side={side} align='end' className='min-w-[160px]'>
+      <DropdownMenuContent data-menu='theme' side={side} align='end' className='w-auto min-w-0'>
         <DropdownMenuRadioGroup value={current.value} onValueChange={value => setTheme(value)}>
           {_THEMES.map(option => (
             // closeOnClick: radio items stay open after a pick by default; this is a pick-and-go menu.
