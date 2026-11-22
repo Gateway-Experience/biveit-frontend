@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router';
-import { ChartColumnIcon, GaugeIcon, GlobeIcon, HouseIcon } from 'lucide-react';
+import { ChartColumnIcon, GaugeIcon, GlobeIcon, HouseIcon, UsersIcon } from 'lucide-react';
 
 import BrandLogo from 'src/components/common/BrandLogo';
 import {
@@ -22,6 +22,7 @@ const _ADMIN_PAGES = [
     icon: GaugeIcon,
     isActive: (pathname: string) => pathname === PATHS.admin || pathname.startsWith(`${PATHS.admin}/projects/`),
   },
+  { path: PATHS.adminUsers, label: 'Users', icon: UsersIcon, isActive: (pathname: string) => pathname === PATHS.adminUsers },
   { path: PATHS.adminAiUsage, label: 'AI usage', icon: ChartColumnIcon, isActive: (pathname: string) => pathname === PATHS.adminAiUsage },
   { path: PATHS.adminDomainTest, label: 'Domain test bench', icon: GlobeIcon, isActive: (pathname: string) => pathname === PATHS.adminDomainTest },
 ];

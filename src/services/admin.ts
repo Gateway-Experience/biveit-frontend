@@ -1,6 +1,6 @@
 import { callBe } from 'src/utils/request';
 import type {
-  AiCostReport, AiCostSeries, PlatformStatus, ProjectDeployments, ProjectPlan, ProjectPlanRequest, ProjectStatus,
+  AdminUser, AiCostReport, AiCostSeries, PlatformStatus, ProjectDeployments, ProjectPlan, ProjectPlanRequest, ProjectStatus,
   SandboxMode, ServerUsage,
 } from 'src/types/admin';
 import type { DnsRecord, DomainContact, DomainVerification, RegistrarDomain } from 'src/types/domains';
@@ -30,14 +30,31 @@ async function getPlatformStatus(): Promise<PlatformStatus> {
   return callBe('/admin/platform');
 }
 
+// Every user, guests too, newest signup first. The page sorts and filters them itself.
+async function getUsers(): Promise<AdminUser[]> {
+  return callBe('/admin/users');
+}
+
 async function getProjectStatus(projectId: number): Promise<ProjectStatus> {
   return callBe(`/admin/projects/${projectId}`);
 }
 
 // Turns the project off: its agents' runners, its dev servers, its container. Nothing on disk is touched,
 // so the owner opening it again brings it all back.
+// Turns the project back on, as its owner opening it would: the agent's session, and the dev environment once it's
+// building. Runs in the background on the BE: watch getProjectStatus's is_running.
+async function startProject(projectId: number): Promise<{ status: 'starting' }> {
+  return callBe({ url: `/admin/projects/${projectId}/start`, method: 'POST' });
+}
+
 async function stopProject(projectId: number): Promise<unknown> {
   return callBe({ url: `/admin/projects/${projectId}/stop`, method: 'POST' });
+}
+
+// Brings the project's dev environment back up (container, dev servers, dev site), as its owner opening it would.
+// Runs in the background on the BE: watch getProjectStatus's devenv. 409 BUILDING_NOT_STARTED with no app yet.
+async function startDevServers(projectId: number): Promise<{ status: 'starting' }> {
+  return callBe({ url: `/admin/projects/${projectId}/dev-servers/start`, method: 'POST' });
 }
 
 async function getProjectDeployments(projectId: number): Promise<ProjectDeployments> {
@@ -146,8 +163,11 @@ export {
   getProjectAiCost,
   getServerUsage,
   getPlatformStatus,
+  getUsers,
   getProjectStatus,
+  startProject,
   stopProject,
+  startDevServers,
   getProjectDeployments,
   deployProject,
   getProjectPlan,

@@ -25,6 +25,7 @@ import AdminDashboard from 'src/components/pages/admin/AdminDashboard';
 import AdminProjectDetail from 'src/components/pages/admin/AdminProjectDetail';
 import AdminDomainTest from 'src/components/pages/admin/AdminDomainTest';
 import AdminAiUsage from 'src/components/pages/admin/AdminAiUsage';
+import AdminUsers from 'src/components/pages/admin/AdminUsers';
 import { useStore } from 'src/state-store';
 import { isSignedInUser } from 'src/services/user';
 import { withArrivalSource } from 'src/services/arrivalSource';
@@ -80,6 +81,7 @@ function AppRoutes() {
         <Route path={`${PATHS.admin}/projects/:projectId`} element={<AdminProjectDetail />} />
         <Route path={PATHS.adminDomainTest} element={<AdminDomainTest />} />
         <Route path={PATHS.adminAiUsage} element={<AdminAiUsage />} />
+        <Route path={PATHS.adminUsers} element={<AdminUsers />} />
       </Route>
       <Route element={<OpenPageLayout />}>
         <Route path={PATHS.termsOfService} element={<TermsOfService />} />

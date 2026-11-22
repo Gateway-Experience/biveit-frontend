@@ -24,13 +24,38 @@ export type AdminProject = {
   updated_at: string;
 };
 
+// One user on the admin's users page (GET /admin/users). last_active_at: the newest of their last chat message, their
+// last project edit and signing up (browsing alone doesn't move it). cost_usd: all their agents ever cost, at today's
+// prices.
+export type AdminUser = {
+  id: number;
+  email: string | null; // null for guests
+  name: string | null;
+  user_type: 'USER' | 'GUEST';
+  is_admin: boolean;
+  created_at: string;
+  last_active_at: string;
+  project_count: number; // live ones: archived count, Trash doesn't
+  cost_usd: number;
+};
+
 export type PlatformStatus = {
   sections: StatusSection[];
   projects: AdminProject[];
 };
 
+// The dev environment as the owner's preview sees it (biveit-backend devenv.get_devenv_status). preview_url is null
+// until the app's in the workspace (nothing built yet); a server's status is pm2's, or 'missing' (container off).
+export type AdminDevenv = {
+  busy: boolean; // a setup or a dev server command is running right now
+  preview_url: string | null;
+  servers: { app: 'backend' | 'frontend'; status: string; port: number }[];
+};
+
 export type ProjectStatus = {
-  project: { id: number; name: string; stage: string };
+  project: { id: number; name: string; stage: string; description: string | null };
+  is_running: boolean; // its container
+  devenv: AdminDevenv;
   sections: StatusSection[];
 };
 
