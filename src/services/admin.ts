@@ -3,6 +3,7 @@ import type {
   AdminUser, AiCostReport, AiCostSeries, PlatformStatus, ProjectDeployments, ProjectPlan, ProjectPlanRequest, ProjectStatus,
   SandboxMode, ServerUsage,
 } from 'src/types/admin';
+import type { AiMessage } from 'src/types/chat';
 import type { DnsRecord, DomainContact, DomainVerification, RegistrarDomain } from 'src/types/domains';
 
 // Intentions: the admin dashboard's calls (biveit-backend controllers/admin). Admins only -- the BE answers
@@ -55,6 +56,16 @@ async function stopProject(projectId: number): Promise<unknown> {
 // Runs in the background on the BE: watch getProjectStatus's devenv. 409 BUILDING_NOT_STARTED with no app yet.
 async function startDevServers(projectId: number): Promise<{ status: 'starting' }> {
   return callBe({ url: `/admin/projects/${projectId}/dev-servers/start`, method: 'POST' });
+}
+
+// Every message of any conversation, oldest first: a read-only look at a project's chat.
+async function getConversationMessages(conversationId: number): Promise<AiMessage[]> {
+  return callBe(`/admin/conversations/${conversationId}/messages`);
+}
+
+// The admin twin of chat.ts' getConversationFileUrl, for the attachments in that view (the owner's route is theirs only).
+function getConversationFileUrl(conversationId: number, path: string) {
+  return `${import.meta.env.VITE_API_BASE_URL}/admin/conversations/${conversationId}/files?path=${encodeURIComponent(path)}`;
 }
 
 async function getProjectDeployments(projectId: number): Promise<ProjectDeployments> {
@@ -168,6 +179,8 @@ export {
   startProject,
   stopProject,
   startDevServers,
+  getConversationMessages,
+  getConversationFileUrl,
   getProjectDeployments,
   deployProject,
   getProjectPlan,

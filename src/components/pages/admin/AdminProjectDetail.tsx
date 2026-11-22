@@ -15,7 +15,7 @@ import { PATHS } from 'src/utils/constants';
 
 // Intentions: one project in the admin dashboard (/admin/projects/<id>) -- its status sections (workspace,
 // the agent's session, container, dev servers, data), the same ones `scripts.manage status <id>` prints --
-// its description, its dev environment (AdminDevServers: the dev site's link, starting stopped servers),
+// its description, a link to its chat (AdminConversation, read-only), its dev environment (AdminDevServers: the dev site's link, starting stopped servers),
 // its plan (AdminPlan: setting one by hand), its production site (AdminDeployments: deploying it by hand), and turning it
 // off or back on (one button, by whether its container runs). Stopping takes down its runners, dev servers and
 // container; nothing on disk is touched. Starting is what the owner opening the project does, and runs in the
@@ -78,6 +78,17 @@ export default function AdminProjectDetail() {
           )}
         </div>
         <div className='flex gap-2'>
+          {status && (
+            <Button
+              variant='outline'
+              size='sm'
+              nativeButton={false}
+              render={<Link to={`${PATHS.admin}/projects/${projectId}/conversations/${status.conversation_id}`} />}
+              data-action='view-conversation'
+            >
+              View conversation
+            </Button>
+          )}
           <Button variant='outline' size='sm' onClick={() => refetch()} disabled={isFetching} data-action='refresh'>
             {isFetching ? 'Refreshing…' : 'Refresh'}
           </Button>

@@ -54,6 +54,7 @@ export type AdminDevenv = {
 
 export type ProjectStatus = {
   project: { id: number; name: string; stage: string; description: string | null };
+  conversation_id: number; // its current conversation (what its owner's chat shows)
   is_running: boolean; // its container
   devenv: AdminDevenv;
   sections: StatusSection[];
