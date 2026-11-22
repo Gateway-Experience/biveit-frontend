@@ -9,7 +9,7 @@ import { useStore } from 'src/state-store';
 import FullScreenLoading from 'src/components/common/FullScreenLoading';
 import i18nMappings from 'src/utils/i18nMappings';
 import { setAnalyticsEnabled, identifyUser } from 'src/services/analytics';
-import { SUPPORTED_LANGUAGES } from 'src/utils/constants';
+import { LANGUAGE_PARAM, SUPPORTED_LANGUAGES } from 'src/utils/constants';
 import { useFollowLogoutFromOtherTabs } from 'src/utils/hooks';
 
 // i18nMappings is keyed by text, then language. Flip it into one resource bundle per language;
@@ -40,18 +40,28 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       .use(LanguageDetector)
       .use(initReactI18next)
       .init({
-        // No forced `lng`: the detector restores the language the user picked last time (it's cached
-        // in localStorage by changeLanguage). First-time visitors get their browser's language if we
-        // support it (region dropped, so "vi-VN" counts as "vi"), otherwise the env default.
+        // No forced `lng`: a language in the URL (LANGUAGE_PARAM, from the landing site's links) wins; then
+        // the one the user picked last time (cached in localStorage, by changeLanguage and by the URL one);
+        // then first-time visitors get their browser's language if we support it (region dropped, so "vi-VN"
+        // counts as "vi"), otherwise the env default.
         fallbackLng: import.meta.env.VITE_APP_LANGUAGE || 'en',
         supportedLngs: SUPPORTED_LANGUAGE_CODES,
         detection: {
-          order: ['localStorage', 'navigator'],
+          order: ['querystring', 'localStorage', 'navigator'],
+          lookupQuerystring: LANGUAGE_PARAM,
           caches: ['localStorage'],
           convertDetectedLanguage: (detectedLanguage: string) => detectedLanguage.split('-')[0],
         },
         resources: i18nResources,
       });
+    // The URL's language has been read (and saved), so it goes: left in, a reload of this page would undo a
+    // language picked from the menu meanwhile. The router isn't mounted yet (it waits for `initialized`), so
+    // it starts from the cleaned URL.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has(LANGUAGE_PARAM)) {
+      url.searchParams.delete(LANGUAGE_PARAM);
+      window.history.replaceState(window.history.state, '', url);
+    }
     callBe('/me')
       .then(data => {
         set({ user: data });

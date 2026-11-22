@@ -62,6 +62,11 @@ const SITE_KIND_OPTIONS = [
 // it from the URL); the landing site's prompt box (biveit-landing, HeroPrompt) sets it, with its own copy of this name.
 const NEW_PROJECT_IDEA_PARAM = 'idea';
 
+// The query param that opens the app in a given language (?lng=vi): the landing site's non-English pages put it on
+// their links into the app (biveit-landing, with its own copy of this name), so the visitor stays in the language
+// they were reading. It wins over the one saved from an earlier visit, then gets saved itself (AppProvider).
+const LANGUAGE_PARAM = 'lng';
+
 // Example site ideas, as i18n keys: typed out in the auth pages' showcase panel, as if someone were asking
 // biveit for a site. (The landing site's prompt box uses the same ones, from its own copy of the strings.)
 const EXAMPLE_IDEA_KEYS = ['auth_showcase_prompt_1', 'auth_showcase_prompt_2', 'auth_showcase_prompt_3', 'auth_showcase_prompt_4'];
@@ -82,6 +87,7 @@ const PATHS = {
   admin: '/admin',
   adminDomainTest: '/admin/domain-name-test',
   adminAiUsage: '/admin/ai-usage',
+  adminUsers: '/admin/users',
 };
 
 export {
@@ -92,6 +98,7 @@ export {
   SUPPORT_EMAIL,
   SITE_KIND_OPTIONS,
   NEW_PROJECT_IDEA_PARAM,
+  LANGUAGE_PARAM,
   EXAMPLE_IDEA_KEYS,
   MAIN_CONTENT_WIDTH_CLASS,
   SIDEBAR_WIDTH_PX,

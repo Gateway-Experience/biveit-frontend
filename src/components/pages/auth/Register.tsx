@@ -32,7 +32,7 @@ const AFTER_REGISTER_PATH = '/';
 // Original purpose: the /register page — Google sign-up first, email + password sign-up below it.
 // References: fourpixie-backend/docs/google-login-fe-handoff.md §2–3 for the BE contract.
 export default function Register() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const notify = useNotification();
   const set = useStore(state => state.set);
@@ -50,13 +50,15 @@ export default function Register() {
       const { user } = await callBe({
         url: '/user/register',
         method: 'POST',
-        // signup_source: where they came from (services/arrivalSource), kept on the new account.
+        // signup_source: where they came from (services/arrivalSource), and language: the one they're seeing the
+        // app in -- both kept on the new account (the agent talks to them in that language).
         data: {
           username: email,
           password,
           first_name: _.trim(firstName),
           last_name: _.trim(lastName),
           signup_source: ARRIVAL_SOURCE,
+          language: i18n.resolvedLanguage,
         },
       });
       set({ user });
