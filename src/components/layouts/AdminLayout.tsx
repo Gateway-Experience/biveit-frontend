@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Link, Outlet, useLocation } from 'react-router';
 import { ChartColumnIcon, GaugeIcon, GlobeIcon, HouseIcon, UsersIcon } from 'lucide-react';
 
@@ -26,6 +27,9 @@ const _ADMIN_PAGES = [
   { path: PATHS.adminAiUsage, label: 'AI usage', icon: ChartColumnIcon, isActive: (pathname: string) => pathname === PATHS.adminAiUsage },
   { path: PATHS.adminDomainTest, label: 'Domain test bench', icon: GlobeIcon, isActive: (pathname: string) => pathname === PATHS.adminDomainTest },
 ];
+
+// Pages whose tables need more room than the usual content column (MAIN_CONTENT_WIDTH_CLASS).
+const _WIDE_PAGE_PATHS = [PATHS.adminUsers];
 
 function AdminSidebar() {
   const location = useLocation();
@@ -73,6 +77,8 @@ function AdminSidebar() {
 }
 
 export default function AdminLayout() {
+  const location = useLocation();
+  const contentWidthClass = _.includes(_WIDE_PAGE_PATHS, location.pathname) ? 'max-w-7xl' : MAIN_CONTENT_WIDTH_CLASS;
   return (
     <SidebarProvider className='app-sidebar-wash' style={{ '--sidebar-width': `${SIDEBAR_WIDTH_PX}px` } as React.CSSProperties}>
       <AdminSidebar />
@@ -82,7 +88,7 @@ export default function AdminLayout() {
           <span className='text-sm font-medium'>Admin</span>
         </header>
         <main className='flex flex-1 flex-col'>
-          <div className={`mx-auto mt-7 mb-12 w-full p-4 ${MAIN_CONTENT_WIDTH_CLASS}`}>
+          <div className={`mx-auto mt-7 mb-12 w-full p-4 ${contentWidthClass}`}>
             <Outlet />
           </div>
         </main>
